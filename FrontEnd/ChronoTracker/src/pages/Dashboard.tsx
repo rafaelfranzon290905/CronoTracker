@@ -27,6 +27,7 @@ function Dashboard() {
         <nav className="flex-1 px-4 space-y-2 text-sm">
           <Button variant="ghost" className="w-full justify-start bg-blue-900 text-white"><Home className="mr-2 h-4 w-4" /> Dashboard</Button>
           <Button variant="ghost" className="w-full justify-start"><Clock className="mr-2 h-4 w-4" /> TimeSheet</Button>
+          <Link to="/collaborators"><Button variant="ghost" className="w-full justify-start"><Users className="mr-2 h-4 w-4" /> Colaboradores</Button></Link>
           <Link to="/clientes"><Button variant="ghost" className="w-full justify-start"><Users className="mr-2 h-4 w-4" /> Clientes</Button></Link>
           <Link to="/projetos"><Button variant="ghost" className="w-full justify-start"><Rocket className="mr-2 h-4 w-4" /> Projetos</Button></Link>
           <Button variant="ghost" className="w-full justify-start"><Activity className="mr-2 h-4 w-4" /> Atividades</Button>

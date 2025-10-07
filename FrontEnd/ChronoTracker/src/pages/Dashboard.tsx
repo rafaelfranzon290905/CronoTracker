@@ -23,6 +23,7 @@ function Dashboard() {
       
       <SideBar/>
 
+
       {/* Conteúdo */}
       <main className="flex-1 p-6 overflow-auto">
         {/* Header com Searchbar */}

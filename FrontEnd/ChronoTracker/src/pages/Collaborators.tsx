@@ -3,8 +3,8 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity } from "lucide-react"
 import CronosAzul from "../imagens/ChronosAzul.png"
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../components/Table";
-import { columns } from "../components/table/columns";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../components/ui/table/table.tsx";
+import { columns } from "../components/ui/table/columns";
 
 
 

@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity } from "lucide-react"
 import CronosAzul from "../imagens/ChronosAzul.png"
+import SideBar from "@/components/componentes/SideBar"
+import Header from "@/components/componentes/Header"
 
 const data = [
   { dia: "Seg", horas: 8 },
@@ -11,35 +13,19 @@ const data = [
   { dia: "Qua", horas: 9 },
   { dia: "Qui", horas: 6 },
   { dia: "Sex", horas: 5 },
-  { dia: "Sáb", horas: 4 },
+  { dia: "Sáb", horas: 7 },
   { dia: "Dom", horas: 0 },
 ]
 
 function Dashboard() {
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-blue-50 shadow-md flex flex-col">
-        <div className="p-6 flex items-center space-x-2 font-bold text-lg">
-          <img src={CronosAzul} className="h-12 w-12" />
-          <span>CHRONO TRACKER</span>
-        </div>
-        <nav className="flex-1 px-4 space-y-2 text-sm">
-          <Button variant="ghost" className="w-full justify-start bg-blue-900 text-white"><Home className="mr-2 h-4 w-4" /> Dashboard</Button>
-          <Button variant="ghost" className="w-full justify-start"><Clock className="mr-2 h-4 w-4" /> TimeSheet</Button>
-          <Link to="/clientes"><Button variant="ghost" className="w-full justify-start"><Users className="mr-2 h-4 w-4" /> Clientes</Button></Link>
-          <Link to="/projetos"><Button variant="ghost" className="w-full justify-start"><Rocket className="mr-2 h-4 w-4" /> Projetos</Button></Link>
-          <Button variant="ghost" className="w-full justify-start"><Activity className="mr-2 h-4 w-4" /> Atividades</Button>
-          <Button variant="ghost" className="w-full justify-start"><FileText className="mr-2 h-4 w-4" /> Relatórios</Button>
-          <Button variant="ghost" className="w-full justify-start"><DollarSign className="mr-2 h-4 w-4" /> Despesas</Button>
-        </nav>
-        <div className="p-4">
-          <Button variant="destructive" className="w-full">Log Out</Button>
-        </div>
-      </aside>
+      <SideBar/>
 
       {/* Conteúdo */}
       <main className="flex-1 p-6 overflow-auto">
+        {/* Header com Searchbar */}
+        <Header/>
         <header className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold">Bem-vinda, Rafaela!</h1>

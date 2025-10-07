@@ -1,7 +1,12 @@
+import React from "react";
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity } from "lucide-react"
 import CronosAzul from "../imagens/ChronosAzul.png"
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../components/Table";
+import { columns } from "../components/table/columns";
+
+
 
 function Collaborators() {
   return (
@@ -36,6 +41,28 @@ function Collaborators() {
           </div>
           <Button className="bg-blue-600 text-white">+ Criar</Button>
         </header>
+        <section>
+            <div className="p-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {columns.map((col) => (
+                            <TableHead key={col.accessor}>{col.header}</TableHead>
+                            ))}
+                        </TableRow>
+                        </TableHeader>
+                    <TableBody>
+                        {paymentsData.map((payment) => (
+                            <TableRow key={payment.id}>
+                            {columns.map((col) => (
+                                <TableCell key={col.accessor}>{payment[col.accessor]}</TableCell>
+                            ))}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </section>
       </main>
     </div>
   )

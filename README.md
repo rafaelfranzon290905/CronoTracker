@@ -7,7 +7,6 @@ Repositório referente ao projeto CronoTracker da Sinosbyte realizado durante o 
 - **TailwindCSS**
 - **Shadcn/ui**
 - **PostgreSQL**
-- 
 ---
 
 ## Pré-requisitos
@@ -44,7 +43,7 @@ npm install
 ```
 npm run dev
 ```
-
+---
 ## Arquitetura Shadcn/ui
 A arquitetura de user interface que usamos nesse projeto é a Shadcn/ui
 
@@ -66,7 +65,7 @@ Por fim, você dá import no topo da página com o componente/subcomponentes que
 ```
 import { Nome do Componente } from "@/components/ui/Nome do Componente"
 ```
-
+---
 ## Lucide React
 O Lucide React foi a tecnologia escolhida para adicionar os icons do projeto de maneira fácil e customizável, para usá-lo, você procura o icon que você quer no site do Lucide React: https://lucide.dev/icons/ e então você dá import no topo da página e depois utiliza como componente React.
 

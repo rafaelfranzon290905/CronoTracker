@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity } from "lucide-react"
 import CronosAzul from "../imagens/ChronosAzul.png"
+import SideBar from "@/components/componentes/SideBar"
+import Header from "@/components/componentes/Header"
 
 const data = [
   { dia: "Seg", horas: 8 },
@@ -11,13 +13,14 @@ const data = [
   { dia: "Qua", horas: 9 },
   { dia: "Qui", horas: 6 },
   { dia: "Sex", horas: 5 },
-  { dia: "Sáb", horas: 4 },
+  { dia: "Sáb", horas: 7 },
   { dia: "Dom", horas: 0 },
 ]
 
 function Dashboard() {
   return (
     <div className="flex h-screen bg-gray-50">
+<<<<<<< HEAD
       {/* Sidebar */}
       <aside className="w-64 bg-blue-50 shadow-md flex flex-col">
         <div className="p-6 flex items-center space-x-2 font-bold text-lg">
@@ -38,9 +41,14 @@ function Dashboard() {
           <Button variant="destructive" className="w-full">Log Out</Button>
         </div>
       </aside>
+=======
+      <SideBar/>
+>>>>>>> origin/develop
 
       {/* Conteúdo */}
       <main className="flex-1 p-6 overflow-auto">
+        {/* Header com Searchbar */}
+        <Header/>
         <header className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold">Bem-vinda, Rafaela!</h1>

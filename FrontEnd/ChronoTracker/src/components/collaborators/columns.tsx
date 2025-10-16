@@ -88,7 +88,7 @@ export const columns: ColumnDef<Collaborador>[] = [
   {
     id: "actions",
     header: "Ações",
-    cell: ({ row }) => {
+    cell: ({  }) => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/componentes/TituloPagina";
 import { type Collaborador } from "@/lib/types";
 import { columns } from "@/components/collaborators/columns";
 import { DataTable } from "@/components/collaborators/data-table";
-
+import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaboratorDialog";
 
 // No futuro, estes dados virão da sua API ou base de dados
 const MOCK_DATA: Collaborador[] = [
@@ -56,10 +56,7 @@ function Collaborators() {
             title="Gerenciar Colaboradores"
             subtitle="Adicione, edite e visualize os membros da sua equipe."
           >
-            <Button className="bg-blue-950 rounded-2xl text-white hover:bg-blue-800 mx-3">
-              <PlusCircle className="mr-2 h-4 w-4 " />
-              Adicionar Colaborador
-            </Button>
+            <AddCollaboratorDialog />
           </PageHeader>
           <DataTable columns={columns} data={data} />
         </main>

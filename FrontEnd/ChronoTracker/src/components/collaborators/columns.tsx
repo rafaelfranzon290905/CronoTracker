@@ -69,6 +69,32 @@ export const columns: ColumnDef<Collaborador>[] = [
       return <Badge variant={variant}>{role}</Badge>;
     },
   },
+
+   // 5. Coluna de email
+  {
+    accessorKey: "email",
+    header: "E-mail",
+    cell: ({ row }) => {
+      const email = row.getValue("email") as string;
+      return <div className="font-medium capitalize">{email}</div>
+    },
+  },
+
+    // 6. Coluna de Data de Entrada formatada
+  {
+    accessorKey: "dataEntrada",
+    header: "Data de Entrada",
+    cell: ({ row }) => {
+      const data = row.getValue("dataEntrada") as string;
+      const dataFormatada = new Date(data).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      return <span>{dataFormatada}</span>;
+    },
+  },
+
   // 5. Coluna de Projetos com Badges
   {
     accessorKey: "projects",

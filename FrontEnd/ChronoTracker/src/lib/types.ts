@@ -3,5 +3,7 @@ export type Collaborador = {
   name: string;
   cpf: string;
   role: string;
+  email: string;
+  dataEntrada: string;  
   projects: string[];
 };

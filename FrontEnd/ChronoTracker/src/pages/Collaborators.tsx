@@ -1,5 +1,4 @@
-import { PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { PageHeader } from "@/components/componentes/TituloPagina";
@@ -15,6 +14,8 @@ const MOCK_DATA: Collaborador[] = [
     name: "Ana Silva",
     cpf: "12345678901",
     role: "Desenvolvedora Frontend",
+    email: "ana.silva@chronotracker.com",
+    dataEntrada: "10/05/2022", 
     projects: ["ChronoTracker V2", "Internal Dashboard"],
   },
   {
@@ -22,6 +23,8 @@ const MOCK_DATA: Collaborador[] = [
     name: "Bruno Costa",
     cpf: "23456789012",
     role: "Desenvolvedor Backend",
+    email: "bruno.costa@chronotracker.com",
+    dataEntrada: "07/04/2024", 
     projects: ["ChronoTracker V2", "API Gateway"],
   },
   {
@@ -29,6 +32,8 @@ const MOCK_DATA: Collaborador[] = [
     name: "Carla Mendes",
     cpf: "34567890123",
     role: "UI/UX Designer",
+    email: "carla.mendes@chronotracker.com",
+    dataEntrada: "09/07/2019", 
     projects: ["ChronoTracker V2"],
   },
   {
@@ -36,6 +41,8 @@ const MOCK_DATA: Collaborador[] = [
     name: "Diego Santos",
     cpf: "45678901234",
     role: "Gerente de Projetos",
+    email: "diego.santos@chronotracker.com",
+    dataEntrada: "20/08/2020", 
     projects: ["ChronoTracker V2", "Internal Dashboard", "API Gateway"],
   },
 ];

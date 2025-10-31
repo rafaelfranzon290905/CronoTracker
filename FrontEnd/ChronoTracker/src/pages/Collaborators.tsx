@@ -40,7 +40,7 @@ const MOCK_DATA: Collaborador[] = [
     id: "COL-004",
     name: "Diego Santos",
     cpf: "45678901234",
-    role: "Gerente de Projetos",
+    role: "Gerentee Projetos",
     email: "diego.santos@chronotracker.com",
     dataEntrada: "20/08/2020", 
     projects: ["ChronoTracker V2", "Internal Dashboard", "API Gateway"],
@@ -49,13 +49,12 @@ const MOCK_DATA: Collaborador[] = [
 
 
 function Collaborators() {
-  {/* No futuro, substitua MOCK_DATA pelos dados reais */ }
+  
   const data = MOCK_DATA;
 
   return (
     <div className="flex h-screen bg-background text-foreground">
       <SideBar />
-      {/* Conteúdo */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-6 md:p-8 ">

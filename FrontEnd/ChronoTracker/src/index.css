@@ -46,6 +46,7 @@
   --color-botao-light: var(--botao-light);
   --color-botao-dark: var(--botao-dark);
   --color-botao-config: var(--botao-config);
+  --color-title: var(--title);
 }
 
 :root {
@@ -73,7 +74,7 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: #E6F5FF;
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -84,6 +85,7 @@
   --botao-light: #0051A2;
   --botao-dark: #033258;
   --botao-config: #F4F4F5;
+  --title: #033258;
 }
 
 .dark {
@@ -121,6 +123,7 @@
   --botao-light: #2563eb;
   --botao-dark: #1d4ed8;
   --botao-config: #334155;
+  --title: #F4F4F5;
 }
 
 @layer base {

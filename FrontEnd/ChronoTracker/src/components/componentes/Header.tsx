@@ -73,7 +73,7 @@ export default function Header() {
         <div className="h-10 md:hidden"></div>
 
         {/* Header padrão para telas maiores */}
-        <header className={`flex justify-between p-0 hidden md:flex`}>
+        <header className={`flex justify-between p-0 hidden mb-4 md:flex `}>
             <div className="flex items-center">
                 <div className="relative">
                     <Input type="text" placeholder="Buscar" className="pl-2 pr-4 py-2 w-64 rounded-2xl" />

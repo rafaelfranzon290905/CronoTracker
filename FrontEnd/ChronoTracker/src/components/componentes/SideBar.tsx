@@ -13,7 +13,7 @@ export default function SideBar() {
           <span>CHRONO TRACKER</span>
         </div>
         <nav className="flex-1 px-4 space-y-2 text-sm">
-          <Button className="w-full justify-start bg-botao-dark " aria-label="Botão para acessar Dashboard"><Home className="mr-2 scale-120" /> Dashboard</Button>
+          <Link to="/"><Button className="w-full justify-start bg-botao-dark " aria-label="Botão para acessar Dashboard"><Home className="mr-2 scale-120" /> Dashboard</Button></Link>
           <Link to="/TimeSheet"><Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar TimeSheets"><Clock className="mr-2 scale-120" /> TimeSheet</Button></Link>
           <Link to="/clientes"><Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Clientes"><Users className="mr-2 scale-120" /> Clientes</Button></Link>
           <Link to="/collaborators"><Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Colaboradores"><Users className="mr-2 scale-120" /> Colaboradores</Button></Link>

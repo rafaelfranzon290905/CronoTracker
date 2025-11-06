@@ -8,6 +8,7 @@ import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { useState } from "react"
 
+
 const data = [
   { dia: "Seg", horas: 8 },
   { dia: "Ter", horas: 7 },

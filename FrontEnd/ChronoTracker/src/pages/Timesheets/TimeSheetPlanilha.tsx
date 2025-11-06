@@ -6,7 +6,7 @@ import SideBar from "@/components/componentes/SideBar"
 export default function TimeSheetPlanilha(){
     return(
         <>
-            <div className="flex h-screen bg-gray-50">
+            <div className="flex h-screen">
       
                 <SideBar/>
 

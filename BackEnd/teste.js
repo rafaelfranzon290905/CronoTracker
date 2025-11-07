@@ -18,11 +18,6 @@ async function getClientes() {
 async function getColaboradores() {
     try {
         const colaboradores = await prisma.colaboradores.findMany({
-            select: {
-                nome_colaborador: true,
-                email: true,
-                colaborador_id: true,
-            },
             take: 3,
         })
         console.log("Conexão ok", colaboradores)

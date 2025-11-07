@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 import Header from "@/components/componentes/Header"
 import SideBar from "@/components/componentes/SideBar"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -5,10 +7,24 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
 import { Search, Ellipsis, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import { ModalCliente } from "@/components/clientes/ModalClientes";
+
+interface Cliente {
+    cliente_id: number;
+    cnpj: string;
+    nome_cliente: string;
+    nome_contato: string;
+    cep: string;
+    endereco: string;
+    cidade: string;
+    estado: string;
+    status: boolean; // Corrigido para boolean, como está no banco
+}
+
+// Base da API
+const API_BASE_URL = 'http://localhost:3001';
 
 function Clientes() {
   const [aberto, setAberto] = useState(false);
@@ -19,30 +35,42 @@ function Clientes() {
     setAberto(true)
   }
 
-  const clientes = [
-    {
-      id: "01",
-      empresa: "Comercial Alfa Ltda",
-      nome: "Marcos Silva",
-      cep: "01001-000",
-      endereco: "Rua das flores, 120",
-      cidade: "São Paulo",
-      estado: "SP",
-      cnpj: "12.345.678/0001-90",
-      status: "Aprovado",
-    },
-    {
-      id: "02",
-      empresa: "Mercado Beta EIRELI",
-      nome: "Ana Paula Rocha",
-      cep: "30140-070",
-      endereco: "Av. Afonso Pena, 850",
-      cidade: "Belo Horizonte",
-      estado: "MG",
-      cnpj: "98.765.432/0001-55",
-      status: "Aprovado",
-    },
-  ];
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Função para buscar os dados da API
+  const fetchClientes = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/clientes`);
+
+      if (!response.ok){
+        throw new Error(`Erro HTTP: ${response.status}`)
+      }
+      const data = await response.json();
+      setClientes(data);
+
+    } catch (err) {
+      console.log("Erro ao buscar clientes:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusDisplay = (status: boolean) => {
+        // Define classe e texto baseado no valor booleano
+        const className = status ? "bg-green-500" : "bg-red-500";
+        const text = status ? "Ativo" : "Inativo";
+        
+        return <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full text-white ${className}`}>{text}</span>;
+    };
+
+  useEffect(() => {
+    fetchClientes();
+  }, [])
+
 
   return (
     <div className="flex h-screen">
@@ -79,16 +107,16 @@ function Clientes() {
                   </TableHeader>
                   <TableBody>
                     {clientes.map((c) => (
-                      <TableRow key={c.id} className="text-center odd:bg-sidebar even: bg-card">
-                        <TableCell className="py-1">{c.id}</TableCell>
-                        <TableCell>{c.empresa}</TableCell>
-                        <TableCell>{c.nome}</TableCell>
+                      <TableRow key={c.cliente_id} className="text-center odd:bg-sidebar even: bg-card">
+                        <TableCell className="py-1">{c.cliente_id}</TableCell>
+                        <TableCell>{c.nome_cliente}</TableCell>
+                        <TableCell>{c.nome_contato}</TableCell>
                         <TableCell>{c.cep}</TableCell>
                         <TableCell>{c.endereco}</TableCell>
                         <TableCell>{c.cidade}</TableCell>
                         <TableCell>{c.estado}</TableCell>
                         <TableCell>{c.cnpj}</TableCell>
-                        <TableCell className="bg-green-500 rounded-2xl text-white">{c.status}</TableCell>
+                        <TableCell>{getStatusDisplay(c.status)}</TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger>

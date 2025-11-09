@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import { ModalCliente } from "@/components/clientes/ModalClientes";
+import DialogClientes from "@/components/componentes/DialogClientes";
 
 interface Cliente {
     cliente_id: number;
@@ -90,6 +91,8 @@ function Clientes() {
                     <Input type="text" placeholder="Buscar" className="w-full rounded-2xl" />
                     <Search className="text-white absolute h-8 w-8 right-1 top-0.5 bg-botao-dark p-1 rounded-2xl" />
                 </div>
+                <Button><DialogClientes/></Button>
+                
                 <Table className="w-full">
                   <TableHeader className="border-b-2">
                     <TableRow>
@@ -123,7 +126,6 @@ function Clientes() {
                               <Button variant="none" className="hover:cursor-pointer"><Ellipsis/></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="bg-background border-2 rounded-md border-botao-config p-2 " side="top">
-                              <DropdownMenuItem onClick={() => openModal("add")}>Adicionar Cliente</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => openModal("edit")}>Editar Cliente</DropdownMenuItem>
                               <DropdownMenuItem>Excluir cliente</DropdownMenuItem>
                             </DropdownMenuContent>

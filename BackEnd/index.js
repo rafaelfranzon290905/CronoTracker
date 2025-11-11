@@ -176,6 +176,20 @@ app.post('/colaboradores', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
+  app.get('/atividades', async (req, res) => {
+  try {
+    const todasAtividades = await prisma.atividades.findMany({
+      // Opcional: ordenar por cliente_id para garantir a ordem
+      orderBy: {
+        atividade_id: 'asc', 
+      },
+    });
+    res.status(200).json(todasAtividades);
+  } catch (error) {
+    console.error('Erro ao buscar todos as atividades:', error);
+    res.status(500).json({ error: 'Erro interno ao listar atividades.' });
+  }
+});
 
 
 // ----------------------------------------------------

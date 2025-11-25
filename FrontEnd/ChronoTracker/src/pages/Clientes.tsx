@@ -29,11 +29,13 @@ const API_BASE_URL = 'http://localhost:3001';
 
 function Clientes() {
   const [aberto, setAberto] = useState(false);
-  const [tipo, setTipo] = useState<"add" | "edit" | null>(null)
-  
-  const openModal = (type: "add" | "edit") => {
-    setTipo(type)
-    setAberto(true)
+  const [tipo, setTipo] = useState<"add" | "edit" | null>(null);
+  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
+
+  const openModal = (type: "add" | "edit", cliente?: Cliente ) => {
+    setTipo(type);
+    setClienteEditando(type === 'edit' ? cliente || null : null);
+    setAberto(true);
   }
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -72,6 +74,32 @@ function Clientes() {
     fetchClientes();
   }, [])
 
+  const deleteCliente = async (cliente_id: number) => {
+    try {
+      // Confirmação
+      if (!window.confirm(`Tem certeza que deseja excluir o cliente com ID ${cliente_id}?`)) {
+        return; //Cancela a exclusão se o usuário não confirmar
+      }
+
+      // Chamada DELETE
+      const response = await fetch(`${API_BASE_URL}/clientes/${cliente_id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        // Mensagem de erro do backend
+        const errorData = await response.json().catch(() => ({error: 'Erro desconhecido'}));
+        throw new Error(errorData.error || `Erro HTTP ${response.status}`);
+      }
+
+      // Atualiza a lista de clientes
+      alert(`Cliente ID ${cliente_id} excluido com sucesso!`);
+      fetchClientes(); //Rebusca a lista completa
+    } catch (err) {
+      console.error("Erro ao deletar cliente:", err);
+      alert(`Falha ao excluir cliente: ${err instanceof Error ? err.message : 'Erro desconhecido' }`);
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -91,7 +119,7 @@ function Clientes() {
                     <Input type="text" placeholder="Buscar" className="w-full rounded-2xl" />
                     <Search className="text-white absolute h-8 w-8 right-1 top-0.5 bg-botao-dark p-1 rounded-2xl" />
                 </div>
-                <Button><DialogClientes/></Button>
+                <Button className="bg-botao-dark text-white"><DialogClientes/></Button>
                 
                 <Table className="w-full">
                   <TableHeader className="border-b-2">
@@ -126,8 +154,8 @@ function Clientes() {
                               <Button variant="none" className="hover:cursor-pointer"><Ellipsis/></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="bg-background border-2 rounded-md border-botao-config p-2 " side="top">
-                              <DropdownMenuItem onClick={() => openModal("edit")}>Editar Cliente</DropdownMenuItem>
-                              <DropdownMenuItem>Excluir cliente</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openModal("edit", c)}>Editar Cliente</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => deleteCliente(c.cliente_id)}>Excluir cliente</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                           
@@ -138,7 +166,7 @@ function Clientes() {
                 </Table>
               </CardContent>
             </Card>
-            <ModalCliente open={aberto} onOpenChange={setAberto} type={tipo}/>
+            <ModalCliente open={aberto} onOpenChange={setAberto} type={tipo} clienteInicial={clienteEditando} aoSalvar={fetchClientes}/>
         </main>
          
       </div>

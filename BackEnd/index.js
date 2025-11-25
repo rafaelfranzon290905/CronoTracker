@@ -106,6 +106,82 @@ app.post('/clientes', async (req, res) => {
   }
 });
 
+// DELETE /clientes - Exclui um cliente
+app.delete('/clientes/:id', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  // Validação simples
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID do cliente inválido.'});
+  }
+  try {
+    // Prisma usa delete para remover um registro pelo ID
+    const clienteDeletado = await prisma.clientes.delete({
+      where: {
+        cliente_id: clienteId,
+      },
+    });
+    // Se for bem sucedida
+    res.status(200).json({ message: 'Cliente excluido com sucesso.', cliente: clienteDeletado});
+
+  } catch (error) {
+    if (error.code == 'P2025'){
+      return res.status(404).json({error: `Cliente com ID ${clienteId} não encontrado`});
+    }
+    console.error('Erro ao deletar o cliente:', error);
+    res.status(500). json({error: 'Erro interno do servidor ao tentar deletar cliente'});
+  }
+})
+
+// PUT /clientes/:id - atualiza os dados de um cliente
+app.put('/clientes/:id', async (req, res) => {
+  // Extair e validar o ID
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)){
+    return res.status(400).json({error: 'ID do cliente inválido.'});
+  }
+  // Extrair dados do corpo da requisição
+  const {
+    cnpj,
+    nome_cliente,
+    nome_contato,
+    cep, 
+    endereco,
+    cidade,
+    estado,
+    status
+  } = req.body;
+
+  // Prepara os dados para a atualização, limpando o CNPJ se ele existir
+  const dadosParaAtualizar = {
+    cnpj: cnpj ? cnpj.replace(/[^\d]/g, ''): undefined,
+    nome_cliente,
+    nome_contato,
+    cep,
+    endereco,
+    cidade,
+    estado,
+    status,
+  };
+  try {
+    const clienteAtualizado = await prisma.clientes.update({
+      where: {cliente_id: clienteId},
+      data: dadosParaAtualizar,
+    });
+
+    res.status(200).json(clienteAtualizado);
+
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({error: `Cliente com ID ${clienteId} não encontrado`});
+    }
+    console.error('Erro ao atualizar cliente:', error);
+    res.status(500).json({error: 'Erro interno ao atualizar o cliente'});
+  }
+
+})
+
 
 // ----------------------------------------------------
 // 🎯 ROTAS DE COLABORADORES

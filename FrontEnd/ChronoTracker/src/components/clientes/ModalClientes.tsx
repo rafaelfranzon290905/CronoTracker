@@ -130,14 +130,14 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
                         <Input id="endereco" placeholder="Digite o endereço" value={formData.endereco} onChange={handleChange}/>
                     </div>
                    
-          <div className="grid grid-cols-2 gap-4">
+          <div className="flex gap-4">
             <div>
               <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" placeholder="Cidade" value={formData.cidade} onChange={handleChange}/>
+              <Input id="cidade" placeholder="Cidade" className="w-100" value={formData.cidade} onChange={handleChange}/>
             </div>
             <div>
               <Label htmlFor="estado">Estado</Label>
-              <Input id="estado" placeholder="Estado (ex: RS)" value={formData.estado} onChange={handleChange}/>
+              <Input id="estado" placeholder="Estado (ex: RS)" maxLength={2} value={formData.estado} onChange={handleChange}/>
             </div>
       
           </div>
@@ -158,10 +158,8 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
                              <span className="text-sm font-medium">{formData.status ? 'Ativo' : 'Inativo'}</span>
                         </div>
                         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button type="submit">
+          
+          <Button type="submit" className="bg-botao-dark">
             Salvar alterações
           </Button>
         </DialogFooter>

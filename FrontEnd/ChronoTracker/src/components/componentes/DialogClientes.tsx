@@ -150,7 +150,7 @@ export default function DialogClientes() {
                 </div>
                 {/* Botão de Submit */}
                     <div className="pt-4 flex justify-end">
-                        <Button type="submit">
+                        <Button type="submit" className="bg-botao-dark">
                                 Salvar
                         </Button>
                     </div>

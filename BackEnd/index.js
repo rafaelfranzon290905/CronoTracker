@@ -106,28 +106,29 @@ app.post('/clientes', async (req, res) => {
   }
 });
 
-
 // ----------------------------------------------------
 // 🎯 ROTAS DE COLABORADORES
 // ----------------------------------------------------
 
-// GET /colaboradores/cpf/:cpf - Verifica se um colaborador existe pelo CPF
-app.get('/colaboradores/cpf/:cpf', async (req, res) => {
-  const cpfLimpo = req.params.cpf.replace(/[^\d]/g, '');
+// GET /colaboradores/email/:email - Verifica se um colaborador existe pelo EMAIL
+// Exemplo de uso: /colaboradores/email/joao@empresa.com
+app.get('/colaboradores/email/:email', async (req, res) => {
+  const { email } = req.params;
 
-  if (cpfLimpo.length !== 11) {
-    return res.status(400).json({ error: 'Formato de CPF inválido. Deve ter 11 dígitos.' });
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Formato de e-mail inválido.' });
   }
 
   try {
-    // 🔎 Prisma: Usa findUnique para buscar um registro pela chave única (CPF)
     const colaborador = await prisma.colaboradores.findUnique({
       where: {
-        cpf: cpfLimpo, // Assumindo que 'cpf' é um campo único no seu modelo 'colaboradores'
+        email: email, 
       },
       select: {
-        colaborador_id: true, // Ou 'id', dependendo do nome exato no seu schema
-        nome: true,
+        colaborador_id: true,
+        nome_colaborador: true, // Ajustado para bater com o schema
+        cargo: true,
+        status: true
       },
     });
     
@@ -137,50 +138,43 @@ app.get('/colaboradores/cpf/:cpf', async (req, res) => {
       res.status(200).json({ existe: false });
     }
   } catch (error) {
-    console.error('Erro ao verificar CPF:', error);
+    console.error('Erro ao verificar e-mail:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
 
 // POST /colaboradores - Cadastra um novo colaborador
 app.post('/colaboradores', async (req, res) => {
-  // Nota: Os nomes dos campos devem bater exatamente com o seu 'schema.prisma'
-  const { cpf, nome_colaborador, cargo, email, data_admissao, status, foto } = req.body;
+  // Nota: Os nomes aqui devem ser idênticos aos do req.body (JSON enviado pelo front)
+  const { nome_colaborador, cargo, email, data_admissao, status, foto } = req.body;
 
-  if (!cpf || !nome_colaborador) {
-    return res.status(400).json({ error: 'CPF e Nome são obrigatórios.' });
+  // Validação básica
+  if (!email || !nome_colaborador || !cargo) {
+    return res.status(400).json({ error: 'Nome, Cargo e E-mail são obrigatórios.' });
   }
-  const cpfLimpo = cpf.replace(/[^\d]/g, '');
 
   try {
-    // ✍️ Prisma: Usa create para inserir um novo registro
+    // Prisma: Criação do registro
     const novoColaborador = await prisma.colaboradores.create({
       data: {
-        cpf: cpfLimpo,
         nome_colaborador,
         cargo,
-        email,
-        data_admissao: data_admissao ? new Date(data_admissao) : undefined,
-        status,
-        foto,
+        email, 
+        data_admissao: data_admissao ? new Date(data_admissao) : new Date(),
+        status: status !== undefined ? status : true, // Se não vier, assume true (conforme default do banco)
+        foto: foto ? Buffer.from(foto, 'base64') : null, 
       }
     });
 
     res.status(201).json(novoColaborador);
+
   } catch (error) {
-    // 🛑 Tratamento de Erro de Chave Única do Prisma
-    if (error.code === 'P2002') { 
-      return res.status(409).json({ error: 'Este CPF já está cadastrado (Violação de Chave Única).' });
+    // Tratamento de Erro de Chave Única (Email Duplicado)
+    if (error.code === 'P2002')
+      return res.status(409).json({ error: 'Este e-mail já está cadastrado para outro colaborador.' });
     }
+    
     console.error('Erro ao cadastrar colaborador:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
-});
-
-
-// ----------------------------------------------------
-// Inicialização do Servidor
-// ----------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+);

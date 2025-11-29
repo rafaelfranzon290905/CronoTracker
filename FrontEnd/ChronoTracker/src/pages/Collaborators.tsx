@@ -1,4 +1,5 @@
-
+'use client'
+import { useEffect, useState } from "react";
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { PageHeader } from "@/components/componentes/TituloPagina";
@@ -6,51 +7,43 @@ import { type Collaborador } from "@/lib/types";
 import { columns } from "@/components/collaborators/columns";
 import { DataTable } from "@/components/collaborators/data-table";
 import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaboratorDialog";
+import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
 
-// No futuro, estes dados virão da sua API ou base de dados
-const MOCK_DATA: Collaborador[] = [
-  {
-    id: "COL-001",
-    name: "Ana Silva",
-    cpf: "12345678901",
-    role: "Desenvolvedora Frontend",
-    email: "ana.silva@chronotracker.com",
-    dataEntrada: "10/05/2022", 
-    projects: ["ChronoTracker V2", "Internal Dashboard"],
-  },
-  {
-    id: "COL-002",
-    name: "Bruno Costa",
-    cpf: "23456789012",
-    role: "Desenvolvedor Backend",
-    email: "bruno.costa@chronotracker.com",
-    dataEntrada: "07/04/2024", 
-    projects: ["ChronoTracker V2", "API Gateway"],
-  },
-  {
-    id: "COL-003",
-    name: "Carla Mendes",
-    cpf: "34567890123",
-    role: "UI/UX Designer",
-    email: "carla.mendes@chronotracker.com",
-    dataEntrada: "09/07/2019", 
-    projects: ["ChronoTracker V2"],
-  },
-  {
-    id: "COL-004",
-    name: "Diego Santos",
-    cpf: "45678901234",
-    role: "Gerente de Projetos",
-    email: "diego.santos@chronotracker.com",
-    dataEntrada: "20/08/2020", 
-    projects: ["ChronoTracker V2", "Internal Dashboard", "API Gateway"],
-  },
-];
-
+const API_BASE_URL = 'http://localhost:3001';
 
 function Collaborators() {
-  {/* No futuro, substitua MOCK_DATA pelos dados reais */ }
-  const data = MOCK_DATA;
+  {/* armazena os colaboradores vindo da api */ }
+  const [data, setData] = useState<Collaborador[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  {/* controla as edições */ }
+  const [editingCollaborator, setEditingCollaborator] = useState<Collaborador | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  {/* busca e atualiza dados */ }
+  const fetchData = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/colaboradores`);
+      if (!response.ok) throw new Error("Erro ao buscar dados");
+      
+      const result = await response.json();
+      setData(result); 
+    } catch (error) {
+      console.error("Erro no fetch:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+{/* passa função via prop para o botao editar */ }
+  const handleEdit = (colaborador: Collaborador) => {
+    setEditingCollaborator(colaborador);
+    setIsEditModalOpen(true);
+  };
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -63,11 +56,27 @@ function Collaborators() {
             title="Gerenciar Colaboradores"
             subtitle="Adicione, edite e visualize os membros da sua equipe."
           >
-            <AddCollaboratorDialog />
+            
+            <AddCollaboratorDialog onSuccess={fetchData} />
+  
           </PageHeader>
-          <DataTable columns={columns} data={data} />
+          {loading ? (
+            <div className="p-10 text-center text-muted-foreground">Carregando colaboradores...</div>
+          ) : (
+            <DataTable 
+                columns={columns} 
+                data={data} 
+                meta={{ onEdit: handleEdit }} 
+            />
+          )}
         </main>
       </div>
+      <ModalColaboradores 
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        colaboradorInicial={editingCollaborator}
+        aoSalvar={fetchData} // Quando salvar, recarrega a tabela
+      />
     </div>
   )
 }

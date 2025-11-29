@@ -1,7 +1,6 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge"; 
 import {
   DropdownMenu,
@@ -13,34 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { type Collaborador } from "@/lib/types";
 
-// Função para formatar o CPF 
-const formatCPF = (cpf: string) => {
-    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-};
-
 export const columns: ColumnDef<Collaborador>[] = [
-  // 1. Coluna de Seleção
+ // 2. Coluna de Nome 
   {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Selecionar todas as linhas"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Selecionar linha"
-      />
-    )
-  },
-
-  // 2. Coluna de Nome 
-  {
-    accessorKey: "name",
+    accessorKey: "nome_colaborador",
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -50,22 +25,16 @@ export const columns: ColumnDef<Collaborador>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <div className="font-medium capitalize">{row.getValue("name")}</div>,
+    cell: ({ row }) => <div className="font-medium capitalize">{row.getValue("nome_colaborador")}</div>,
   },
 
-  // 3. Coluna de CPF com formatação
-  {
-    accessorKey: "cpf",
-    header: "CPF",
-    cell: ({ row }) => <div>{formatCPF(row.getValue("cpf"))}</div>
-  },
   // 4. Coluna de Cargo
   {
-    accessorKey: "role",
+    accessorKey: "cargo",
     header: "Cargo",
     cell: ({ row }) => {
-      const role = row.getValue("role") as string;
-      const variant: "default" | "secondary" = role.includes("Gerente") ? "default" : "secondary";
+      const role = row.getValue("cargo") as string;
+      const variant: "default" | "secondary" | "outline" = role.toLowerCase().includes("gerente") ? "default" : "secondary";
       return <Badge variant={variant}>{role}</Badge>;
     },
   },
@@ -80,13 +49,15 @@ export const columns: ColumnDef<Collaborador>[] = [
     },
   },
 
-    // 6. Coluna de Data de Entrada formatada
+    // 6. Coluna de Data de admissao formatada
   {
-    accessorKey: "dataEntrada",
-    header: "Data de Entrada",
+    accessorKey: "data_admissao",
+    header: "Data de Admissão",
     cell: ({ row }) => {
-      const data = row.getValue("dataEntrada") as string;
-      const dataFormatada = new Date(data).toLocaleDateString("pt-BR", {
+      const dataString = row.getValue("data_admissao") as string | null;
+      if (!dataString) return <span className="text-muted-foreground text-sm">Pendente</span>;
+      const data = new Date(dataString);
+      const dataFormatada = data.toLocaleDateString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
@@ -94,27 +65,27 @@ export const columns: ColumnDef<Collaborador>[] = [
       return <span>{dataFormatada}</span>;
     },
   },
-
-  // 5. Coluna de Projetos com Badges
+// 6. Coluna de Status 
   {
-    accessorKey: "projects",
-    header: "Projetos",
+    accessorKey: "status",
+    header: "Status",
     cell: ({ row }) => {
-        const projects = row.getValue("projects") as string[];
-        return (
-            <div className="flex flex-wrap gap-1">
-                {projects.map((project) => (
-                    <Badge key={project} variant="secondary">{project}</Badge>
-                ))}
-            </div>
-        );
+      const isAtivo = row.getValue("status") as boolean;
+      
+      return (
+        <Badge variant={isAtivo ? "default" : "destructive"} className={isAtivo ? "bg-green-600 hover:bg-green-700" : ""}>
+          {isAtivo ? "Ativo" : "Inativo"}
+        </Badge>
+      );
     }
   },
   // 6. Coluna de Ações com Dropdown Menu
   {
     id: "actions",
     header: "Ações",
-    cell: ({  }) => {
+    cell: ({ table, row }) => {
+      const colaborador = row.original;
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -126,7 +97,7 @@ export const columns: ColumnDef<Collaborador>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Editar Colaborador</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => (table.options.meta as any)?.onEdit(colaborador)}>Editar Colaborador</DropdownMenuItem>
             <DropdownMenuItem>
               Excluir Colaborador
             </DropdownMenuItem>

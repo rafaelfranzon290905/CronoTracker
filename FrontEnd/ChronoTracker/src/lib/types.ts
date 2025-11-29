@@ -1,9 +1,9 @@
 export type Collaborador = {
-  id: string;        // ID único para cada colaborador
-  name: string;
-  cpf: string;
-  role: string;
+  colaborador_id: number;      
+  nome_colaborador: string;   
+  cargo: string;
   email: string;
-  dataEntrada: string;  
-  projects: string[];
+  data_admissao: string | null;
+  status: boolean;            
+  // foto?: string | null;        //ainda nao vamos implementar
 };

@@ -110,6 +110,25 @@ app.post('/clientes', async (req, res) => {
 // 🎯 ROTAS DE COLABORADORES
 // ----------------------------------------------------
 
+//get para listagem
+app.get('/colaboradores', async (req, res) => {
+  try {
+    const colaboradores = await prisma.colaboradores.findMany({
+      orderBy: { colaborador_id: 'asc' }
+    });
+    
+    const colaboradoresFormatados = colaboradores.map(col => ({
+        ...col,
+        foto: col.foto ? col.foto.toString('base64') : null
+    }));
+
+    res.status(200).json(colaboradoresFormatados);
+  } catch (error) {
+    console.error('Erro ao buscar colaboradores:', error);
+    res.status(500).json({ error: 'Erro ao buscar lista de colaboradores' });
+  }
+});
+
 // GET /colaboradores/email/:email - Verifica se um colaborador existe pelo EMAIL
 // Exemplo de uso: /colaboradores/email/joao@empresa.com
 app.get('/colaboradores/email/:email', async (req, res) => {
@@ -123,13 +142,7 @@ app.get('/colaboradores/email/:email', async (req, res) => {
     const colaborador = await prisma.colaboradores.findUnique({
       where: {
         email: email, 
-      },
-      select: {
-        colaborador_id: true,
-        nome_colaborador: true, // Ajustado para bater com o schema
-        cargo: true,
-        status: true
-      },
+      }
     });
     
     if (colaborador) {
@@ -178,3 +191,8 @@ app.post('/colaboradores', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 );
+// roda o servidor
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`👉 Teste em: http://localhost:${PORT}`);
+});

@@ -10,29 +10,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { Switch } from "../ui/switch"
+import { type Collaborador } from "@/lib/types";
 
 interface ModalColaboradorProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    colaboradorInicial: Colaborador | null;
+    colaboradorInicial: Collaborador | null;
     aoSalvar: () => void;
-}
-
-interface Colaborador {
-    colaborador_id: number;
-    nome_colaborador: string;
-    cargo: string;
-    email: string;
-    data_admissao: string | Date | null; // Pode vir como string do JSON ou Date
-    status: boolean;
-    // O campo 'foto' não precisa estar na interface de leitura inicial, pois tratamos o upload separado
 }
 
 const API_BASE_URL = 'http://localhost:3001'
 
+
 export function ModalColaboradores({open, onOpenChange, colaboradorInicial, aoSalvar}: ModalColaboradorProps) {
 
-  const [formData, setFormData] = useState<Colaborador | null>(colaboradorInicial);
+  const [formData, setFormData] = useState<Collaborador | null>(colaboradorInicial);
   const [fotoArquivo, setFotoArquivo] = useState<File | null>(null);
 
   useEffect(() => {
@@ -40,7 +32,7 @@ export function ModalColaboradores({open, onOpenChange, colaboradorInicial, aoSa
     setFotoArquivo(null); // Reseta o arquivo ao abrir um novo colaborador
   }, [colaboradorInicial, open]);
 
-  if (!colaboradorInicial) {
+  if (!colaboradorInicial && open) {
     return null;
   }
 
@@ -49,18 +41,22 @@ export function ModalColaboradores({open, onOpenChange, colaboradorInicial, aoSa
   // Função auxiliar para formatar a data para o input HTML (yyyy-MM-dd)
   const formatDateForInput = (dateValue: string | Date | null) => {
     if (!dateValue) return '';
-    const date = new Date(dateValue);
-    return date.toISOString().split('T')[0];
+    try {
+        const date = new Date(dateValue);
+        return date.toISOString().split('T')[0];
+    } catch (e) {
+        return '';
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formData) return;
     const {id, value} = e.target;
     
-    setFormData(prev => ({
-      ...(prev as Colaborador),
-      [id]: value,
-    }));
+    setFormData(prev => {
+        if (!prev) return null;
+        return { ...prev, [id]: value };
+    });
   };
 
   // Handler específico para o arquivo de foto
@@ -72,12 +68,14 @@ export function ModalColaboradores({open, onOpenChange, colaboradorInicial, aoSa
 
   // Handler específico para o Switch de status
   const handleStatusChange = (checked: boolean) => {
-      setFormData(prev => ({ ...prev!, status: checked }));
+      setFormData(prev => {
+          if (!prev) return null;
+          return { ...prev, status: checked };
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData) return;
 
     const idDoColaborador = formData.colaborador_id; 
@@ -131,7 +129,7 @@ export function ModalColaboradores({open, onOpenChange, colaboradorInicial, aoSa
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            Editar Colaborador: {colaboradorInicial.nome_colaborador}
+            Editar Colaborador
           </DialogTitle>
         </DialogHeader>
         

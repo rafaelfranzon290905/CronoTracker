@@ -73,7 +73,7 @@ export const columns: ColumnDef<Collaborador>[] = [
       const isAtivo = row.getValue("status") as boolean;
       
       return (
-        <Badge variant={isAtivo ? "default" : "destructive"} className={isAtivo ? "bg-green-600 hover:bg-green-700" : ""}>
+        <Badge variant={isAtivo ? "default" : "destructive"} className={isAtivo ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}>
           {isAtivo ? "Ativo" : "Inativo"}
         </Badge>
       );

@@ -20,6 +20,7 @@ import {
 } from "../ui/table"
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { Search } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -54,15 +55,22 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full">
       {/* Filtro por nome */}
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filtrar por nome..."
-          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+      <div className="flex items-center py-4 w-full">
+        <div className="relative w-full">
+          <Input
+            placeholder="Filtrar por nome..."
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("name")?.setFilterValue(event.target.value)
+            }
+            className="w-full rounded-full pr-14 pl-4 h-12 border-gray-200"
+          />
+          <div className="absolute right-1 top-1/2 -translate-y-1/2">
+            <div className="bg-blue-950 text-white p-2 rounded-full flex items-center justify-center w-10 h-10 hover:bg-blue-800 transition-colors cursor-pointer">
+              <Search size={20} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabela */}

@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/componentes/TituloPagina";
 import { type Atividades } from "@/lib/activities";
 import { columns } from "@/components/activities/collumnsActivities";
 import { DataTable } from "@/components/activities/data-table-activities";
-import { AddProjectDialog } from "@/components/activities/addActivitieDialog";
+import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
 import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
 
 interface Atividade {
@@ -63,6 +63,12 @@ function Atividades() {
     useEffect(() => {
         fetchAtividades();
     }, []); 
+
+    // 💡 1. DEFINIR A FUNÇÃO DE SUCESSO: Recarrega os dados após o cadastro
+    const handleAddSuccess = () => {
+        // Recarrega a lista de atividades para mostrar a nova atividade
+        fetchAtividades(); 
+    };
   
 
   return (
@@ -75,8 +81,8 @@ function Atividades() {
             title="Atividades"
             subtitle="Adicione, edite e visualize suas atividades."
           >
-            {/* O AddProjectDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-            <AddProjectDialog/>
+            {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
+            <AddActivitiesDialog projetoId={2} onSuccess={handleAddSuccess}/>
           </PageHeader>
 
             {/* Opcional: Adicionar um loading state simples */}

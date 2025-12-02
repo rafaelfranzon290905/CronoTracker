@@ -129,8 +129,7 @@ export const columns: ColumnDef<Atividades>[] = [
     header: "Ações",
     enableHiding: false,
     cell: ({ row }) => {
-      // Opcional: Pegue a ID da linha se precisar passar para as ações de Edição/Exclusão
-      // const atividadeId = row.original.atividade_id; 
+    
       
       return (
         <DropdownMenu>
@@ -140,7 +139,7 @@ export const columns: ColumnDef<Atividades>[] = [
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="bg-white">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem 

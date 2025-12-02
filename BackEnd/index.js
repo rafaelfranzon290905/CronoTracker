@@ -176,10 +176,14 @@ app.post('/colaboradores', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
+
+// Rota de Atividades
+ // GET /atividades - Lista todas as atividades
+
   app.get('/atividades', async (req, res) => {
   try {
     const todasAtividades = await prisma.atividades.findMany({
-      // Opcional: ordenar por cliente_id para garantir a ordem
+      // Opcional: ordenar por atividade_id para garantir a ordem
       orderBy: {
         atividade_id: 'asc', 
       },
@@ -190,7 +194,125 @@ app.post('/colaboradores', async (req, res) => {
     res.status(500).json({ error: 'Erro interno ao listar atividades.' });
   }
 });
+// POST /atividades - Cadastra um novo cliente
+app.post('/atividades', async (req, res) => {
+  // Nota: 'status' foi REMOVIDO da desestruturação, pois será forçado como 'true'
+  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id} = req.body;
+  
+  if (!projeto_id) {
+    return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
+  }
+  
+  try {
+    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO (Já corrigido)
+   const projetoIdNumerico = Number(projeto_id); 
+    if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
+      return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
+    }
 
+    // 2. CONVERSÃO DAS DATAS PARA OBJETO Date (Já corrigido)
+    const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
+    const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null; 
+
+    // 🎯 NOVO PASSO: Forçar o status como BOOLEAN TRUE (Conforme solicitado)
+    const statusBoolean = true; 
+    
+    // ✍️ Criação da Atividade no Prisma
+    const novaAtividade = await prisma.atividades.create({
+      data: {
+        nome_atividade,
+        descr_atividade,
+        data_prevista_inicio: dataInicio, 
+        data_prevista_fim: dataFim,
+        status: statusBoolean, // ✅ Agora envia o valor booleano esperado pelo Postgres
+        projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
+      }
+    });
+
+    res.status(201).json(novaAtividade);
+  } catch (error) {
+    // Tratamento de erro específico para chave estrangeira (P2003)
+    if (error.code === 'P2003') {
+      return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
+    }
+
+    console.error('Erro ao cadastrar atividade:', error);
+    res.status(500).json({ error: 'Erro interno do servidor. Verifique os logs para detalhes.' });
+  }
+});
+
+// Rota DELETE para Atividades
+
+app.delete('/atividades/:atividade_id', async (req, res) => {
+    const atividadeId = parseInt(req.params.atividade_id);
+
+    if (isNaN(atividadeId)) {
+        return res.status(400).json({ error: 'ID da atividade inválido.' });
+    }
+
+    try {
+        // ✍️ Prisma: Usa delete para remover o registro
+        await prisma.atividades.delete({
+            where: {
+                atividade_id: atividadeId, 
+            },
+        });
+
+        // Retorna 204 No Content para deleção bem-sucedida.
+        res.status(204).send();
+
+    } catch (error) {
+        // 🛑 Tratamento de Erro P2025: Registro não encontrado
+        if (error.code === 'P2025') {
+            return res.status(404).json({ error: `Atividade com ID ${atividadeId} não encontrada.` });
+        }
+        
+        console.error('Erro ao deletar atividade:', error);
+        res.status(500).json({ error: 'Erro interno ao deletar atividade.' });
+    }
+});
+
+// PUT Atividades
+app.put('/atividades/:atividade_id', async (req, res) => {
+    const atividadeId = parseInt(req.params.atividade_id);
+    
+    const dadosParaAtualizar = req.body;
+    if (isNaN(atividadeId)) {
+        return res.status(400).json({ error: 'ID da atividade inválido.' });
+    }
+    if (Object.keys(dadosParaAtualizar).length === 0) {
+        return res.status(400).json({ error: 'Nenhum dado fornecido para atualização.' });
+    }
+    try {
+        
+        const atividadeAtualizada = await prisma.atividades.update({
+            where: {
+            
+                atividade_id: atividadeId, 
+            },
+            data: {
+                
+                ...dadosParaAtualizar, 
+            },
+        });
+
+       
+        res.status(200).json(atividadeAtualizada);
+
+    } catch (error) {
+    
+        if (error.code === 'P2025') {
+          
+            return res.status(404).json({ error: `Atividade com ID ${atividadeId} não encontrada.` });
+        }
+        if (error.code === 'P2002') { 
+            return res.status(409).json({ error: 'Violação de chave única. Verifique os dados fornecidos.' });
+        }
+         console.error('Erro ao atualizar atividade:', error);
+       
+        res.status(500).json({ error: 'Erro interno ao atualizar atividade.' });
+    }
+});
 
 // ----------------------------------------------------
 // Inicialização do Servidor

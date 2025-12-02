@@ -101,6 +101,22 @@ function Clientes() {
     }
   };
 
+  const formatCnpj = (cnpj: string) => {
+    // 1. Remove qualquer coisa que não seja dígito (se houver no dado vindo do banco)
+    const cleaned = cnpj.replace(/\D/g, ''); 
+
+    // 2. Verifica se tem 14 dígitos (ou o suficiente para formatar)
+    if (cleaned.length !== 14) {
+        return cnpj; // Retorna o original se não for um CNPJ válido/completo
+    }
+
+    // 3. Aplica a máscara: XX.XXX.XXX/XXXX-XX
+    return cleaned.replace(
+        /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, 
+        '$1.$2.$3/$4-$5'
+    );
+};
+
   return (
     <div className="flex h-screen">
       
@@ -109,9 +125,13 @@ function Clientes() {
         <main className="flex-1 p-6 overflow-auto">
             {/* Header com Searchbar */}
             <Header/>
-            <PageHeader 
-            title="Clientes"
-            subtitle="Adicione, edite e visualize os clientes"/>
+            <div className="flex justify-between">
+              <PageHeader 
+              title="Clientes"
+              subtitle="Adicione, edite e visualize os clientes"/>
+              <Button className="bg-botao-dark text-white mr-4 mt-4"><DialogClientes aoSalvar={fetchClientes}/></Button>
+            </div>
+            
             
             <Card>
               <CardContent>
@@ -119,7 +139,7 @@ function Clientes() {
                     <Input type="text" placeholder="Buscar" className="w-full rounded-2xl" />
                     <Search className="text-white absolute h-8 w-8 right-1 top-0.5 bg-botao-dark p-1 rounded-2xl" />
                 </div>
-                <Button className="bg-botao-dark text-white"><DialogClientes/></Button>
+                
                 
                 <Table className="w-full">
                   <TableHeader className="border-b-2">
@@ -138,7 +158,7 @@ function Clientes() {
                   </TableHeader>
                   <TableBody>
                     {clientes.map((c) => (
-                      <TableRow key={c.cliente_id} className="text-center odd:bg-sidebar even: bg-card">
+                      <TableRow key={c.cliente_id} className="text-center odd:bg-sidebar-border even: bg-card">
                         <TableCell className="py-1">{c.cliente_id}</TableCell>
                         <TableCell>{c.nome_cliente}</TableCell>
                         <TableCell>{c.nome_contato}</TableCell>
@@ -146,7 +166,7 @@ function Clientes() {
                         <TableCell>{c.endereco}</TableCell>
                         <TableCell>{c.cidade}</TableCell>
                         <TableCell>{c.estado}</TableCell>
-                        <TableCell>{c.cnpj}</TableCell>
+                        <TableCell>{formatCnpj(c.cnpj)}</TableCell>
                         <TableCell>{getStatusDisplay(c.status)}</TableCell>
                         <TableCell>
                           <DropdownMenu>

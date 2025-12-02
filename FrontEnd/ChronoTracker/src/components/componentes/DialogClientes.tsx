@@ -28,9 +28,11 @@ interface ClienteFormData {
     status: boolean; // O campo booleano
 }
 
+interface DialogClientesProps {
+    aoSalvar: () => void;
+}
 
-
-export default function DialogClientes() {
+export default function DialogClientes({aoSalvar}: DialogClientesProps) {
     // 1. ESTADO DO FORMULÁRIO: Inicializa com valores vazios e status TRUE por padrão (ativo)
     const [formData, setFormData] = useState<ClienteFormData>({
         cnpj: "",
@@ -42,7 +44,32 @@ export default function DialogClientes() {
         estado: "",
         status: true, 
     });
+    const [open, setOpen] = useState(false);
+    // 🎯 NOVO ESTADO: Para armazenar erros de validação
+    const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
+    const [isSubmitting, setIsSubmitting] = useState(false); // Para controle de loading
 
+    // Função de validação
+    const validateForm = (data: ClienteFormData) => {
+        const errors: { [key: string]: string } = {};
+
+        // 1. Validação do CNPJ (14 dígitos e apenas números)
+        const cleanCnpj = data.cnpj.replace(/[^\d]/g, ''); // Remove formatação (pontos, traços)
+        if (cleanCnpj.length !== 14) {
+            errors.cnpj = "CNPJ deve conter 14 dígitos.";
+        }
+        
+        // 2. Validação do CEP (8 dígitos e apenas números)
+        const cleanCep = data.cep.replace(/[^\d]/g, ''); // Remove formatação (traço)
+        if (cleanCep.length !== 8) {
+            errors.cep = "CEP deve conter 8 dígitos.";
+        }
+
+        setValidationErrors(errors);
+        
+        // Retorna TRUE se não houver erros
+        return Object.keys(errors).length === 0;
+    };
      // Função genérica para atualizar os inputs
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -54,10 +81,90 @@ export default function DialogClientes() {
         setFormData(prev => ({ ...prev, status: checked }));
     };
 
+    // 🎯 NOVO: Função para aplicar a máscara de CEP (XXXXX-XXX)
+    const maskCep = (value: string) => {
+        // 1. Remove tudo que não for dígito
+        const cleaned = value.replace(/\D/g, '');
+        // 2. Aplica a máscara (5 dígitos e depois o hífen)
+        return cleaned
+            .slice(0, 8) // Limita a 8 dígitos
+            .replace(/^(\d{5})(\d)/, '$1-$2'); // Coloca o hífen após o 5º dígito
+    };
+
+    // 🎯 NOVO: Função para aplicar a máscara de CNPJ (XX.XXX.XXX/XXXX-XX)
+    const maskCnpj = (value: string) => {
+        // 1. Remove tudo que não for dígito
+        const cleaned = value.replace(/\D/g, '');
+        // 2. Aplica a máscara e limita a 14 dígitos
+        return cleaned
+            .slice(0, 14) // Limita a 14 dígitos
+            .replace(/^(\d{2})(\d)/, '$1.$2')
+            .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+            .replace(/\.(\d{3})(\d)/, '.$1/$2')
+            .replace(/(\d{4})(\d)/, '$1-$2'); // Coloca o hífen após os 4 dígitos do final
+    };
+
+    // 🎯 NOVO: Handler específico para CNPJ
+    const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const maskedValue = maskCnpj(e.target.value);
+        setFormData(prev => ({ ...prev, cnpj: maskedValue }));
+    };
+
+    // 🎯 NOVO: Handler específico para CEP
+    const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value;
+        const maskedValue = maskCep(rawValue);
+        
+        // Atualiza o estado do formulário imediatamente com a máscara (para visualização)
+        setFormData(prev => ({ ...prev, cep: maskedValue }));
+        
+        // 1. Limpa o CEP para validação
+        const cleanCep = rawValue.replace(/\D/g, '');
+
+        // 2. Verifica se atingiu 8 dígitos para buscar
+        if (cleanCep.length === 8) {
+            try {
+                // Desabilitar o campo temporariamente ou mostrar loading aqui seria ideal
+                
+                // 3. Chama a API ViaCEP
+                const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                const data = await response.json();
+
+                // 4. Verifica se o CEP é válido e preenche os campos
+                if (!data.erro) {
+                    setFormData(prev => ({ 
+                        ...prev, 
+                        endereco: data.logradouro,
+                        cidade: data.localidade,
+                        estado: data.uf,
+                        // Bairro (se você tiver esse campo)
+                        // bairro: data.bairro || prev.bairro, 
+                    }));
+                } else {
+                    // Se a API retornar erro (CEP não encontrado)
+                    console.log("CEP não encontrado pela API.");
+                }
+            } catch (error) {
+                console.error("Erro ao buscar CEP:", error);
+            }
+        }
+    };
+
+    
+
     // 2. FUNÇÃO DE SUBMISSÃO
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
+        if (!validateForm(formData)) {
+            // Se houver erros, a função para aqui e as mensagens de erro serão exibidas
+            alert("Por favor, corrija os erros de validação antes de salvar."); // Alerta geral
+            return; 
+        }
+
+        // Bloqueia o botão e inicia o envio
+        setIsSubmitting(true);
+
         try {
             const response = await fetch(`${API_BASE_URL}/clientes`, {
                 method: 'POST',
@@ -84,6 +191,11 @@ export default function DialogClientes() {
                 cnpj: "", nome_cliente: "", nome_contato: "", cep: "", 
                 endereco: "", cidade: "", estado: "", status: true 
             }));
+            // Chama a função para recarregar dados
+            aoSalvar();
+
+            // Fecha o modal
+            setOpen(false);
         } catch (error) {
             console.error('Erro ao enviar formulário:', error);
             // Mostra o erro de validação ou de servidor
@@ -94,7 +206,7 @@ export default function DialogClientes() {
     };
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger>Adicionar Cliente</DialogTrigger>
         <DialogContent>
             <DialogHeader>
@@ -115,7 +227,10 @@ export default function DialogClientes() {
                     </div>
                     <div>
                         <Label htmlFor="cep-1">CEP</Label>
-                        <Input id="cep-1" name="cep" value={formData.cep} onChange={handleChange}/>
+                        <Input id="cep-1" name="cep" value={formData.cep} onChange={handleCepChange}/>
+                        {validationErrors.cep && (
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.cep}</p>
+                        )}
                     </div>
                     <div>
                         <Label htmlFor="endereco-1">Endereço</Label>
@@ -133,7 +248,10 @@ export default function DialogClientes() {
                     </div>
                     <div>
                         <Label htmlFor="cnpj-1">CNPJ</Label>
-                        <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleChange} required/>
+                        <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleCnpjChange} required/>
+                        {validationErrors.cnpj && (
+                            <p className="text-red-500 text-sm mt-1">{validationErrors.cnpj}</p>
+                        )}
                     </div>
                     {/* Linha 7: Status (Switch/Alternador) */}
                         <div className="flex items-center space-x-2 pt-2">

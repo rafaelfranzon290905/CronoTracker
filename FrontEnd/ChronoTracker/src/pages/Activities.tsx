@@ -7,33 +7,23 @@ import { DataTable } from "@/components/activities/data-table-activities";
 import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
 import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
 
-interface Atividade {
-    atividade_id: number;
-    nome_atividade: string; 
-    descr_atividade: string; 
-    data_prevista_inicio: string; 
-    data_prevista_fim: string;
-    status: boolean;
-    projetos: any; 
-    lancamentos_de_horas: any; 
-}
 
 // Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
 const API_BASE_URL = 'http://localhost:3001';
 
 function Atividades() {
     // ESTADOS PARA O MODAL (Adicionar/Editar)
-    const [aberto, setAberto] = useState(false);
-    const [tipo, setTipo] = useState<"add" | "edit" | null>(null)
+//     const [aberto, setAberto] = useState(false);
+//     const [tipo, setTipo] = useState<"add" | "edit" | null>(null);
     
     // Função para abrir o modal e definir o tipo (add ou edit)
-    const openModal = (type: "add" | "edit") => {
-        setTipo(type)
-        setAberto(true)
-    }
+//     const openModal = (type: "add" | "edit") => {
+//         setTipo(type)
+//         setAberto(true)
+//     }
 
     // ESTADOS PARA OS DADOS DA ATIVIDADE
-    const [atividades, setAtividades] = useState<Atividade[]>([]);
+    const [atividades, setAtividades] = useState<Atividades[]>([]);
     const [loading, setLoading] = useState(true);
     // const [error, setError] = useState(null);
 
@@ -82,7 +72,7 @@ function Atividades() {
             subtitle="Adicione, edite e visualize suas atividades."
           >
             {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-            <AddActivitiesDialog projetoId={2} onSuccess={handleAddSuccess}/>
+            <AddActivitiesDialog projetoId={1} onSuccess={handleAddSuccess}/>
           </PageHeader>
 
             {/* Opcional: Adicionar um loading state simples */}

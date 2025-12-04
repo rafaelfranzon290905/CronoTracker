@@ -15,9 +15,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
+
 
 const API_BASE_URL = 'http://localhost:3001'
 
@@ -43,7 +41,7 @@ type ActivityFormValues = z.infer<typeof activitySchema>
 
 // --- Definição do Componente (PROPS AJUSTADAS) ---
 // O projetoId é essencial para a criação da atividade
-export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: string; onSuccess: () => void }) {
+export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: number; onSuccess: () => void }) {
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [apiError, setApiError] = useState<string | null>(null)

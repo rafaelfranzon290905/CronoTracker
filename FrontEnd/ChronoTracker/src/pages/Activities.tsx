@@ -6,6 +6,7 @@ import { columns } from "@/components/activities/collumnsActivities";
 import { DataTable } from "@/components/activities/data-table-activities";
 import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
 import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
+import { EditActivitiesDialog } from "@/components/activities/EditActivitiesDialog";
 
 interface Atividade {
     atividade_id: number;
@@ -25,12 +26,28 @@ function Atividades() {
     // ESTADOS PARA O MODAL (Adicionar/Editar)
     const [aberto, setAberto] = useState(false);
     const [tipo, setTipo] = useState<"add" | "edit" | null>(null)
+
+    const [atividadeEmEdicaoId, setAtividadeEmEdicaoId] = useState<number | null>(null)
     
     // Função para abrir o modal e definir o tipo (add ou edit)
-    const openModal = (type: "add" | "edit") => {
-        setTipo(type)
+    const openModal = (type: "add" | "edit", atividadeId: number | null = null) => {
+        setAtividadeEmEdicaoId(atividadeId);
+        setTipo(type)
         setAberto(true)
     }
+
+    // Função que será passada para as colunas
+    const handleEditActivity = (atividadeId: number) => {
+        // 🎯 AÇÃO: Abre o modal de edição passando o ID da atividade
+        openModal("edit", atividadeId);
+    };
+
+    // Função para fechar e resetar o estado (será usada dentro do modal)
+    const handleCloseEdit = () => {
+        setAberto(false);
+        setTipo(null);
+        setAtividadeEmEdicaoId(null);
+    }
 
     // ESTADOS PARA OS DADOS DA ATIVIDADE
     const [atividades, setAtividades] = useState<Atividade[]>([]);
@@ -69,6 +86,36 @@ function Atividades() {
         // Recarrega a lista de atividades para mostrar a nova atividade
         fetchAtividades(); 
     };
+
+    const handleDeleteActivity = async (atividadeId: number) => {
+        if (!confirm(`Tem certeza que deseja deletar a atividade com ID ${atividadeId}?`)) {
+            return; // Cancela se o usuário não confirmar
+        }
+
+        try {
+            // 1. Chamada DELETE para a API
+            const response = await fetch(`${API_BASE_URL}/atividades/${atividadeId}`, {
+                method: 'DELETE',
+            });
+
+            // 2. Verifica se a exclusão foi bem-sucedida (status 204 No Content)
+            if (response.status === 204) {
+                window.alert(`Atividade ${atividadeId} deletada com sucesso`)
+                console.log(`Atividade ${atividadeId} deletada com sucesso!`);
+                
+                // 3. Recarrega a lista para atualizar a tabela
+                fetchAtividades(); 
+            } else if (response.status === 404) {
+                const errorData = await response.json();
+                alert(`Erro ao deletar: ${errorData.error}`);
+            } else {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+        } catch (err) {
+            console.error("Erro ao deletar atividade:", err);
+            alert("Erro ao deletar atividade. Verifique o console.");
+        }
+    };
   
 
   return (
@@ -82,17 +129,27 @@ function Atividades() {
             subtitle="Adicione, edite e visualize suas atividades."
           >
             {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-            <AddActivitiesDialog projetoId={2} onSuccess={handleAddSuccess}/>
+            <AddActivitiesDialog onSuccess={handleAddSuccess}/>
           </PageHeader>
 
             {/* Opcional: Adicionar um loading state simples */}
             {loading ? (
                 <div className="text-center py-12">Carregando atividades...</div>
             ) : (
-                <DataTable<Atividades, unknown> columns={columns} data={atividades} />
+                <DataTable<Atividades, unknown> columns={columns(handleDeleteActivity, handleEditActivity)} data={atividades} />
             )}
         </main>
       </div>
+
+        {/* ✅ NOVO COMPONENTE: Modal de Edição */}
+            {aberto && tipo === "edit" && atividadeEmEdicaoId !== null && (
+                 <EditActivitiesDialog 
+                    atividadeId={atividadeEmEdicaoId} // Passa o ID da atividade
+                    open={aberto}
+                    onOpenChange={handleCloseEdit} // Fecha o modal
+                    onSuccess={fetchAtividades} // Recarrega os dados após a edição
+                />
+            )}
     </div>
   )
 }

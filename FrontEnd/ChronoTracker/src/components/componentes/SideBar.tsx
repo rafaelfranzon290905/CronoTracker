@@ -18,7 +18,7 @@ export default function SideBar() {
           <Link to="/clientes"><Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Clientes"><Users className="mr-2 scale-120" /> Clientes</Button></Link>
           <Link to="/collaborators"><Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Colaboradores"><Users className="mr-2 scale-120" /> Colaboradores</Button></Link>
           <Link to="/projetos"><Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Projetos"><Rocket className="mr-2 scale-120" /> Projetos</Button></Link>
-          <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Atividades"><Activity className="mr-2 scale-120" /> Atividades</Button>
+          <Link to="/atividades"><Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Atividades"><Activity className="mr-2 scale-120" /> Atividades</Button></Link>
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Relatórios"><FileText className="mr-2 scale-120" /> Relatórios</Button>
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Despesas"><DollarSign className="mr-2 scale-120" /> Despesas</Button>
         </nav>

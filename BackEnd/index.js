@@ -194,6 +194,32 @@ app.post('/colaboradores', async (req, res) => {
     res.status(500).json({ error: 'Erro interno ao listar atividades.' });
   }
 });
+
+// 🎯 ROTA GET /atividades/:atividade_id - Busca uma única atividade
+app.get('/atividades/:atividade_id', async (req, res) => {
+  const atividadeId = Number(req.params.atividade_id);
+
+  if (!Number.isInteger(atividadeId)) {
+    return res.status(400).json({ error: "ID inválido." });
+  }
+
+  try {
+    const atividade = await prisma.atividades.findUnique({
+      where: { atividade_id: atividadeId }
+    });
+
+    if (!atividade) {
+      return res.status(404).json({ error: "Atividade não encontrada." });
+    }
+
+    res.json(atividade);
+  } catch (error) {
+    console.error("Erro ao buscar atividade:", error);
+    res.status(500).json({ error: "Erro ao buscar atividade." });
+  }
+});
+
+
 // POST /atividades - Cadastra um novo cliente
 app.post('/atividades', async (req, res) => {
   // Nota: 'status' foi REMOVIDO da desestruturação, pois será forçado como 'true'
@@ -215,7 +241,7 @@ app.post('/atividades', async (req, res) => {
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null; 
 
     // 🎯 NOVO PASSO: Forçar o status como BOOLEAN TRUE (Conforme solicitado)
-    const statusBoolean = true; 
+    const statusEnum = "a_fazer"; 
     
     // ✍️ Criação da Atividade no Prisma
     const novaAtividade = await prisma.atividades.create({
@@ -224,7 +250,7 @@ app.post('/atividades', async (req, res) => {
         descr_atividade,
         data_prevista_inicio: dataInicio, 
         data_prevista_fim: dataFim,
-        status: statusBoolean, // ✅ Agora envia o valor booleano esperado pelo Postgres
+        status: statusEnum, // ✅ Agora envia o valor booleano esperado pelo Postgres
         projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
       }
     });
@@ -244,73 +270,93 @@ app.post('/atividades', async (req, res) => {
 // Rota DELETE para Atividades
 
 app.delete('/atividades/:atividade_id', async (req, res) => {
-    const atividadeId = parseInt(req.params.atividade_id);
+  const atividadeId = Number(req.params.atividade_id);
 
-    if (isNaN(atividadeId)) {
-        return res.status(400).json({ error: 'ID da atividade inválido.' });
+  if (!Number.isInteger(atividadeId)) {
+    return res.status(400).json({ error: "ID inválido." });
+  }
+
+  try {
+    const existe = await prisma.atividades.findUnique({
+      where: { atividade_id: atividadeId }
+    });
+
+    if (!existe) {
+      return res.status(404).json({ error: `Atividade ${atividadeId} não existe.` });
     }
 
-    try {
-        // ✍️ Prisma: Usa delete para remover o registro
-        await prisma.atividades.delete({
-            where: {
-                atividade_id: atividadeId, 
-            },
-        });
+    await prisma.atividades.delete({
+      where: { atividade_id: atividadeId }
+    });
 
-        // Retorna 204 No Content para deleção bem-sucedida.
-        res.status(204).send();
-
-    } catch (error) {
-        // 🛑 Tratamento de Erro P2025: Registro não encontrado
-        if (error.code === 'P2025') {
-            return res.status(404).json({ error: `Atividade com ID ${atividadeId} não encontrada.` });
-        }
-        
-        console.error('Erro ao deletar atividade:', error);
-        res.status(500).json({ error: 'Erro interno ao deletar atividade.' });
-    }
+    res.sendStatus(204);
+  } catch (error) {
+    console.error("Erro ao deletar:", error);
+    res.status(500).json({ error: "Erro interno ao deletar." });
+  }
 });
 
-// PUT Atividades
+
+// 🎯 ROTA PUT /atividades/:atividade_id - Atualiza uma atividade existente
 app.put('/atividades/:atividade_id', async (req, res) => {
-    const atividadeId = parseInt(req.params.atividade_id);
-    
-    const dadosParaAtualizar = req.body;
-    if (isNaN(atividadeId)) {
-        return res.status(400).json({ error: 'ID da atividade inválido.' });
-    }
-    if (Object.keys(dadosParaAtualizar).length === 0) {
-        return res.status(400).json({ error: 'Nenhum dado fornecido para atualização.' });
-    }
+    const { atividade_id } = req.params;
+    const { 
+        nome_atividade, 
+        descr_atividade, 
+        data_prevista_inicio, // String 'YYYY-MM-DD' ou null
+        data_prevista_fim, // String 'YYYY-MM-DD' ou null
+        status: status, 
+        projeto_id 
+    } = req.body;
+
     try {
-        
+        const atividadeIdNumerico = parseInt(atividade_id, 10);
+        if (isNaN(atividadeIdNumerico)) {
+            return res.status(400).json({ error: "ID da atividade inválido." });
+        }
+
+        // Conversão dos dados de entrada
+        const dataInicio = data_prevista_inicio 
+            ? new Date(data_prevista_inicio + 'T00:00:00Z') 
+            : null;
+        const dataFim = data_prevista_fim 
+            ? new Date(data_prevista_fim + 'T00:00:00Z') 
+            : null;
+
+        const projetoIdNumerico = projeto_id ? parseInt(projeto_id, 10) : null;
+        if (projeto_id && isNaN(projetoIdNumerico)) {
+             return res.status(400).json({ error: "ID do projeto deve ser um número válido." });
+        }
+
+
         const atividadeAtualizada = await prisma.atividades.update({
             where: {
-            
-                atividade_id: atividadeId, 
+                atividade_id: atividadeIdNumerico,
             },
             data: {
-                
-                ...dadosParaAtualizar, 
+                nome_atividade: nome_atividade,
+                descr_atividade: descr_atividade,
+                data_prevista_inicio: dataInicio,
+                data_prevista_fim: dataFim,
+                status: status, // Deve ser um enum string ('a_fazer', 'em_andamento', 'concluido')
+                projeto_id: projetoIdNumerico, 
             },
         });
 
-       
         res.status(200).json(atividadeAtualizada);
 
     } catch (error) {
-    
+        // Erro: Atividade não encontrada no banco de dados (Prisma P2025)
         if (error.code === 'P2025') {
-          
-            return res.status(404).json({ error: `Atividade com ID ${atividadeId} não encontrada.` });
+            return res.status(404).json({ error: "Atividade não encontrada para o ID fornecido." });
         }
-        if (error.code === 'P2002') { 
-            return res.status(409).json({ error: 'Violação de chave única. Verifique os dados fornecidos.' });
+        // Erro: Projeto ID não encontrado (Prisma P2003)
+        if (error.code === 'P2003') {
+            return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
         }
-         console.error('Erro ao atualizar atividade:', error);
-       
-        res.status(500).json({ error: 'Erro interno ao atualizar atividade.' });
+
+        console.error("Erro ao atualizar atividade:", error);
+        res.status(500).json({ error: "Erro interno do servidor ao tentar atualizar a atividade." });
     }
 });
 

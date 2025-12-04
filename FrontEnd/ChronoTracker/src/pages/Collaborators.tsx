@@ -12,15 +12,12 @@ import { ModalColaboradores } from "@/components/collaborators/modal-colaborador
 const API_BASE_URL = 'http://localhost:3001';
 
 function Collaborators() {
-  {/* armazena os colaboradores vindo da api */ }
   const [data, setData] = useState<Collaborador[]>([]);
   const [loading, setLoading] = useState(true);
 
-  {/* controla as edições */ }
   const [editingCollaborator, setEditingCollaborator] = useState<Collaborador | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  {/* busca e atualiza dados */ }
   const fetchData = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/colaboradores`);
@@ -39,7 +36,30 @@ function Collaborators() {
     fetchData();
   }, []);
 
-{/* passa função via prop para o botao editar */ }
+  const deleteColaborador = async (colaborador_id: number) => {
+    try {
+      if (!window.confirm(`Tem certeza que deseja excluir o colaborador com ID ${colaborador_id}?`)) {
+        return; 
+      }
+
+      const response = await fetch(`${API_BASE_URL}/colaboradores/${colaborador_id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
+        throw new Error(errorData.error || `Erro HTTP ${response.status}`);
+      }
+
+      alert('Colaborador excluído com sucesso!');
+      fetchData(); // Atualiza a lista após excluir
+
+    } catch (error: any) {
+      console.error('Erro na exclusão:', error);
+      alert(error.message || 'Ocorreu um erro ao tentar excluir o colaborador.');
+    }
+  };
+
   const handleEdit = (colaborador: Collaborador) => {
     setEditingCollaborator(colaborador);
     setIsEditModalOpen(true);
@@ -48,7 +68,6 @@ function Collaborators() {
   return (
     <div className="flex h-screen bg-background text-foreground">
       <SideBar />
-      {/* Conteúdo */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-6 md:p-8 ">
@@ -56,17 +75,20 @@ function Collaborators() {
             title="Gerenciar Colaboradores"
             subtitle="Adicione, edite e visualize os membros da sua equipe."
           >
-            
             <AddCollaboratorDialog onSuccess={fetchData} />
-  
           </PageHeader>
+          
           {loading ? (
             <div className="p-10 text-center text-muted-foreground">Carregando colaboradores...</div>
           ) : (
+            /* --- CORREÇÃO AQUI --- */
             <DataTable 
                 columns={columns} 
                 data={data} 
-                meta={{ onEdit: handleEdit }} 
+                meta={{ 
+                    onEdit: handleEdit, 
+                    onDelete: deleteColaborador  // Passamos a função delete aqui
+                }} 
             />
           )}
         </main>
@@ -75,7 +97,7 @@ function Collaborators() {
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         colaboradorInicial={editingCollaborator}
-        aoSalvar={fetchData} // Quando salvar, recarrega a tabela
+        aoSalvar={fetchData}
       />
     </div>
   )

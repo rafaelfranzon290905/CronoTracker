@@ -1,4 +1,4 @@
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type RowData } from "@tanstack/react-table"; // Adicionei RowData
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge"; 
@@ -12,8 +12,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { type Collaborador } from "@/lib/types";
 
+// --- PARTE NOVA: Tipagem do Meta ---
+// Isso ensina ao TypeScript que sua tabela aceita onDelete
+declare module "@tanstack/react-table" {
+  interface TableMeta<TData extends RowData> {
+    onEdit: (data: TData) => void;
+    onDelete: (id: number) => void; // A nova função
+  }
+}
+
 export const columns: ColumnDef<Collaborador>[] = [
- // 2. Coluna de Nome 
+  // 2. Coluna de Nome 
   {
     accessorKey: "nome_colaborador",
     header: ({ column }) => (
@@ -49,7 +58,7 @@ export const columns: ColumnDef<Collaborador>[] = [
     },
   },
 
-    // 6. Coluna de Data de admissao formatada
+   // 6. Coluna de Data de admissao formatada
   {
     accessorKey: "data_admissao",
     header: "Data de Admissão",
@@ -85,6 +94,7 @@ export const columns: ColumnDef<Collaborador>[] = [
     header: "Ações",
     cell: ({ table, row }) => {
       const colaborador = row.original;
+      const meta = table.options.meta; // Agora isso está tipado corretamente
 
       return (
         <DropdownMenu>
@@ -97,10 +107,24 @@ export const columns: ColumnDef<Collaborador>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => (table.options.meta as any)?.onEdit(colaborador)}>Editar Colaborador</DropdownMenuItem>
-            <DropdownMenuItem>
+            
+            <DropdownMenuItem onClick={() => meta?.onEdit(colaborador)}>
+                Editar Colaborador
+            </DropdownMenuItem>
+            
+            {/* --- MUDANÇA AQUI --- */}
+            <DropdownMenuItem 
+                className="text-red-600 focus:text-red-600 cursor-pointer"
+                onClick={() => {
+                    // Verifica se o ID existe e chama a função
+                    if(colaborador.colaborador_id && meta?.onDelete) {
+                        meta.onDelete(colaborador.colaborador_id)
+                    }
+                }}
+            >
               Excluir Colaborador
             </DropdownMenuItem>
+
           </DropdownMenuContent>
         </DropdownMenu>
       );

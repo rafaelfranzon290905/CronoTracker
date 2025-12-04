@@ -35,18 +35,18 @@ const formatarData = (dateString: string | null | undefined): string => {
  * @param status O valor do status da atividade (ex: "em_andamento").
  * @returns Um objeto contendo label (texto) e variant (estilo da badge).
  */
-const getStatusBadgeProps = (status: string | null | undefined) => {
-  switch (status) {
-    case "em_andamento":
-      return { label: "Em andamento", variant: "default" as const };
-    case "concluido":
-      return { label: "Concluído", variant: "secondary" as const };
-    case "a_fazer":
-      return { label: "A Fazer", variant: "outline" as const };
-    default:
-      return { label: "Não Definido", variant: "outline" as const };
-  }
-};
+// const getStatusBadgeProps = (status: string | null | undefined) => {
+//   switch (status) {
+//     case "em_andamento":
+//       return { label: "Em andamento", variant: "default" as const };
+//     case "concluido":
+//       return { label: "Concluído", variant: "secondary" as const };
+//     case "a_fazer":
+//       return { label: "A Fazer", variant: "outline" as const };
+//     default:
+//       return { label: "Não Definido", variant: "outline" as const };
+//   }
+// };
 
 // --- Definição das Colunas ---
 
@@ -113,11 +113,10 @@ export const columns: ColumnDef<Atividades>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      const { label, variant } = getStatusBadgeProps(status);
+      const statusBool = row.getValue("status") as boolean;
       return (
-        <Badge variant={variant}>
-          {label}
+        <Badge variant={statusBool ? "default" : "secondary"}>
+          {statusBool ? "Ativo" : "Inativo"}
         </Badge>
       );
     },
@@ -129,7 +128,7 @@ export const columns: ColumnDef<Atividades>[] = [
     header: "Ações",
     enableHiding: false,
     cell: ({ row }) => {
-    
+      const atividade = row.original;
       
       return (
         <DropdownMenu>
@@ -143,13 +142,13 @@ export const columns: ColumnDef<Atividades>[] = [
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-                // onClick={() => console.log('Editar', atividadeId)}
+                onClick={() => console.log('Editar', atividade.atividade_id)}
             >
                 Editar Atividade
             </DropdownMenuItem>
             <DropdownMenuItem 
                 className="text-red-600 focus:text-red-700"
-                // onClick={() => console.log('Excluir', atividadeId)}
+                onClick= { () => console.log('Excluir', atividade.atividade_id)}
             >
                 Excluir Atividade
             </DropdownMenuItem>

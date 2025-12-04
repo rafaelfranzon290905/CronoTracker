@@ -48,9 +48,11 @@ const getStatusBadgeProps = (status: string | null | undefined) => {
   }
 };
 
+type DeleteActivityHandler = (atividadeId: number) => Promise<void>;
+type EditActivityHandler = (atividadeId: number) => void;
 // --- Definição das Colunas ---
 
-export const columns: ColumnDef<Atividades>[] = [
+export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditActivity: EditActivityHandler): ColumnDef<Atividades>[] => [
   // 1. COLUNA: Nome da Atividade (Com Ordenação)
   {
     accessorKey: "nome_atividade",
@@ -129,6 +131,12 @@ export const columns: ColumnDef<Atividades>[] = [
     header: "Ações",
     enableHiding: false,
     cell: ({ row }) => {
+      const ativdadeId = Number(req.params.atividade_id);
+      console.log("ID enviado para a edição: ", ativdadeId)
+      if (!Number.isInteger(atividadeId)) {
+        return res.status(400).json({ error: "ID inválido." });
+}
+
     
       
       return (
@@ -143,13 +151,13 @@ export const columns: ColumnDef<Atividades>[] = [
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-                // onClick={() => console.log('Editar', atividadeId)}
+                onClick={() => handleEditActivity(ativdadeId)}
             >
                 Editar Atividade
             </DropdownMenuItem>
             <DropdownMenuItem 
                 className="text-red-600 focus:text-red-700"
-                // onClick={() => console.log('Excluir', atividadeId)}
+                onClick={() => handleDeleteActivity(ativdadeId)}
             >
                 Excluir Atividade
             </DropdownMenuItem>

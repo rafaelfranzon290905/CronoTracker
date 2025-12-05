@@ -51,8 +51,9 @@ const formatarData = (dateString: string | null | undefined): string => {
 // --- Definição das Colunas ---
 
 type DeleteActivityHandler = (atividadeId: number) => Promise<void>;
+type EditActivityHandler = (activity: Atividades) => void;
 
-export const columns = (handleDeleteActivity: DeleteActivityHandler): ColumnDef<Atividades>[] => [
+export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditActivity: EditActivityHandler): ColumnDef<Atividades>[] => [
   // 1. COLUNA: Nome da Atividade (Com Ordenação)
   {
     accessorKey: "nome_atividade",
@@ -130,6 +131,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler): ColumnDef<
     header: "Ações",
     enableHiding: false,
     cell: ({ row }) => {
+      const atividade = row.original;
       const atividadeId = row.original.atividade_id;
       
       return (
@@ -144,7 +146,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler): ColumnDef<
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-                onClick={() => console.log('Editar', atividadeId)}
+                onClick={() => handleEditActivity(atividade)}
             >
                 Editar Atividade
             </DropdownMenuItem>

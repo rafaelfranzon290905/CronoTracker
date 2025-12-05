@@ -72,7 +72,7 @@ function Atividades() {
             subtitle="Adicione, edite e visualize suas atividades."
           >
             {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-            <AddActivitiesDialog projetoId={1} onSuccess={handleAddSuccess}/>
+            <AddActivitiesDialog projetoId={4} onSuccess={handleAddSuccess}/>
           </PageHeader>
 
             {/* Opcional: Adicionar um loading state simples */}

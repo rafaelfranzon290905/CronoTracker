@@ -6,7 +6,7 @@ import { columns } from "@/components/activities/collumnsActivities";
 import { DataTable } from "@/components/activities/data-table-activities";
 import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
 import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
-
+import { EditActivitiesDialog, type AtividadesInitialData } from "@/components/activities/EditActivitiesDialog";
 
 // Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
 const API_BASE_URL = 'http://localhost:3001';
@@ -25,6 +25,9 @@ function Atividades() {
     // ESTADOS PARA OS DADOS DA ATIVIDADE
     const [atividades, setAtividades] = useState<Atividades[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
+    
+    const [activityToEdit, setActivityToEdit] = useState<AtividadesInitialData | null>(null);
     // const [error, setError] = useState(null);
 
     // ----------------------------------------------------------------------
@@ -82,7 +85,30 @@ function Atividades() {
                 console.log("Erro ao deletar atividade:", err);
                 alert("Erro ao deletar atividade. Verifique o console.");
             }
-        }
+        };
+
+        const handleEditActivity = (activity: AtividadesInitialData) => {
+        // Converte a data_prevista_inicio/fim para string 'YYYY-MM-DD'
+        const dataInicio = activity.data_prevista_inicio ? new Date(activity.data_prevista_inicio).toISOString().split('T')[0] : '';
+        const dataFim = activity.data_prevista_fim ? new Date(activity.data_prevista_fim).toISOString().split('T')[0] : '';
+        
+        // Define os dados iniciais, garantindo o formato de data correto
+        setActivityToEdit({
+            ...activity,
+            data_prevista_inicio: dataInicio,
+            data_prevista_fim: dataFim,
+        });
+        setIsEditModalOpen(true);
+    };
+
+    // Função de sucesso após a edição
+    const handleEditSuccess = () => {
+        setIsEditModalOpen(false); // Fecha o modal
+        fetchAtividades(); // Recarrega a lista
+    };
+    
+    // Passa a função handleEditActivity para as colunas
+    // const activityColumns = columns(handleDeleteActivity, handleEditActivity);
     
   
 
@@ -104,10 +130,19 @@ function Atividades() {
             {loading ? (
                 <div className="text-center py-12">Carregando atividades...</div>
             ) : (
-                <DataTable<Atividades, unknown> columns={columns(handleDeleteActivity)} data={atividades} />
+                <DataTable<Atividades, unknown> columns={columns(handleDeleteActivity, handleEditActivity)} data={atividades} />
             )}
         </main>
       </div>
+        {/* NOVO: Componente de Edição */}
+            {activityToEdit && (
+                <EditActivitiesDialog 
+                    open={isEditModalOpen} 
+                    onOpenChange={setIsEditModalOpen}
+                    initialData={activityToEdit}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
     </div>
   )
 }

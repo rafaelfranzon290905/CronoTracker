@@ -305,7 +305,7 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         descr_atividade, 
         data_prevista_inicio, // String 'YYYY-MM-DD' ou null
         data_prevista_fim, // String 'YYYY-MM-DD' ou null
-        status: status, 
+        status, 
         projeto_id 
     } = req.body;
 
@@ -327,6 +327,9 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         if (projeto_id && isNaN(projetoIdNumerico)) {
              return res.status(400).json({ error: "ID do projeto deve ser um número válido." });
         }
+        const statusBooleano = typeof status === 'string' 
+            ? status.toLowerCase() === 'true' 
+            : Boolean(status);
 
 
         const atividadeAtualizada = await prisma.atividades.update({
@@ -338,7 +341,7 @@ app.put('/atividades/:atividade_id', async (req, res) => {
                 descr_atividade: descr_atividade,
                 data_prevista_inicio: dataInicio,
                 data_prevista_fim: dataFim,
-                status: status, // Deve ser um enum string ('a_fazer', 'em_andamento', 'concluido')
+                status: statusBooleano, // Deve ser um enum string ('a_fazer', 'em_andamento', 'concluido')
                 projeto_id: projetoIdNumerico, 
             },
         });

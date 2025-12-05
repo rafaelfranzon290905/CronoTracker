@@ -15,22 +15,16 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
+
 
 const API_BASE_URL = 'http://localhost:3001'
 
 // --- Zod Schema e Tipagem (PROJETO_ID ADICIONADO) ---
 const activitySchema = z.object({
     nome_atividade: z.string().min(1, { message: "O nome é obrigatório." }),
-    projeto_id: z.string().refine(val => {
-        const num = Number(val);
-        return !isNaN(num) && Number.isInteger(num) && num > 0;
-    }, {
-        message: "O ID do projeto deve ser um número inteiro e positivo.",
-        path: ["projeto_id"],
-    }),
+    // ✅ PROJETO_ID ADICIONADO ao schema (será mesclado via props)
+    // Para simplificar a validação do formulário, removemos o campo PROJETO_ID daqui
+    // pois ele virá das props e não de um campo de formulário no modal.
     descr_atividade: z.string().optional().nullable(),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
@@ -47,7 +41,7 @@ type ActivityFormValues = z.infer<typeof activitySchema>
 
 // --- Definição do Componente (PROPS AJUSTADAS) ---
 // O projetoId é essencial para a criação da atividade
-export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: string; onSuccess: () => void }) {
+export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: number; onSuccess: () => void }) {
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [apiError, setApiError] = useState<string | null>(null)
@@ -56,7 +50,6 @@ export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: strin
         resolver: zodResolver(activitySchema),
         defaultValues: {
             nome_atividade: "",
-            projeto_id: "",
             descr_atividade: "",
             data_prevista_inicio: new Date().toISOString().split('T')[0],
             data_prevista_fim: "",
@@ -66,10 +59,10 @@ export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: strin
 
     async function onSubmit(data: ActivityFormValues) {
         // 🛑 Validação da Prop: Garante que o ID do projeto foi passado
-        // if (!projetoId) {
-        //      setApiError("Erro interno: ID do projeto não fornecido.");
-        //      return;
-        // }
+        if (!projetoId) {
+             setApiError("Erro interno: ID do projeto não fornecido.");
+             return;
+        }
 
         setIsSubmitting(true)
         setApiError(null)
@@ -77,6 +70,7 @@ export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: strin
         // 💡 Ajuste no payload: Adiciona o PROJETO_ID 
         const payload = {
             ...data,
+            projeto_id: projetoId, // ✅ ID do projeto incluído
             descr_atividade: data.descr_atividade || null,
             data_prevista_fim: data.data_prevista_fim || null,
         };
@@ -123,7 +117,7 @@ export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: strin
                     <DialogDescription>
                         Preencha os dados abaixo para cadastrar uma nova atividade.
                         {/* Exibe o projeto vinculado para feedback visual */}
-                        
+                        <span className="block mt-2 text-blue-600 font-semibold">Vinculando ao Projeto ID: {projetoId}</span> 
                     </DialogDescription>
                 </DialogHeader>
 
@@ -134,14 +128,10 @@ export function AddActivitiesDialog({ projetoId, onSuccess }: { projetoId: strin
                             {/* Nome da atividade */}
                             <FormField control={formActivities.control} name ="nome_atividade"
                                 render={({ field }) => (<FormItem><FormLabel>Nome da atividade</FormLabel><FormControl><Input placeholder="Ex: Implementar login" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            
-                            {/* ID do Projeto */}
-                            <FormField control={formActivities.control} name ="projeto_id"
-                                render={({ field }) => (<FormItem><FormLabel>ID do Projeto</FormLabel><FormControl><Input placeholder="Ex: 1, 2, 3" {...field} /></FormControl><FormMessage /></FormItem>)}/>
 
                             {/* Descrição */}
                             <FormField control={formActivities.control} name="descr_atividade"
-                                render={({ field }) => (<FormItem><FormLabel>Descrição</FormLabel><FormControl><Input placeholder="Descreva brevemente a atividade" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                                render={({ field }) => (<FormItem><FormLabel>Descrição</FormLabel><FormControl><Input placeholder="Descreva brevemente a atividade" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)}/>
 
                             {/* Data Prevista de Início */}
                             <FormField control={formActivities.control} name="data_prevista_inicio"

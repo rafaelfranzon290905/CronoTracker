@@ -4,6 +4,7 @@ const cors = require('cors');
 
 require('dotenv').config();
 const { PrismaClient } = require('./generated/prisma');
+const { boolean } = require('fast-check');
 
 // Inicialização do Prisma Client
 const prisma = new PrismaClient();
@@ -239,9 +240,8 @@ app.post('/atividades', async (req, res) => {
     // 2. CONVERSÃO DAS DATAS PARA OBJETO Date (Já corrigido)
     const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null; 
-
-    // 🎯 NOVO PASSO: Forçar o status como BOOLEAN TRUE (Conforme solicitado)
-    const statusEnum = "a_fazer"; 
+    const statusBoolean = true;
+    
     
     // ✍️ Criação da Atividade no Prisma
     const novaAtividade = await prisma.atividades.create({
@@ -250,7 +250,7 @@ app.post('/atividades', async (req, res) => {
         descr_atividade,
         data_prevista_inicio: dataInicio, 
         data_prevista_fim: dataFim,
-        status: statusEnum, // ✅ Agora envia o valor booleano esperado pelo Postgres
+        status: statusBoolean, // ✅ Agora envia o valor booleano esperado pelo Postgres
         projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
       }
     });

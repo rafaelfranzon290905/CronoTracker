@@ -35,24 +35,24 @@ const formatarData = (dateString: string | null | undefined): string => {
  * @param status O valor do status da atividade (ex: "em_andamento").
  * @returns Um objeto contendo label (texto) e variant (estilo da badge).
  */
-const getStatusBadgeProps = (status: string | null | undefined) => {
-  switch (status) {
-    case "em_andamento":
-      return { label: "Em andamento", variant: "default" as const };
-    case "concluido":
-      return { label: "Concluído", variant: "secondary" as const };
-    case "a_fazer":
-      return { label: "A Fazer", variant: "outline" as const };
-    default:
-      return { label: "Não Definido", variant: "outline" as const };
-  }
-};
+// const getStatusBadgeProps = (status: string | null | undefined) => {
+//   switch (status) {
+//     case "em_andamento":
+//       return { label: "Em andamento", variant: "default" as const };
+//     case "concluido":
+//       return { label: "Concluído", variant: "secondary" as const };
+//     case "a_fazer":
+//       return { label: "A Fazer", variant: "outline" as const };
+//     default:
+//       return { label: "Não Definido", variant: "outline" as const };
+//   }
+// };
 
-type DeleteActivityHandler = (atividadeId: number) => Promise<void>;
-type EditActivityHandler = (atividadeId: number) => void;
 // --- Definição das Colunas ---
 
-export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditActivity: EditActivityHandler): ColumnDef<Atividades>[] => [
+type DeleteActivityHandler = (atividadeId: number) => Promise<void>;
+
+export const columns = (handleDeleteActivity: DeleteActivityHandler): ColumnDef<Atividades>[] => [
   // 1. COLUNA: Nome da Atividade (Com Ordenação)
   {
     accessorKey: "nome_atividade",
@@ -115,11 +115,10 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      const { label, variant } = getStatusBadgeProps(status);
+      const statusBool = row.getValue("status") as boolean;
       return (
-        <Badge variant={variant}>
-          {label}
+        <Badge variant={statusBool ? "default" : "secondary"}>
+          {statusBool ? "Ativo" : "Inativo"}
         </Badge>
       );
     },
@@ -131,13 +130,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     header: "Ações",
     enableHiding: false,
     cell: ({ row }) => {
-      const ativdadeId = Number(req.params.atividade_id);
-      console.log("ID enviado para a edição: ", ativdadeId)
-      if (!Number.isInteger(atividadeId)) {
-        return res.status(400).json({ error: "ID inválido." });
-}
-
-    
+      const atividadeId = row.original.atividade_id;
       
       return (
         <DropdownMenu>
@@ -151,13 +144,13 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-                onClick={() => handleEditActivity(ativdadeId)}
+                onClick={() => console.log('Editar', atividadeId)}
             >
                 Editar Atividade
             </DropdownMenuItem>
             <DropdownMenuItem 
                 className="text-red-600 focus:text-red-700"
-                onClick={() => handleDeleteActivity(ativdadeId)}
+                onClick= { () => handleDeleteActivity(atividadeId)}
             >
                 Excluir Atividade
             </DropdownMenuItem>

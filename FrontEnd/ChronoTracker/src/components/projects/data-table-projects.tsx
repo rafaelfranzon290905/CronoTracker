@@ -59,9 +59,9 @@ export function DataTable<TData, TValue>({
         <div className="relative w-full">
           <Input
             placeholder="Filtrar por nome..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("nome_projeto")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
+              table.getColumn("nome_projeto")?.setFilterValue(event.target.value)
             }
             className="w-full rounded-full pr-14 pl-4 h-12 border-gray-200"
           />

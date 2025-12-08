@@ -1,9 +1,9 @@
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { PlusCircle, Loader2 } from "lucide-react"
+import { PlusCircle, Loader2, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -21,6 +21,7 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
+    FormDescription
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "../ui/scroll-area"
@@ -31,6 +32,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { type Projeto } from "@/lib/projects"
 
 
 const formSchema = z.object({
@@ -54,13 +57,16 @@ type ProjetoFormValues = z.infer<typeof formSchema>;
 interface AddProjectDialogProps {
     clientes: { cliente_id: number; nome_cliente: string }[];
     onSuccess: () => void;
+    projectToEdit?: Projeto;
 }
 
-export function AddProjectDialog({ clientes, onSuccess }: AddProjectDialogProps) {
+export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProjectDialogProps) {
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false)
 
     console.log("Componente Modal Renderizado. Estado open:", open);
+
+    const isEditMode = !!projectToEdit; // Verifica se está em modo de edição
 
     const formProjects = useForm<ProjetoFormValues>({
         resolver: zodResolver(formSchema),
@@ -74,11 +80,48 @@ export function AddProjectDialog({ clientes, onSuccess }: AddProjectDialogProps)
         },
     });
 
+    useEffect(() => {
+        if (open && projectToEdit) {
+            formProjects.reset({
+                nome_projeto: projectToEdit.nome_projeto,
+                cliente_id: projectToEdit.cliente_id.toString(),
+                descricao: projectToEdit.descricao || "",
+                data_inicio: projectToEdit.data_inicio ? new Date(projectToEdit.data_inicio).toISOString().split('T')[0] : "",
+                data_fim: projectToEdit.data_fim ? new Date(projectToEdit.data_fim).toISOString().split('T')[0] : "",
+                status: projectToEdit.status,
+            });
+        } else if (open && !projectToEdit) {
+            formProjects.reset({
+                nome_projeto: "",
+                cliente_id: "",
+                descricao: "",
+                data_inicio: "",
+                data_fim: "",
+                status: true,
+            });
+        }
+    }, [open, projectToEdit, formProjects]);
+
     async function onSubmit(values: ProjetoFormValues) {
         setIsLoading(true);
         try {
-            const response = await fetch("http://localhost:3001/projetos", {
-                method: "POST",
+            const url = isEditMode
+                ? `http://localhost:3001/projetos/${projectToEdit?.projeto_id}`
+                : "http://localhost:3001/projetos";
+
+            const method = isEditMode ? "PUT" : "POST";
+
+            // const response = await fetch("http://localhost:3001/projetos", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({
+            //         ...values,
+            //         cliente_id: parseInt(values.cliente_id)
+            //     }),
+            // });
+
+            const response = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...values,
@@ -92,7 +135,8 @@ export function AddProjectDialog({ clientes, onSuccess }: AddProjectDialogProps)
                 return;
             }
             setOpen(false);
-            formProjects.reset();
+            // formProjects.reset();
+            if (!isEditMode) formProjects.reset();
             onSuccess();
         } catch (error) {
             console.error(error);
@@ -104,14 +148,27 @@ export function AddProjectDialog({ clientes, onSuccess }: AddProjectDialogProps)
 
     return (
         <>
-            <Button onClick={() => setOpen(true)} className="bg-blue-950 rounded-2xl text-white hover:bg-blue-800 mx-3">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Projeto
-            </Button>
-            <Dialog open={open} onOpenChange={setOpen}>
+            {isEditMode ? (
+                <div onClick={(e) => {
+                    e.preventDefault();
+                    setOpen(true);
+                }}
+                    className="flex items-center gap-2 px-2 py-1.5 text-sm outline-none hover:bg-gray-100 cursor-pointer rounded-sm transition-colors w-full"
+                >
+                    <Edit className="h-4 w-4 text-blue-900" />
+                    <span>Editar</span>
+                </div>
+            ) : (
+                <Button onClick={() => setOpen(true)} className="bg-blue-950 rounded-2xl text-white hover:bg-blue-800 mx-3">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Projeto
+                </Button>
+            )}
+            < Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Adicionar Novo Projeto</DialogTitle>
+                        {/* <DialogTitle>Adicionar Novo Projeto</DialogTitle> */}
+                        <DialogTitle>{isEditMode ? "Editar Projeto" : "Adicionar Novo Projeto"}</DialogTitle>
                         <DialogDescription>
                             Preencha os dados abaixo para cadastrar um novo projeto.
                         </DialogDescription>
@@ -158,7 +215,7 @@ export function AddProjectDialog({ clientes, onSuccess }: AddProjectDialogProps)
                                     )}
                                 />
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <FormField
                                         control={formProjects.control}
                                         name="data_inicio"
@@ -185,20 +242,42 @@ export function AddProjectDialog({ clientes, onSuccess }: AddProjectDialogProps)
                                             </FormItem>
                                         )}
                                     />
+
                                     <FormField
                                         control={formProjects.control}
-                                        name="descricao"
+                                        name="status"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Descrição</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="Descreva brevemente o projeto" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
+                                            <FormItem className="flex flex-col">
+                                                <FormLabel className="text-base">Status</FormLabel>
+                                                <div className="flex content-center gap-4">
+                                                    <FormDescription className="text-sm">
+                                                        {field.value ? "Ativo." : "Inativo."}
+                                                    </FormDescription>
+
+                                                    <FormControl>
+                                                        <Switch
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                        />
+                                                    </FormControl>
+                                                </div>
                                             </FormItem>
                                         )}
                                     />
                                 </div>
+                                <FormField
+                                    control={formProjects.control}
+                                    name="descricao"
+                                    render={({ field }) => (
+                                        <FormItem className="col-span-2">
+                                            <FormLabel>Descrição</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Descreva brevemente o projeto" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </form>
                         </Form>
                     </ScrollArea>
@@ -208,11 +287,11 @@ export function AddProjectDialog({ clientes, onSuccess }: AddProjectDialogProps)
                             onClick={formProjects.handleSubmit(onSubmit)}
                             className="bg-blue-950 rounded-2xl text-white hover:bg-blue-800"
                         >
-                            {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : " Salvar"}
+                            {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : (isEditMode ? "Salvar Alterações" : "Salvar Projeto")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
+            </Dialog >
 
         </>
     );

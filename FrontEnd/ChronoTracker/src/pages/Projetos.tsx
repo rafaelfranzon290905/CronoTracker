@@ -1,9 +1,9 @@
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { PageHeader } from "@/components/componentes/TituloPagina";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { type Projeto } from "@/lib/projects";
-import { columns } from "@/components/projects/collumnsProjects";
+import { getColumns } from "@/components/projects/collumnsProjects";
 import { DataTable } from "@/components/projects/data-table-projects";
 import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 
@@ -31,6 +31,9 @@ function Projetos() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  //garante que as colunas só recriem se clientes mudarem
+  const columns = useMemo(() => getColumns(clientes, fetchData), [clientes]);
 
   return (
     <div className="flex h-screen bg-background text-foreground">

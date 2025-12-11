@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 // Importações dos componentes UI (Ajuste os caminhos se necessário)
 import { Button } from "@/components/ui/button"
@@ -15,7 +16,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Checkbox } from "@/components/ui/checkbox" // ⬅️ NOVO: Checkbox para o status
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+
 
 // Supondo que você use o mesmo URL base
 const API_BASE_URL = 'http://localhost:3001';
@@ -23,9 +25,15 @@ const API_BASE_URL = 'http://localhost:3001';
 // ... (Coloque editActivitySchema e EditActivityFormValues aqui ou no arquivo de schemas) ...
 // No arquivo de definição dos schemas (ou no topo do componente EditActivitiesDialog)
 
+type ProjetoSelect = {
+    projeto_id: number;
+    nome_projeto: string;
+}
+
 // 1. Defina o Status como Booleano no Schema de Edição
 const editActivitySchema = z.object({
     nome_atividade: z.string().min(1, { message: "O nome é obrigatório." }),
+    projeto_id: z.string().min(1, {message: "Selecione um projeto"}),
     descr_atividade: z.string().optional().nullable(),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
@@ -58,10 +66,11 @@ interface EditActivitiesDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void; // Para fechar o modal
     initialData: AtividadesInitialData; // Os dados da atividade a ser editada
+    projetos: ProjetoSelect;
     onSuccess: () => void; // Recarrega os dados na tabela
 }
 
-export function EditActivitiesDialog({ open, onOpenChange, initialData, onSuccess }: EditActivitiesDialogProps) {
+export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos, onSuccess }: EditActivitiesDialogProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
 
@@ -70,6 +79,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, onSucces
         resolver: zodResolver(editActivitySchema),
         defaultValues: {
             nome_atividade: initialData.nome_atividade,
+            projeto_id: String(initialData.projeto_id),
             descr_atividade: initialData.descr_atividade || "", // Garante string vazia se null
             data_prevista_inicio: initialData.data_prevista_inicio ? new Date(initialData.data_prevista_inicio).toISOString().split('T')[0] : "",
             data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
@@ -86,15 +96,18 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, onSucces
                 data_prevista_inicio: initialData.data_prevista_inicio ? new Date(initialData.data_prevista_inicio).toISOString().split('T')[0] : "",
                 data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
                 status: initialData.status,
+                projeto_id: String(initialData.projeto_id),
             });
             setApiError(null);
         }
-    }, [initialData, open, formActivities]);
+    }, [initialData, open, formActivities, projetos]);
 
 
     async function onSubmit(data: EditActivityFormValues) {
         setIsSubmitting(true);
         setApiError(null);
+
+        const projetoIdNumerico = parseInt(data.projeto_id, 10)
 
         const payload = {
             ...data,
@@ -102,7 +115,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, onSucces
             // então data.status já está correto (true/false)
             descr_atividade: data.descr_atividade || null,
             data_prevista_fim: data.data_prevista_fim || null,
-            projeto_id: initialData.projeto_id, // Mantém o ID do projeto original
+            projeto_id: projetoIdNumerico,
         };
 
         try {
@@ -154,6 +167,31 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, onSucces
                             <FormField control={formActivities.control} name="descr_atividade"
                                 render={({ field }) => (<FormItem><FormLabel>Descrição</FormLabel><FormControl><Input placeholder="Descreva brevemente a atividade" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)}/>
 
+                            <FormField control={formActivities.control} name="projeto_id" render={({field}) => (
+                                <FormItem>
+                                    <FormLabel>Projeto vinculado</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione um projeto"/>
+                                    </SelectTrigger>
+                                    </FormControl>
+                                        <SelectContent>
+                                            {projetos.map((projeto) => (
+                                                <SelectItem
+                                                key={projeto.projeto_id}
+                                                value={String(projeto.projeto_id)}>
+                                                    ({projeto.projeto_id}) - {projeto.nome_projeto}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                        
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+
                             {/* Data Prevista de Início */}
                             <FormField control={formActivities.control} name="data_prevista_inicio"
                                 render={({ field }) => (<FormItem><FormLabel>Data Prevista de Início</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)}/>
@@ -167,21 +205,24 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, onSucces
                                 control={formActivities.control}
                                 name="status"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-md">
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <div className="space-y-1 leading-none">
+                                    <FormItem className="">
+                                    
                                             <FormLabel>
                                                 Status (Ativa/Inativa)
                                             </FormLabel>
+                                        <FormControl>
+                                           
+                                            <Switch 
+                                                className="w-10 h-5"
+                                                id="status"
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                            />
+                                        </FormControl>
                                             <DialogDescription className="text-sm text-muted-foreground pt-1">
                                                 {field.value ? "Atividade marcada como Ativa." : "Atividade marcada como Inativa."}
                                             </DialogDescription>
-                                        </div>
+                                        
                                     </FormItem>
                                 )}
                             />

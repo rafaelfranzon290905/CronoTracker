@@ -11,6 +11,11 @@ import { EditActivitiesDialog, type AtividadesInitialData } from "@/components/a
 // Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
 const API_BASE_URL = 'http://localhost:3001';
 
+type ProjetoSelect = {
+    projeto_id: number;
+    nome_projeto: string;
+}
+
 function Atividades() {
     // ESTADOS PARA O MODAL (Adicionar/Editar)
 //     const [aberto, setAberto] = useState(false);
@@ -25,6 +30,9 @@ function Atividades() {
     // ESTADOS PARA OS DADOS DA ATIVIDADE
     const [atividades, setAtividades] = useState<Atividades[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [projetos, setProjetos] = useState<ProjetoSelect[]>([]);
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
     
     const [activityToEdit, setActivityToEdit] = useState<AtividadesInitialData | null>(null);
@@ -51,10 +59,33 @@ function Atividades() {
             setLoading(false);
         }
     };
+
+    const fetchProjetos = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/projetos`);
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            // Mapeia os dados para a interface mais simples
+            const projetosMapeados: ProjetoSelect[] = data.map((p: any) => ({
+                projeto_id: p.projeto_id,
+                nome_projeto: p.nome_projeto,
+            }));
+            
+            setProjetos(projetosMapeados);
+            console.log("Projetos carregados:", projetosMapeados.length);
+
+        } catch (err) {
+            console.error("Erro ao buscar projetos:", err);
+        }
+    };
     
     // ⬅️ ADIÇÃO CRUCIAL: Chama fetchAtividades apenas uma vez ao montar o componente
     useEffect(() => {
         fetchAtividades();
+        fetchProjetos();
     }, []); 
 
     // 💡 1. DEFINIR A FUNÇÃO DE SUCESSO: Recarrega os dados após o cadastro
@@ -106,9 +137,9 @@ function Atividades() {
         setIsEditModalOpen(false); // Fecha o modal
         fetchAtividades(); // Recarrega a lista
     };
+
     
-    // Passa a função handleEditActivity para as colunas
-    // const activityColumns = columns(handleDeleteActivity, handleEditActivity);
+    
     
   
 
@@ -123,7 +154,7 @@ function Atividades() {
             subtitle="Adicione, edite e visualize suas atividades."
           >
             {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-            <AddActivitiesDialog projetoId={3} onSuccess={handleAddSuccess}/>
+            <AddActivitiesDialog projetos={projetos} onSuccess={handleAddSuccess}/>
           </PageHeader>
 
             {/* Opcional: Adicionar um loading state simples */}
@@ -140,6 +171,7 @@ function Atividades() {
                     open={isEditModalOpen} 
                     onOpenChange={setIsEditModalOpen}
                     initialData={activityToEdit}
+                    projetos={projetos}
                     onSuccess={handleEditSuccess}
                 />
             )}

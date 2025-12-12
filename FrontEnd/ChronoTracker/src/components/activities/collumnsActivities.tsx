@@ -162,3 +162,22 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
 ];
+
+export const getAtividadesColumns = (
+    isGerente: boolean, 
+    handleDeleteActivity: DeleteActivityHandler, 
+    handleEditActivity: EditActivityHandler
+): ColumnDef<Atividades>[] => {
+    
+    // 1. Gera o array COMPLETO de colunas, passando os handlers
+    const allColumns = columns(handleDeleteActivity, handleEditActivity);
+
+    if (isGerente) {
+        // Se for gerente, retorna todas as colunas
+        return allColumns;
+    }
+    
+    // 2. Se não for gerente, filtra a coluna 'actions' (pelo id: "actions")
+    // ATENÇÃO: O ID da coluna Ações é 'actions', não 'acoes'.
+    return allColumns.filter(column => column.id !== 'actions');
+}

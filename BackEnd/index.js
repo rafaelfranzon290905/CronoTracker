@@ -189,7 +189,7 @@ app.post('/colaboradores', async (req, res) => {
     console.error('Erro ao cadastrar colaborador:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
-});
+);
 
 // Rota de Atividades
  // GET /atividades - Lista todas as atividades

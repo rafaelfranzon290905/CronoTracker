@@ -6,6 +6,8 @@ import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity } from "luci
 import CronosAzul from "../imagens/ChronosAzul.png"
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
+import { useState } from "react"
+
 
 const data = [
   { dia: "Seg", horas: 8 },
@@ -18,8 +20,10 @@ const data = [
 ]
 
 function Dashboard() {
+
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen">
       
       <SideBar/>
 
@@ -28,17 +32,17 @@ function Dashboard() {
       <main className="flex-1 p-6 overflow-auto">
         {/* Header com Searchbar */}
         <Header/>
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex items-center justify-between mb-6 mt-2">
           <div>
             <h1 className="text-xl font-bold">Bem-vinda, Rafaela!</h1>
             <p className="text-gray-500">Aqui você encontra tudo o que precisa saber sobre suas tarefas e as do seu time!</p>
           </div>
-          <Button className="bg-blue-600 text-white">+ Criar</Button>
+          <Button className="bg-botao-light text-white">+ Criar</Button>
         </header>
 
         {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card aria-label="Card de horas de trabalho hoje">
             <CardHeader>
               <CardTitle>Horas Hoje</CardTitle>
             </CardHeader>
@@ -47,7 +51,7 @@ function Dashboard() {
               <p className="text-green-600 text-sm">+12% vs ontem</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card aria-label="Card de número de projetos Ativos">
             <CardHeader>
               <CardTitle>Projetos Ativos</CardTitle>
             </CardHeader>
@@ -55,7 +59,7 @@ function Dashboard() {
               <p className="text-2xl font-bold">8</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card aria-label="Card de porcentagem de produtividade">
             <CardHeader>
               <CardTitle>Produtividade</CardTitle>
             </CardHeader>
@@ -64,7 +68,7 @@ function Dashboard() {
               <p className="text-green-600 text-sm">Excelente!</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card aria-label="Card de receita mensal ">
             <CardHeader>
               <CardTitle>Receita Mensal</CardTitle>
             </CardHeader>
@@ -77,7 +81,7 @@ function Dashboard() {
 
         {/* Gráfico + Atividades */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
+          <Card aria-label="Gráfico de horas trabalhadas na última semana">
             <CardHeader>
               <CardTitle>Horas Trabalhadas - Última Semana</CardTitle>
             </CardHeader>
@@ -94,7 +98,7 @@ function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card aria-label="Card de Atividades recentes">
             <CardHeader>
               <CardTitle>Atividades Recentes</CardTitle>
             </CardHeader>

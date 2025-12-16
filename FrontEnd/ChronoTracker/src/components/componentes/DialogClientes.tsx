@@ -1,0 +1,161 @@
+import { useState } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "../ui/button"
+import { Switch } from "../ui/switch"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
+
+const API_BASE_URL = 'http://localhost:3001'
+
+// Definindo o tipo de dados do cliente para o estado do formulário
+interface ClienteFormData {
+    cnpj: string;
+    nome_cliente: string;
+    nome_contato: string;
+    cep: string;
+    endereco: string;
+    cidade: string;
+    estado: string;
+    status: boolean; // O campo booleano
+}
+
+
+
+export default function DialogClientes() {
+    // 1. ESTADO DO FORMULÁRIO: Inicializa com valores vazios e status TRUE por padrão (ativo)
+    const [formData, setFormData] = useState<ClienteFormData>({
+        cnpj: "",
+        nome_cliente: "",
+        nome_contato: "",
+        cep: "",
+        endereco: "",
+        cidade: "",
+        estado: "",
+        status: true, 
+    });
+
+     // Função genérica para atualizar os inputs
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Função específica para o campo 'status' (Switch)
+    const handleStatusChange = (checked: boolean) => {
+        setFormData(prev => ({ ...prev, status: checked }));
+    };
+
+    // 2. FUNÇÃO DE SUBMISSÃO
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/clientes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                // Captura a mensagem de erro do servidor (ex: "CNPJ já cadastrado")
+                const errorMessage = result.error || "Erro desconhecido ao cadastrar cliente.";
+                throw new Error(errorMessage);
+            }
+
+            // Sucesso: Fecha o modal e limpa o formulário (ou faz o que for necessário, como recarregar a lista)
+            // IMPORTANTE: Use um modal customizado de sucesso em vez de alert() em produção.
+            console.log("Cliente cadastrado com sucesso!");
+            
+            // Limpa o formulário e fecha
+            setFormData(prev => ({ ...prev, 
+                cnpj: "", nome_cliente: "", nome_contato: "", cep: "", 
+                endereco: "", cidade: "", estado: "", status: true 
+            }));
+        } catch (error) {
+            console.error('Erro ao enviar formulário:', error);
+            // Mostra o erro de validação ou de servidor
+        
+        } finally {
+            console.log("jdanjadnja")
+        }
+    };
+
+    return (
+        <Dialog>
+        <DialogTrigger>Adicionar Cliente</DialogTrigger>
+        <DialogContent>
+            <DialogHeader>
+            <DialogTitle>Adicionar Cliente</DialogTitle>
+            <DialogDescription>
+                Adicione os dados do cliente que deseja adicionar:
+            </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit}>
+                <div className="grid gap-4">
+                    <div>
+                        <Label htmlFor="empresa">Nome da empresa</Label>
+                        <Input id="empresa" name="nome_cliente" value={formData.nome_cliente} onChange={handleChange} required/>
+                    </div>
+                    <div>
+                        <Label htmlFor="contato">Nome do contato</Label>
+                        <Input id="contato" name="nome_contato" value={formData.nome_contato} onChange={handleChange}/>
+                    </div>
+                    <div>
+                        <Label htmlFor="cep-1">CEP</Label>
+                        <Input id="cep-1" name="cep" value={formData.cep} onChange={handleChange}/>
+                    </div>
+                    <div>
+                        <Label htmlFor="endereco-1">Endereço</Label>
+                        <Input id="endereco-1" name="endereco" value={formData.endereco} onChange={handleChange}/>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <Label htmlFor="cidade-1">Cidade</Label>
+                            <Input id="cidade-1" name="cidade" className="w-100" value={formData.cidade} onChange={handleChange}/>
+                        </div>
+                        <div className="flex-1">
+                            <Label htmlFor="estado-1">Estado</Label>
+                            <Input id="estado-1" name="estado" maxLength={2} value={formData.estado} onChange={handleChange}/>
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="cnpj-1">CNPJ</Label>
+                        <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleChange} required/>
+                    </div>
+                    {/* Linha 7: Status (Switch/Alternador) */}
+                        <div className="flex items-center space-x-2 pt-2">
+                            <Label htmlFor="status">Status</Label>
+                            {/* O Switch recebe o estado booleano e o handler de mudança */}
+                            <Switch 
+                                id="status"
+                                name="status"
+                                checked={formData.status}
+                                onCheckedChange={handleStatusChange}
+                            />
+                             <span className="text-sm font-medium">{formData.status ? 'Ativo' : 'Inativo'}</span>
+                        </div>
+                </div>
+                {/* Botão de Submit */}
+                    <div className="pt-4 flex justify-end">
+                        <Button type="submit">
+                                Salvar
+                        </Button>
+                    </div>
+            </form>
+        </DialogContent>
+        </Dialog>
+    )
+}

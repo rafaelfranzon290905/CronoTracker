@@ -3,7 +3,7 @@ import SideBar from "@/components/componentes/SideBar"
 
 function Projetos() {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen">
       
                 <SideBar/>
 

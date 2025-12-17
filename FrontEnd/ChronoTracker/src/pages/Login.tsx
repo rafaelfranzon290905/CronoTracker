@@ -47,7 +47,8 @@ export default function Login() {
                 localStorage.setItem('currentUser', JSON.stringify({
                     id: user.usuario_id,
                     username: user.nome_usuario,
-                    cargo: user.cargo
+                    cargo: user.cargo,
+                    nomeCompleto: user.nome_completo
                 }));
                 
                 alert(`Login bem-sucedido! Bem-vindo(a), ${user.nome_usuario} (${user.cargo})`);

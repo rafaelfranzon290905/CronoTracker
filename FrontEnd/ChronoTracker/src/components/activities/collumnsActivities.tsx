@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 // Assumindo que a interface Atividades reflete a estrutura de dados correta
 import { type Atividades } from "@/lib/activities"; 
-
+import { usePermissions } from "@/hooks/usePermissions";
 
 // --- Funções Auxiliares de Formatação ---
 
@@ -53,7 +53,9 @@ const formatarData = (dateString: string | null | undefined): string => {
 type DeleteActivityHandler = (atividadeId: number) => Promise<void>;
 type EditActivityHandler = (activity: Atividades) => void;
 
+
 export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditActivity: EditActivityHandler): ColumnDef<Atividades>[] => [
+  
   // 1. COLUNA: Nome da Atividade (Com Ordenação)
   {
     accessorKey: "nome_atividade",

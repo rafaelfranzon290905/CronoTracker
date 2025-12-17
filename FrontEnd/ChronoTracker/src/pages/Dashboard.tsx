@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
@@ -8,6 +8,8 @@ import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { useState } from "react"
 import { useEffect } from "react"
+import { useNavigate } from "react-router-dom";
+
 
 const data = [
   { dia: "Seg", horas: 8 },
@@ -23,10 +25,11 @@ interface CurrentUser {
     id: number;
     username: string; // O nome que você quer exibir
     cargo: string;
+    nomeCompleto: string;
 }
 
 function Dashboard() {
-  const [userName, setUserName] = useState<string>('');
+  const [userDisplayName, setUserDisplayName] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -40,7 +43,8 @@ function Dashboard() {
                 
                 // 3. Atualiza o estado com o nome de usuário
                 // Usamos o 'username' que foi salvo no localStorage
-                setUserName(user.username); 
+                const nameToDisplay = user.nomeCompleto || user.username;
+                setUserDisplayName(nameToDisplay); 
                 
             } catch (error) {
                 console.error("Erro ao carregar dados do usuário:", error);
@@ -49,7 +53,7 @@ function Dashboard() {
             }
         } else {
             // Se não houver dados, o usuário não está logado
-            // router.push('/login');
+            navigate('/login')
             console.log("Usuário não logado. Redirecionar para /login.");
         }
         
@@ -62,7 +66,7 @@ function Dashboard() {
     }
     
     // Define a primeira letra maiúscula para a saudação
-    const saudacao = (userName.charAt(0).toUpperCase() + userName.slice(1)) || 'usuário';
+    const saudacao = (userDisplayName.charAt(0).toUpperCase() + userDisplayName.slice(1)) || 'usuário';
 
   return (
     <div className="flex h-screen">

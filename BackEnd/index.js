@@ -1,10 +1,15 @@
 // Importações
 const express = require('express');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-muito-segura';
 
 require('dotenv').config();
 const { PrismaClient } = require('./generated/prisma');
 const { boolean } = require('fast-check');
+const { error } = require('effect/Brand');
 
 // Inicialização do Prisma Client
 const prisma = new PrismaClient();
@@ -580,6 +585,57 @@ app.delete('/projetos/:id', async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao excluir projeto.' });
     }
 });
+
+// Rotas de Login
+app.post('/login', async (req, res) => {
+  const {nome_usuario, senha} = req.body;
+
+  if (!nome_usuario || !senha) {
+    return res.status(400).json({error: "Nome de usuário e senha são obrigatórios."});
+  }
+
+  try {
+    const usuario = await prisma.usuarios.findUnique({
+      where: {nome_usuario},
+    });
+    if (!usuario) {
+      return res.status(401).json({error: "Credenciais inválidas."});
+    }
+
+    const senhaValida = await bcrypt.compare(senha, usuario.hash_senha);
+
+    if (!senhaValida) {
+      return res.status(401).json({error: "Credenciais inválidas."});
+    }
+
+    const token = jwt.sign(
+            { 
+                usuarioId: usuario.usuario_id, 
+                cargo: usuario.cargo, // ✅ Incluir o cargo para RBAC
+                nomeUsuario: usuario.nome_usuario 
+            }, 
+            JWT_SECRET, 
+            { expiresIn: '8h' } // Token expira em 8 horas
+        );
+
+        // 4. Retornar o token e dados do usuário (sem a senha!)
+        res.json({
+            message: "Login bem-sucedido!",
+            token,
+            user: {
+                usuario_id: usuario.usuario_id,
+                nome_usuario: usuario.nome_usuario,
+                cargo: usuario.cargo,
+                nome_completo: usuario.nome_completo,
+            }
+        });
+
+    } catch (error) {
+        console.error("Erro no login:", error);
+        res.status(500).json({ error: "Erro interno do servidor." });
+    }
+});
+  
 
 // ----------------------------------------------------
 // 🎯 ROTAS DE PROJETOS

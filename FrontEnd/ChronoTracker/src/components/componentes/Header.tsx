@@ -4,11 +4,35 @@ import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { Search, Calendar, Sun, Bell, Settings, User, Menu, X, Clock, Home, Users, Rocket, Activity, DollarSign, FileText, Moon } from "lucide-react"
 import CronosBranco from "../../imagens/ChronosAzulFundoRemovido.png"
-
+import { useEffect } from "react"
 
 export default function Header() {
     const [menuAberto, setMenuAberto] = useState(false);
     const [darkmode, setDarkMode] = useState(false);
+    
+    const [userDisplayName, setUserDisplayName] = useState<string>('Usuário');
+    
+    // 2. Efeito para carregar o nome do localStorage
+    useEffect(() => {
+        const userJson = localStorage.getItem('currentUser');
+        
+        if (userJson) {
+            try {
+                const user = JSON.parse(userJson);
+                // Prioriza o nomeCompleto, usa o username como fallback
+                const nameToDisplay = user.nomeCompleto || user.username; 
+                
+                // Converte a primeira letra de cada palavra para maiúscula
+                const formattedName = nameToDisplay.toLowerCase().split(' ')
+                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+
+                setUserDisplayName(formattedName); 
+            } catch (error) {
+                console.error("Erro ao carregar dados do usuário no Header:", error);
+            }
+        }
+    }, []);
 
     const toggleDarkMode = () => {
         setDarkMode(!darkmode);
@@ -92,7 +116,7 @@ export default function Header() {
                 <Bell className="text-gray-400 h-9 w-9 bg-botao-config p-2 rounded-3xl mx-1" />
                 <Settings className="text-gray-400 h-9 w-9 bg-botao-config p-2 rounded-3xl mx-1" />
                 <hr className="border border-muted-foreground h-9 mx-3" />
-                <h3 className="p-1">Rafaela Borges de Oliveira</h3>
+                <h3 className="p-1">{userDisplayName}</h3>
                 <User className="text-black h-9 w-9 bg-botao-config p-1 rounded-3xl mx-3" />
             </div>
             

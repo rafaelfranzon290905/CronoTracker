@@ -7,6 +7,8 @@ import { DataTable } from "@/components/activities/data-table-activities";
 import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
 import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
 import { EditActivitiesDialog, type AtividadesInitialData } from "@/components/activities/EditActivitiesDialog";
+import { usePermissions } from "@/hooks/usePermissions";
+import { getAtividadesColumns } from "@/components/activities/collumnsActivities";
 
 // Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
 const API_BASE_URL = 'http://localhost:3001';
@@ -36,6 +38,8 @@ function Atividades() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
     
     const [activityToEdit, setActivityToEdit] = useState<AtividadesInitialData | null>(null);
+
+    const {isGerente} = usePermissions()
     // const [error, setError] = useState(null);
 
     // ----------------------------------------------------------------------
@@ -138,10 +142,12 @@ function Atividades() {
         fetchAtividades(); // Recarrega a lista
     };
 
-    
-    
-    
-  
+    const tableColumns = getAtividadesColumns(
+        isGerente,
+        handleDeleteActivity,
+        handleEditActivity,
+    );
+
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -153,15 +159,19 @@ function Atividades() {
             title="Atividades"
             subtitle="Adicione, edite e visualize suas atividades."
           >
-            {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-            <AddActivitiesDialog projetos={projetos} onSuccess={handleAddSuccess}/>
+            {isGerente && (
+            <AddActivitiesDialog projetos={projetos} onSuccess={handleAddSuccess}/>
+            )}
+
+{/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
+            
           </PageHeader>
 
             {/* Opcional: Adicionar um loading state simples */}
             {loading ? (
                 <div className="text-center py-12">Carregando atividades...</div>
             ) : (
-                <DataTable<Atividades, unknown> columns={columns(handleDeleteActivity, handleEditActivity)} data={atividades} />
+                <DataTable<Atividades, unknown> columns={columns(tableColumns)} data={atividades} />
             )}
         </main>
       </div>

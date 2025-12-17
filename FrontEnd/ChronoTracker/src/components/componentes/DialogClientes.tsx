@@ -95,13 +95,15 @@ export default function DialogClientes() {
 
     return (
         <Dialog>
-        <DialogTrigger>Adicionar Cliente</DialogTrigger>
+        <DialogTrigger asChild>
+                <Button className="bg-botao-dark">Adicionar Cliente</Button>
+            </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-            <DialogTitle>Adicionar Cliente</DialogTitle>
-            <DialogDescription>
-                Adicione os dados do cliente que deseja adicionar:
-            </DialogDescription>
+                <DialogTitle>Adicionar Cliente</DialogTitle>
+                <DialogDescription>
+                    Adicione os dados do cliente que deseja adicionar:
+                </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
                 <div className="grid gap-4">

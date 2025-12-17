@@ -16,6 +16,7 @@ interface ModalClienteProps {
     onOpenChange: (open: boolean) => void
     clienteInicial: Cliente | null;
     aoSalvar: () => void;
+    type: "add" | "edit" | null;
 }
 
 interface Cliente {
@@ -61,7 +62,7 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
 
   // Função específica para o campo 'status' (Switch)
     const handleStatusChange = (checked: boolean) => {
-        setFormData(prev => ({ ...prev, status: checked }));
+        setFormData(prev => ({ ...(prev as Cliente), status: checked }));
     };
 
   const handleSubmit = async (e: React.FormEvent) => {

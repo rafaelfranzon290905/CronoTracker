@@ -3,14 +3,15 @@ import { useState, useEffect } from "react";
 import Header from "@/components/componentes/Header"
 import SideBar from "@/components/componentes/SideBar"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
-import { Search, Ellipsis, MoreVertical } from "lucide-react";
+import { Search, Ellipsis } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/componentes/TituloPagina";
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import { ModalCliente } from "@/components/clientes/ModalClientes";
 import DialogClientes from "@/components/componentes/DialogClientes";
+
 
 interface Cliente {
     cliente_id: number;
@@ -119,7 +120,9 @@ function Clientes() {
                     <Input type="text" placeholder="Buscar" className="w-full rounded-2xl" />
                     <Search className="text-white absolute h-8 w-8 right-1 top-0.5 bg-botao-dark p-1 rounded-2xl" />
                 </div>
-                <Button className="bg-botao-dark text-white"><DialogClientes/></Button>
+                <div className="mb-4">
+                    <DialogClientes/>
+                </div>
                 
                 <Table className="w-full">
                   <TableHeader className="border-b-2">
@@ -138,7 +141,7 @@ function Clientes() {
                   </TableHeader>
                   <TableBody>
                     {clientes.map((c) => (
-                      <TableRow key={c.cliente_id} className="text-center odd:bg-sidebar even: bg-card">
+                      <TableRow key={c.cliente_id} className="text-center odd:bg-sidebar even:bg-card">
                         <TableCell className="py-1">{c.cliente_id}</TableCell>
                         <TableCell>{c.nome_cliente}</TableCell>
                         <TableCell>{c.nome_contato}</TableCell>
@@ -150,8 +153,8 @@ function Clientes() {
                         <TableCell>{getStatusDisplay(c.status)}</TableCell>
                         <TableCell>
                           <DropdownMenu>
-                            <DropdownMenuTrigger>
-                              <Button variant="none" className="hover:cursor-pointer"><Ellipsis/></Button>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="hover:cursor-pointer"><Ellipsis/></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="bg-background border-2 rounded-md border-botao-config p-2 " side="top">
                               <DropdownMenuItem onClick={() => openModal("edit", c)}>Editar Cliente</DropdownMenuItem>

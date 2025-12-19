@@ -8,6 +8,8 @@ import { columns } from "@/components/collaborators/columns";
 import { DataTable } from "@/components/collaborators/data-table";
 import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaboratorDialog";
 import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
+import { usePermissions } from "@/hooks/usePermissions";
+import { getColaboradorColumns } from "@/components/collaborators/columns";
 
 const API_BASE_URL = 'http://localhost:3001';
 
@@ -19,6 +21,9 @@ function Collaborators() {
   {/* controla as edições */ }
   const [editingCollaborator, setEditingCollaborator] = useState<Collaborador | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Permissões
+  const {isGerente} = usePermissions()
 
   {/* busca e atualiza dados */ }
   const fetchData = async () => {
@@ -55,15 +60,17 @@ function Collaborators() {
             title="Gerenciar Colaboradores"
             subtitle="Adicione, edite e visualize os membros da sua equipe."
           >
+            {isGerente &&
+              <AddCollaboratorDialog onSuccess={fetchData} />
+            }
             
-            <AddCollaboratorDialog onSuccess={fetchData} />
   
           </PageHeader>
           {loading ? (
             <div className="p-10 text-center text-muted-foreground">Carregando colaboradores...</div>
           ) : (
             <DataTable 
-                columns={columns} 
+                columns={getColaboradorColumns(isGerente)} 
                 data={data} 
                 meta={{ onEdit: handleEdit }} 
             />

@@ -2,7 +2,6 @@ import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import { type Atividades } from "@/lib/activities";
-import { columns } from "@/components/activities/collumnsActivities";
 import { DataTable } from "@/components/activities/data-table-activities";
 import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
 import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
@@ -154,7 +153,7 @@ function Atividades() {
       <SideBar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 ">
+        <main className="flex-1 overflow-y-auto p-0 md:p-0 ">
           <PageHeader
             title="Atividades"
             subtitle="Adicione, edite e visualize suas atividades."
@@ -171,7 +170,7 @@ function Atividades() {
             {loading ? (
                 <div className="text-center py-12">Carregando atividades...</div>
             ) : (
-                <DataTable<Atividades, unknown> columns={columns(tableColumns)} data={atividades} />
+                <DataTable<Atividades, unknown> columns={tableColumns} data={atividades} />
             )}
         </main>
       </div>

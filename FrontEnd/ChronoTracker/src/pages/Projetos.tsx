@@ -6,10 +6,14 @@ import { type Projeto } from "@/lib/projects";
 import { getColumns } from "@/components/projects/collumnsProjects";
 import { DataTable } from "@/components/projects/data-table-projects";
 import { AddProjectDialog } from "@/components/projects/addProjectDialog";
+import { usePermissions } from "@/hooks/usePermissions";
+import { getProjetosColumns } from "@/components/projects/collumnsProjects";
 
 function Projetos() {
   const [data, setData] = useState<Projeto[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
+
+  const {isGerente} = usePermissions()
 
   const fetchData = async () => {
     try {
@@ -33,7 +37,7 @@ function Projetos() {
   }, []);
 
   //garante que as colunas só recriem se clientes mudarem
-  const columns = useMemo(() => getColumns(clientes, fetchData), [clientes]);
+  const columns = useMemo(() => getProjetosColumns(clientes, isGerente, fetchData), [clientes, isGerente]);
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -45,7 +49,9 @@ function Projetos() {
             title="Projetos"
             subtitle="Adicione, edite e visualize os seus projetos."
           >
-            <AddProjectDialog clientes={clientes} onSuccess={fetchData}/>
+            {isGerente && 
+              <AddProjectDialog clientes={clientes} onSuccess={fetchData}/>
+            }
           </PageHeader>
           <DataTable<Projeto, unknown> columns={columns} data={data} />
         </main>

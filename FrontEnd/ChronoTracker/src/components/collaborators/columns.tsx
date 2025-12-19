@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { type Collaborador } from "@/lib/types";
 
-export const columns: ColumnDef<Collaborador>[] = [
+export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
  // 2. Coluna de Nome 
   {
     accessorKey: "nome_colaborador",
@@ -107,3 +107,20 @@ export const columns: ColumnDef<Collaborador>[] = [
     },
   },
 ];
+
+export const getColaboradorColumns = (
+    isGerente: boolean, 
+): ColumnDef<Collaborador>[] => {
+    
+    // 1. Gera o array COMPLETO de colunas, passando os handlers
+    const allColumns = columns(isGerente);
+
+    if (isGerente) {
+        // Se for gerente, retorna todas as colunas
+        return allColumns;
+    }
+    
+    // 2. Se não for gerente, filtra a coluna 'actions' (pelo id: "actions")
+    // ATENÇÃO: O ID da coluna Ações é 'actions', não 'acoes'.
+    return allColumns.filter(column => column.id !== 'actions');
+};

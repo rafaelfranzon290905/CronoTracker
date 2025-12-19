@@ -151,7 +151,6 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                     <DialogTitle>Editar Atividade #{initialData.atividade_id}</DialogTitle>
                     <DialogDescription>
                         Ajuste os dados da atividade e defina o status (Ativo/Inativo).
-                        <span className="block mt-2 text-blue-600 font-semibold">Vinculado ao Projeto ID: {initialData.projeto_id}</span>
                     </DialogDescription>
                 </DialogHeader>
 

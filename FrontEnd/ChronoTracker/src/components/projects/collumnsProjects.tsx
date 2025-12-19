@@ -36,6 +36,7 @@ const deleteProject = async (id: number) => {
 
 export const getColumns = (
   clientes: { cliente_id: number; nome_cliente: string }[],
+  isGerente,
   onSuccess: () => void
 ): ColumnDef<Projeto>[] => [
     {
@@ -136,3 +137,22 @@ export const getColumns = (
       },
     },
   ];
+
+export const getProjetosColumns = (
+  clientes: {cliente_id: number; nome_cliente: string}[],  
+  isGerente: boolean,
+  onSuccess: () => void
+): ColumnDef<Projeto>[] => {
+    
+    // 1. Gera o array COMPLETO de colunas, passando os handlers
+    const allColumns = getColumns(clientes ,isGerente, onSuccess);
+
+    if (isGerente) {
+        // Se for gerente, retorna todas as colunas
+        return allColumns;
+    }
+    
+    // 2. Se não for gerente, filtra a coluna 'actions' (pelo id: "actions")
+    // ATENÇÃO: O ID da coluna Ações é 'actions', não 'acoes'.
+    return allColumns.filter(column => column.id !== 'actions');
+}

@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/componentes/TituloPagina";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import { ModalCliente } from "@/components/clientes/ModalClientes";
 import DialogClientes from "@/components/componentes/DialogClientes";
-
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Cliente {
     cliente_id: number;
@@ -42,6 +42,7 @@ function Clientes() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const {isGerente} = usePermissions()
 
   // Função para buscar os dados da API
   const fetchClientes = async () => {
@@ -112,7 +113,9 @@ function Clientes() {
             <Header/>
             <PageHeader 
             title="Clientes"
-            subtitle="Adicione, edite e visualize os clientes"/>
+            subtitle="Adicione, edite e visualize os clientes">
+              {isGerente && <DialogClientes/>}
+            </PageHeader>
             
             <Card>
               <CardContent>
@@ -121,7 +124,7 @@ function Clientes() {
                     <Search className="text-white absolute h-8 w-8 right-1 top-0.5 bg-botao-dark p-1 rounded-2xl" />
                 </div>
                 <div className="mb-4">
-                    <DialogClientes/>
+                    
                 </div>
                 
                 <Table className="w-full">
@@ -136,7 +139,7 @@ function Clientes() {
                       <TableHead>Estado</TableHead>
                       <TableHead>CNPJ</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
+                      {isGerente && <TableHead>Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -151,7 +154,8 @@ function Clientes() {
                         <TableCell>{c.estado}</TableCell>
                         <TableCell>{c.cnpj}</TableCell>
                         <TableCell>{getStatusDisplay(c.status)}</TableCell>
-                        <TableCell>
+                        {isGerente &&
+                          <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" className="hover:cursor-pointer"><Ellipsis/></Button>
@@ -163,6 +167,8 @@ function Clientes() {
                           </DropdownMenu>
                           
                           </TableCell>
+                        }
+                        
                       </TableRow>
                     ))}
                   </TableBody>

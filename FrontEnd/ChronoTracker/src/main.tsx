@@ -9,9 +9,11 @@ import TimeSheetPlanilha from './pages/Timesheets/TimeSheetPlanilha.tsx'
 import Collaborators from "./pages/Collaborators.tsx"
 import Atividades from './pages/Activities.tsx'
 import Login from './pages/Login.tsx'
+import { Toaster } from 'sonner'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <Toaster richColors position="top-right"/>
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<Login/>}/>

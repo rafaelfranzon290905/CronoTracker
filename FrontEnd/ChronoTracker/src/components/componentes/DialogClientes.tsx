@@ -13,6 +13,7 @@ import { Button } from "../ui/button"
 import { Switch } from "../ui/switch"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
+import { toast } from "sonner"
 
 const API_BASE_URL = 'http://localhost:3001'
 
@@ -28,9 +29,13 @@ interface ClienteFormData {
     status: boolean; // O campo booleano
 }
 
+interface DialogClientesProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    aoSalvar: () => void;
+}
 
-
-export default function DialogClientes() {
+export default function DialogClientes({open, onOpenChange, aoSalvar}): DialogClientesProps {
     // 1. ESTADO DO FORMULÁRIO: Inicializa com valores vazios e status TRUE por padrão (ativo)
     const [formData, setFormData] = useState<ClienteFormData>({
         cnpj: "",
@@ -43,10 +48,17 @@ export default function DialogClientes() {
         status: true, 
     });
 
+    const [errors, setErrors] = useState({
+        cnpj: "",
+        cep: "",
+        estado: ""
+    });
+
      // Função genérica para atualizar os inputs
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        setErrors(prev => ({ ...prev, [name]: "" }));
     };
 
     // Função específica para o campo 'status' (Switch)
@@ -57,6 +69,31 @@ export default function DialogClientes() {
     // 2. FUNÇÃO DE SUBMISSÃO
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        let temErro = false;
+        const novosErros = { cnpj: "", cep: "", estado: "" };
+       const cnpjLimpo = formData.cnpj.replace(/\D/g, ''); // Remove pontos e traços
+       const cepLimpo = formData.cep.replace(/\D/g, '');
+        
+        if (cnpjLimpo.length !== 14) {
+            novosErros.cnpj = "O CNPJ deve ter 14 dígitos.";
+            temErro = true;
+        }
+
+        if (cepLimpo.length !== 8) {
+            novosErros.cep = "O CEP deve ter 8 dígitos.";
+            temErro = true;
+        }
+
+        if (formData.estado.trim().length !== 2) {
+            novosErros.estado = "2 dígitos ex.(SP)";
+            temErro = true;
+        } 
+
+        if (temErro) {
+            setErrors(novosErros);
+            return; // Interrompe o envio
+        }
         
         try {
             const response = await fetch(`${API_BASE_URL}/clientes`, {
@@ -78,13 +115,21 @@ export default function DialogClientes() {
             // Sucesso: Fecha o modal e limpa o formulário (ou faz o que for necessário, como recarregar a lista)
             // IMPORTANTE: Use um modal customizado de sucesso em vez de alert() em produção.
             console.log("Cliente cadastrado com sucesso!");
-            
+            toast.success("Cliente cadastrado com sucesso!", {
+              description: `O cliente ${formData.nome_cliente} foi cadastrado com sucesso`
+            });
             // Limpa o formulário e fecha
             setFormData(prev => ({ ...prev, 
                 cnpj: "", nome_cliente: "", nome_contato: "", cep: "", 
                 endereco: "", cidade: "", estado: "", status: true 
             }));
-        } catch (error) {
+
+            aoSalvar();
+
+            onOpenChange(false);
+
+        } catch (error: any) {
+            console.log(error);
             console.error('Erro ao enviar formulário:', error);
             // Mostra o erro de validação ou de servidor
         
@@ -94,7 +139,7 @@ export default function DialogClientes() {
     };
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogTrigger asChild>
                 <Button className="bg-botao-dark">Adicionar Cliente</Button>
             </DialogTrigger>
@@ -117,7 +162,8 @@ export default function DialogClientes() {
                     </div>
                     <div>
                         <Label htmlFor="cep-1">CEP</Label>
-                        <Input id="cep-1" name="cep" value={formData.cep} onChange={handleChange}/>
+                        <Input id="cep-1" name="cep" value={formData.cep} onChange={handleChange} maxLength={9}/>
+                        {errors.cep && <span className="text-sm font-medium text-red-500 mt-2">{errors.cep}</span>}
                     </div>
                     <div>
                         <Label htmlFor="endereco-1">Endereço</Label>
@@ -127,15 +173,19 @@ export default function DialogClientes() {
                         <div className="flex-1">
                             <Label htmlFor="cidade-1">Cidade</Label>
                             <Input id="cidade-1" name="cidade" className="w-100" value={formData.cidade} onChange={handleChange}/>
+                            {errors.estado && <span className="text-sm font-medium text-red-500 mt-2">{errors.estado}</span>}
                         </div>
                         <div className="flex-1">
                             <Label htmlFor="estado-1">Estado</Label>
                             <Input id="estado-1" name="estado" maxLength={2} value={formData.estado} onChange={handleChange}/>
                         </div>
+                        
                     </div>
+                    
                     <div>
                         <Label htmlFor="cnpj-1">CNPJ</Label>
-                        <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleChange} required/>
+                        <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleChange} required maxLength={14}/>
+                        {errors.cnpj && <span className="text-sm font-medium text-red-500 mt-2">{errors.cnpj}</span>}
                     </div>
                     {/* Linha 7: Status (Switch/Alternador) */}
                         <div className="flex items-center space-x-2 pt-2">

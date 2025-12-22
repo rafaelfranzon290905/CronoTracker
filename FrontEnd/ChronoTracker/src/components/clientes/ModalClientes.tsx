@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { Switch } from "../ui/switch"
+import {toast} from "sonner"
+import { Description } from "@radix-ui/react-dialog"
 
 interface ModalClienteProps {
     open: boolean
@@ -31,7 +33,11 @@ interface Cliente {
     status: boolean;
 }
 
-
+interface FormErrors {
+    cnpj: string;
+    cep: string;
+    estado: string;
+}
 
 const API_BASE_URL = 'http://localhost:3001'
 
@@ -41,8 +47,15 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
 
   const [formData, setFormData] = useState<Cliente | null>(clienteInicial);
 
+  const [errors, setErrors] = useState<FormErrors>({
+        cnpj: "",
+        cep: "",
+        estado: ""
+    });
+
   useEffect(() => {
     setFormData(clienteInicial);
+    setErrors({ cnpj: "", cep: "", estado: "" });
   }, [clienteInicial, open]);
 
   if (!clienteInicial) {
@@ -58,6 +71,10 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
       ...(prev as Cliente),
       [id]: type === 'checkbox' ? checked : value,
     }));
+
+    if (id === 'cnpj' || id === 'cep' || id === 'estado') {
+             setErrors(prev => ({ ...prev, [id]: "" }));
+        }
   };
 
   // Função específica para o campo 'status' (Switch)
@@ -70,6 +87,34 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
 
     if (!formData) return;
 
+    let temErro = false;
+    const novosErros: FormErrors = { cnpj: "", cep: "", estado: "" };
+
+    const cnpjLimpo = (formData.cnpj || "").replace(/\D/g, '');
+    const cepLimpo = (formData.cep || "").replace(/\D/g, '');
+    const estadoLimpo = (formData.estado || "").trim();
+
+    if (cnpjLimpo.length !== 14) {
+            novosErros.cnpj = "O CNPJ deve ter 14 dígitos.";
+            temErro = true;
+        }
+
+        // Validação do CEP
+        if (cepLimpo.length !== 8) {
+            novosErros.cep = "O CEP deve ter 8 dígitos.";
+            temErro = true;
+        }
+
+        if (estadoLimpo.length !== 2) {
+            novosErros.estado = "Use 2 letras (ex: SP).";
+            temErro = true;
+        }
+
+        // Se houve erro, atualiza o estado de erros e PARE o envio.
+        if (temErro) {
+            setErrors(novosErros);
+            return;
+        }
     // Use o ID de forma limpa
     const idDoCliente = formData.cliente_id; 
     
@@ -92,8 +137,10 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
                 const errorData = await response.json().catch(() => ({ error: 'Erro de atualização desconhecido' }));
                 throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
             }
-
-            alert(`Cliente ID ${formData.cliente_id} atualizado com sucesso!`);
+            toast.success("As alterações foram salvas!", {
+              description: `O cliente ${formData.cliente_id}-${formData.nome_cliente} atualizado com sucesso`
+            });
+            // alert(`Cliente ID ${formData.cliente_id} atualizado com sucesso!`);
             
             aoSalvar(); // Recarrega a lista
             onOpenChange(false); // Fecha o modal
@@ -124,7 +171,8 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
                     </div>
                      <div>
                         <Label htmlFor="cep">CEP</Label>
-                        <Input id="cep" name="cep" value={formData.cep} onChange={handleChange}/>
+                        <Input id="cep" name="cep" value={formData.cep} onChange={handleChange} maxLength={9}/>
+                        {errors.cep && <span className="text-sm font-medium text-red-500 mt-2">{errors.cep}</span>}
                     </div>
                     <div>
                         <label htmlFor="endereco">Endereço</label>
@@ -135,16 +183,18 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
             <div>
               <Label htmlFor="cidade">Cidade</Label>
               <Input id="cidade" placeholder="Cidade" className="w-100" value={formData.cidade} onChange={handleChange}/>
+              {errors.estado && <span className="text-sm font-medium text-red-500 mt-2">{errors.estado}</span>}
             </div>
             <div>
               <Label htmlFor="estado">Estado</Label>
               <Input id="estado" placeholder="Estado (ex: RS)" maxLength={2} value={formData.estado} onChange={handleChange}/>
             </div>
-      
+            
           </div>
           <div>
               <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" placeholder="0000000" value={formData.cnpj} onChange={handleChange} required/>
+              <Input id="cnpj" placeholder="0000000" value={formData.cnpj} onChange={handleChange} required maxLength={14}/>
+              {errors.cnpj && <span className="text-sm font-medium text-red-500 mt-2">{errors.cnpj}</span>}
             </div>
           {/* Linha 7: Status (Switch/Alternador) */}
                         <div className="flex items-center space-x-2 pt-2">

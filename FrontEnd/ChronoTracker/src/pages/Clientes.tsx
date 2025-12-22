@@ -29,6 +29,7 @@ interface Cliente {
 const API_BASE_URL = 'http://localhost:3001';
 
 function Clientes() {
+  const [addModalAberto, setAddModalAberto] = useState(false);
   const [aberto, setAberto] = useState(false);
   const [tipo, setTipo] = useState<"add" | "edit" | null>(null);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
@@ -114,7 +115,10 @@ function Clientes() {
             <PageHeader 
             title="Clientes"
             subtitle="Adicione, edite e visualize os clientes">
-              {isGerente && <DialogClientes/>}
+              {isGerente && <DialogClientes 
+                              open={addModalAberto}
+                              onOpenChange={setAddModalAberto}
+                              aoSalvar={fetchClientes}/>}
             </PageHeader>
             
             <Card>

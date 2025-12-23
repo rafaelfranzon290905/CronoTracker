@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
@@ -6,6 +6,10 @@ import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity } from "luci
 import CronosAzul from "../imagens/ChronosAzul.png"
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
+import { useState } from "react"
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom";
+
 
 const data = [
   { dia: "Seg", horas: 8 },
@@ -17,49 +21,74 @@ const data = [
   { dia: "Dom", horas: 0 },
 ]
 
+interface CurrentUser {
+    id: number;
+    username: string; // O nome que você quer exibir
+    cargo: string;
+    nomeCompleto: string;
+}
+
 function Dashboard() {
+  const [userDisplayName, setUserDisplayName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+        // 1. Tenta buscar a informação salva no localStorage
+        const userJson = localStorage.getItem('currentUser');
+        
+        if (userJson) {
+            try {
+                // 2. Faz o parse do JSON
+                const user: CurrentUser = JSON.parse(userJson);
+                
+                // 3. Atualiza o estado com o nome de usuário
+                // Usamos o 'username' que foi salvo no localStorage
+                const nameToDisplay = user.nomeCompleto || user.username;
+                setUserDisplayName(nameToDisplay); 
+                
+            } catch (error) {
+                console.error("Erro ao carregar dados do usuário:", error);
+                // Se der erro ao fazer o parse, podemos redirecionar para o login
+                // router.push('/login');
+            }
+        } else {
+            // Se não houver dados, o usuário não está logado
+            navigate('/login')
+            console.log("Usuário não logado. Redirecionar para /login.");
+        }
+        
+        setIsLoading(false);
+    }, []); // O array vazio [] garante que isso só roda uma vez (ao montar o componente)
+
+    if (isLoading) {
+        // Exibe um loading enquanto busca os dados
+        return <div className="p-8">Carregando dashboard...</div>;
+    }
+    
+    // Define a primeira letra maiúscula para a saudação
+    const saudacao = (userDisplayName.charAt(0).toUpperCase() + userDisplayName.slice(1)) || 'usuário';
+
   return (
-    <div className="flex h-screen bg-gray-50">
-<<<<<<< HEAD
-      {/* Sidebar */}
-      <aside className="w-64 bg-blue-50 shadow-md flex flex-col">
-        <div className="p-6 flex items-center space-x-2 font-bold text-lg">
-          <img src={CronosAzul} className="h-12 w-12" />
-          <span>CHRONO TRACKER</span>
-        </div>
-        <nav className="flex-1 px-4 space-y-2 text-sm">
-          <Button variant="ghost" className="w-full justify-start bg-blue-900 text-white"><Home className="mr-2 h-4 w-4" /> Dashboard</Button>
-          <Button variant="ghost" className="w-full justify-start"><Clock className="mr-2 h-4 w-4" /> TimeSheet</Button>
-          <Link to="/collaborators"><Button variant="ghost" className="w-full justify-start"><Users className="mr-2 h-4 w-4" /> Colaboradores</Button></Link>
-          <Link to="/clientes"><Button variant="ghost" className="w-full justify-start"><Users className="mr-2 h-4 w-4" /> Clientes</Button></Link>
-          <Link to="/projetos"><Button variant="ghost" className="w-full justify-start"><Rocket className="mr-2 h-4 w-4" /> Projetos</Button></Link>
-          <Button variant="ghost" className="w-full justify-start"><Activity className="mr-2 h-4 w-4" /> Atividades</Button>
-          <Button variant="ghost" className="w-full justify-start"><FileText className="mr-2 h-4 w-4" /> Relatórios</Button>
-          <Button variant="ghost" className="w-full justify-start"><DollarSign className="mr-2 h-4 w-4" /> Despesas</Button>
-        </nav>
-        <div className="p-4">
-          <Button variant="destructive" className="w-full">Log Out</Button>
-        </div>
-      </aside>
-=======
+    <div className="flex h-screen">
+      
       <SideBar/>
->>>>>>> origin/develop
+
 
       {/* Conteúdo */}
       <main className="flex-1 p-6 overflow-auto">
         {/* Header com Searchbar */}
         <Header/>
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex items-center justify-between mb-6 mt-2">
           <div>
-            <h1 className="text-xl font-bold">Bem-vinda, Rafaela!</h1>
+            <h1 className="text-xl font-bold">Bem-vindo(a), {saudacao}!</h1>
             <p className="text-gray-500">Aqui você encontra tudo o que precisa saber sobre suas tarefas e as do seu time!</p>
           </div>
-          <Button className="bg-blue-600 text-white">+ Criar</Button>
+          <Button className="bg-botao-light text-white">+ Criar</Button>
         </header>
 
         {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card aria-label="Card de horas de trabalho hoje">
             <CardHeader>
               <CardTitle>Horas Hoje</CardTitle>
             </CardHeader>
@@ -68,7 +97,7 @@ function Dashboard() {
               <p className="text-green-600 text-sm">+12% vs ontem</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card aria-label="Card de número de projetos Ativos">
             <CardHeader>
               <CardTitle>Projetos Ativos</CardTitle>
             </CardHeader>
@@ -76,7 +105,7 @@ function Dashboard() {
               <p className="text-2xl font-bold">8</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card aria-label="Card de porcentagem de produtividade">
             <CardHeader>
               <CardTitle>Produtividade</CardTitle>
             </CardHeader>
@@ -85,7 +114,7 @@ function Dashboard() {
               <p className="text-green-600 text-sm">Excelente!</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card aria-label="Card de receita mensal ">
             <CardHeader>
               <CardTitle>Receita Mensal</CardTitle>
             </CardHeader>
@@ -98,7 +127,7 @@ function Dashboard() {
 
         {/* Gráfico + Atividades */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
+          <Card aria-label="Gráfico de horas trabalhadas na última semana">
             <CardHeader>
               <CardTitle>Horas Trabalhadas - Última Semana</CardTitle>
             </CardHeader>
@@ -115,7 +144,7 @@ function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card aria-label="Card de Atividades recentes">
             <CardHeader>
               <CardTitle>Atividades Recentes</CardTitle>
             </CardHeader>

@@ -481,7 +481,7 @@ app.get('/projetos', async (req, res) => {
 
 // POST /projetos - Criar Projeto
 app.post('/projetos', async (req, res) => {
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status } = req.body;
+    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas } = req.body;
 
     if (!cliente_id || !nome_projeto || !data_inicio || !data_fim) {
         return res.status(400).json({ error: 'Campos obrigatórios: Cliente, Nome, Data Início, Data Fim.' });
@@ -515,6 +515,7 @@ app.post('/projetos', async (req, res) => {
                 descricao,
                 data_inicio: inicio,
                 data_fim: fim,
+                horas_previstas: horas_previstas ? parseInt(horas_previstas) : 0,
                 status: status ?? true 
             }
         });
@@ -530,7 +531,7 @@ app.post('/projetos', async (req, res) => {
 // PUT /projetos/:id - Atualizar Projeto
 app.put('/projetos/:id', async (req, res) => {
     const { id } = req.params;
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status } = req.body;
+    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas } = req.body;
 
     try {
         if (data_inicio && data_fim) {
@@ -558,6 +559,7 @@ app.put('/projetos/:id', async (req, res) => {
                 descricao,
                 data_inicio: data_inicio ? new Date(data_inicio) : undefined,
                 data_fim: data_fim ? new Date(data_fim) : undefined,
+                horas_previstas: horas_previstas !== undefined ? parseInt(horas_previstas) : undefined,
                 status
             }
         });
@@ -637,134 +639,7 @@ app.post('/login', async (req, res) => {
 });
   
 
-// ----------------------------------------------------
-// 🎯 ROTAS DE PROJETOS
-// ----------------------------------------------------
 
-// GET /projetos - Listar Projetos (com dados do Cliente)
-app.get('/projetos', async (req, res) => {
-    try {
-        const projetos = await prisma.projetos.findMany({
-            include: {
-                clientes: {
-                    select: { nome_cliente: true } 
-                }
-            },
-            orderBy: { projeto_id: 'desc' }
-        });
-        res.status(200).json(projetos);
-    } catch (error) {
-        console.error('Erro ao buscar projetos:', error);
-        res.status(500).json({ error: 'Erro ao listar projetos.' });
-    }
-});
-
-// POST /projetos - Criar Projeto
-app.post('/projetos', async (req, res) => {
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status } = req.body;
-
-    if (!cliente_id || !nome_projeto || !data_inicio || !data_fim) {
-        return res.status(400).json({ error: 'Campos obrigatórios: Cliente, Nome, Data Início, Data Fim.' });
-    }
-
-    try {
-        const inicio = new Date(data_inicio);
-        const fim = new Date(data_fim);
-        if (fim < inicio) {
-            return res.status(400).json({ error: 'A Data Prevista de Fim não pode ser anterior à Data de Início.' });
-        }
-        const projetoExistente = await prisma.projetos.findFirst({
-            where: {
-                cliente_id: parseInt(cliente_id),
-                nome_projeto: {
-                    equals: nome_projeto,
-                    mode: 'insensitive' 
-                }
-            }
-        });
-
-        if (projetoExistente) {
-            return res.status(409).json({ error: `Este cliente já possui um projeto chamado "${nome_projeto}".` });
-        }
-
-        // Criação
-        const novoProjeto = await prisma.projetos.create({
-            data: {
-                cliente_id: parseInt(cliente_id),
-                nome_projeto,
-                descricao,
-                data_inicio: inicio,
-                data_fim: fim,
-                status: status ?? true 
-            }
-        });
-
-        res.status(201).json(novoProjeto);
-
-    } catch (error) {
-        console.error('Erro ao criar projeto:', error);
-        res.status(500).json({ error: 'Erro interno ao criar projeto.' });
-    }
-});
-
-// PUT /projetos/:id - Atualizar Projeto
-app.put('/projetos/:id', async (req, res) => {
-    const { id } = req.params;
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status } = req.body;
-
-    try {
-        if (data_inicio && data_fim) {
-            if (new Date(data_fim) < new Date(data_inicio)) {
-                 return res.status(400).json({ error: 'A Data Prevista de Fim não pode ser anterior à Data de Início.' });
-            }
-        }
-
-        if (cliente_id && nome_projeto) {
-             const duplicado = await prisma.projetos.findFirst({
-                where: {
-                    cliente_id: parseInt(cliente_id),
-                    nome_projeto: { equals: nome_projeto, mode: 'insensitive' },
-                    projeto_id: { not: parseInt(id) } 
-                }
-            });
-            if (duplicado) return res.status(409).json({ error: 'Nome de projeto já existe para este cliente.' });
-        }
-
-        const projetoAtualizado = await prisma.projetos.update({
-            where: { projeto_id: parseInt(id) },
-            data: {
-                cliente_id: cliente_id ? parseInt(cliente_id) : undefined,
-                nome_projeto,
-                descricao,
-                data_inicio: data_inicio ? new Date(data_inicio) : undefined,
-                data_fim: data_fim ? new Date(data_fim) : undefined,
-                status
-            }
-        });
-
-        res.status(200).json(projetoAtualizado);
-    } catch (error) {
-        console.error('Erro ao atualizar:', error);
-        res.status(500).json({ error: 'Erro ao atualizar projeto.' });
-    }
-});
-
-// DELETE /projetos/:id - Excluir Projeto
-app.delete('/projetos/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        await prisma.projetos.delete({
-            where: { projeto_id: parseInt(id) }
-        });
-        res.status(204).send();
-    } catch (error) {
-        console.error('Erro ao excluir projeto:', error);
-        if (error.code === 'P2025') {
-            return res.status(404).json({ error: 'Projeto não encontrado.' });
-        }
-        res.status(500).json({ error: 'Erro interno ao excluir projeto.' });
-    }
-});
 
 // PUT /colaboradores/:id - Atualiza colaborador
 app.put('/colaboradores/:id', async (req, res) => {

@@ -74,6 +74,7 @@ model projetos {
   data_inicio          DateTime?              @default(now()) @db.Timestamp(6)
   data_fim             DateTime?              @default(now()) @db.Timestamp(6)
   status               Boolean?               @default(true)
+  horas_previstas      Int?                   @default(0)
   atividades           atividades[]
   lancamentos_de_horas lancamentos_de_horas[]
   clientes             clientes               @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_projeto_cliente")

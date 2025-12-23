@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model atividades {
+  atividade_id         Int                    @id @default(autoincrement())
+  projeto_id           Int
+  nome_atividade       String                 @db.VarChar(100)
+  descr_atividade      String
+  data_prevista_inicio DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
+  data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
+  status               Boolean?               @default(true)
+  projetos             projetos               @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_atividade_projeto")
+  lancamentos_de_horas lancamentos_de_horas[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model clientes {
+  cliente_id           Int                    @id @default(autoincrement())
+  nome_cliente         String                 @db.VarChar(50)
+  nome_contato         String                 @db.VarChar(50)
+  cep                  String?                @db.VarChar(10)
+  endereco             String?                @db.VarChar(100)
+  cidade               String?                @db.VarChar(100)
+  estado               String?                @db.Char(2)
+  cnpj                 String?                @unique @db.VarChar(18)
+  status               Boolean?               @default(true)
+  lancamentos_de_horas lancamentos_de_horas[]
+  projetos             projetos[]
+}
+
+model colaboradores {
+  colaborador_id       Int                    @id @default(autoincrement())
+  nome_colaborador     String                 @db.VarChar(100)
+  cargo                String                 @db.VarChar(50)
+  email                String                 @unique @db.VarChar(100)
+  data_admissao        DateTime?              @default(now()) @db.Timestamp(6)
+  foto                 Bytes?
+  status               Boolean?               @default(true)
+  lancamentos_de_horas lancamentos_de_horas[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model lancamentos_de_horas {
+  lancamento_id   Int                      @id @default(autoincrement())
+  cliente_id      Int
+  colaborador_id  Int
+  atividade_id    Int
+  projeto_id      Int
+  tipo_registro   String                   @db.VarChar(50)
+  justificativa   String?                  @db.VarChar(255)
+  data_lancamento DateTime?                @default(now()) @db.Timestamp(6)
+  hora_inicio     DateTime                 @db.Time(6)
+  hora_fim        DateTime                 @db.Time(6)
+  duracao_total   Unsupported("interval")? @default(dbgenerated("(hora_fim - hora_inicio)"))
+  status          Boolean?                 @default(true)
+  atividades      atividades               @relation(fields: [atividade_id], references: [atividade_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_atividade")
+  clientes        clientes                 @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_cliente")
+  colaboradores   colaboradores            @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_colaborador")
+  projetos        projetos                 @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_projeto")
+}
+
+model projetos {
+  projeto_id           Int                    @id @default(autoincrement())
+  cliente_id           Int
+  nome_projeto         String                 @db.VarChar(100)
+  descricao            String
+  data_inicio          DateTime?              @default(now()) @db.Timestamp(6)
+  data_fim             DateTime?              @default(now()) @db.Timestamp(6)
+  status               Boolean?               @default(true)
+  atividades           atividades[]
+  lancamentos_de_horas lancamentos_de_horas[]
+  clientes             clientes               @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_projeto_cliente")
+}
+
+model usuarios {
+  usuario_id    Int     @id @default(autoincrement())
+  nome_usuario  String  @unique @db.VarChar(50)
+  hash_senha    String
+  nome_completo String? @db.VarChar(100)
+  email         String? @unique @db.VarChar(100)
+  cargo         String? @db.VarChar(20)
+
+  @@map("usuarios")
+}

@@ -1,69 +1,88 @@
-import React from "react";
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity } from "lucide-react"
-import CronosAzul from "../imagens/ChronosAzul.png"
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../components/Table";
-import { columns } from "../components/table/columns";
+'use client'
+import { useEffect, useState } from "react";
+import SideBar from "@/components/componentes/SideBar"
+import Header from "@/components/componentes/Header"
+import { PageHeader } from "@/components/componentes/TituloPagina";
+import { type Collaborador } from "@/lib/types";
+import { columns } from "@/components/collaborators/columns";
+import { DataTable } from "@/components/collaborators/data-table";
+import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaboratorDialog";
+import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
+import { usePermissions } from "@/hooks/usePermissions";
+import { getColaboradorColumns } from "@/components/collaborators/columns";
 
-
+const API_BASE_URL = 'http://localhost:3001';
 
 function Collaborators() {
-  return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-blue-50 shadow-md flex flex-col">
-        <div className="p-6 flex items-center space-x-2 font-bold text-lg">
-          <img src={CronosAzul} className="h-12 w-12" />
-          <span>CHRONO TRACKER</span>
-        </div>
-        <nav className="flex-1 px-4 space-y-2 text-sm">
-          <Button variant="ghost" className="w-full justify-start"><Home className="mr-2 h-4 w-4" /> Dashboard</Button>
-          <Button variant="ghost" className="w-full justify-start"><Clock className="mr-2 h-4 w-4" /> TimeSheet</Button>
-          <Link to="/collaborators"><Button variant="ghost" className="w-full justify-start bg-blue-900 text-white"><Users className="mr-2 h-4 w-4" /> Colaboradores</Button></Link>
-          <Link to="/clientes"><Button variant="ghost" className="w-full justify-start"><Users className="mr-2 h-4 w-4" /> Clientes</Button></Link>
-          <Link to="/projetos"><Button variant="ghost" className="w-full justify-start"><Rocket className="mr-2 h-4 w-4" /> Projetos</Button></Link>
-          <Button variant="ghost" className="w-full justify-start"><Activity className="mr-2 h-4 w-4" /> Atividades</Button>
-          <Button variant="ghost" className="w-full justify-start"><FileText className="mr-2 h-4 w-4" /> Relatórios</Button>
-          <Button variant="ghost" className="w-full justify-start"><DollarSign className="mr-2 h-4 w-4" /> Despesas</Button>
-        </nav>
-        <div className="p-4">
-          <Button variant="destructive" className="w-full">Log Out</Button>
-        </div>
-      </aside>
+  {/* armazena os colaboradores vindo da api */ }
+  const [data, setData] = useState<Collaborador[]>([]);
+  const [loading, setLoading] = useState(true);
 
-      {/* Conteúdo */}
-      <main className="flex-1 p-6 overflow-auto">
-        <header className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-bold">Bem-vinda, Rafaela!</h1>
-            <p className="text-gray-500">Aqui você encontra tudo o que precisa saber sobre suas tarefas e as do seu time!</p>
-          </div>
-          <Button className="bg-blue-600 text-white">+ Criar</Button>
-        </header>
-        <section>
-            <div className="p-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            {columns.map((col) => (
-                            <TableHead key={col.accessor}>{col.header}</TableHead>
-                            ))}
-                        </TableRow>
-                        </TableHeader>
-                    <TableBody>
-                        {paymentsData.map((payment) => (
-                            <TableRow key={payment.id}>
-                            {columns.map((col) => (
-                                <TableCell key={col.accessor}>{payment[col.accessor]}</TableCell>
-                            ))}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        </section>
-      </main>
+  {/* controla as edições */ }
+  const [editingCollaborator, setEditingCollaborator] = useState<Collaborador | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Permissões
+  const {isGerente} = usePermissions()
+
+  {/* busca e atualiza dados */ }
+  const fetchData = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/colaboradores`);
+      if (!response.ok) throw new Error("Erro ao buscar dados");
+      
+      const result = await response.json();
+      setData(result); 
+    } catch (error) {
+      console.error("Erro no fetch:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+{/* passa função via prop para o botao editar */ }
+  const handleEdit = (colaborador: Collaborador) => {
+    setEditingCollaborator(colaborador);
+    setIsEditModalOpen(true);
+  };
+
+  return (
+    <div className="flex h-screen bg-background text-foreground">
+      <SideBar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 ">
+          <PageHeader
+            title="Gerenciar Colaboradores"
+            subtitle="Adicione, edite e visualize os membros da sua equipe."
+          >
+            {isGerente &&
+              <AddCollaboratorDialog onSuccess={fetchData} />
+            }
+            
+  
+          </PageHeader>
+          {loading ? (
+            <div className="p-10 text-center text-muted-foreground">Carregando colaboradores...</div>
+          ) : (
+            <DataTable 
+                columns={getColaboradorColumns(isGerente)} 
+                data={data} 
+                meta={{ onEdit: handleEdit }} 
+            />
+          )}
+        </main>
+      </div>
+      <ModalColaboradores 
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        colaboradorInicial={editingCollaborator}
+        aoSalvar={fetchData} // Quando salvar, recarrega a tabela
+      />
     </div>
   )
 }

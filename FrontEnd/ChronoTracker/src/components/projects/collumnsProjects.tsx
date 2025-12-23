@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { type Projeto } from "@/lib/projects";
 import { AddProjectDialog } from "./addProjectDialog";
+import { toast } from "sonner";
 
 const deleteProject = async (id: number) => {
   if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
@@ -21,14 +22,14 @@ const deleteProject = async (id: number) => {
       });
 
       if (response.ok) {
-        alert("Projeto excluído com sucesso!");
+        toast.success("Projeto excluído com sucesso!");
         window.location.reload();
       } else {
-        alert("Erro ao excluir projeto.");
+        toast.error("Erro ao excluir projeto.");
       }
     } catch (error) {
       console.error("Erro de conexão:", error);
-      alert("Erro ao conectar com o servidor.");
+      toast.error("Erro ao conectar com o servidor.");
     }
   }
 };
@@ -88,6 +89,14 @@ export const getColumns = (
         return <span>{dataFormatada}</span>;
       },
     },
+    {
+      accessorKey: "horas_previstas",
+      header: "Horas Previstas",
+      cell: ({ row }) => {
+          const horas = row.getValue("horas_previstas") as number;
+          return <span>{horas ? `${horas}h` : "0h"}</span>;
+      },
+  },
     {
       accessorKey: "status",
       header: "Status",

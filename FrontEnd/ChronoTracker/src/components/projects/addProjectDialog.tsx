@@ -42,6 +42,7 @@ const formSchema = z.object({
     descricao: z.string().optional(),
     data_inicio: z.string().min(1, { message: "A data de início é obrigatória." }),
     data_fim: z.string().min(1, { message: "A data de fim é obrigatória." }),
+    horas_previstas: z.coerce.number().min(1, {message: "Mínimo 1 hora."}),
     status: z.boolean(),
 }).refine((data) => {
     const inicio = new Date(data.data_inicio);
@@ -76,6 +77,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
             descricao: "",
             data_inicio: "",
             data_fim: "",
+            horas_previstas: 0,
             status: true,
         },
     });
@@ -88,6 +90,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                 descricao: projectToEdit.descricao || "",
                 data_inicio: projectToEdit.data_inicio ? new Date(projectToEdit.data_inicio).toISOString().split('T')[0] : "",
                 data_fim: projectToEdit.data_fim ? new Date(projectToEdit.data_fim).toISOString().split('T')[0] : "",
+                horas_previstas: projectToEdit.horas_previstas || 0,
                 status: projectToEdit.status,
             });
         } else if (open && !projectToEdit) {
@@ -97,6 +100,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                 descricao: "",
                 data_inicio: "",
                 data_fim: "",
+                horas_previstas: 0,
                 status: true,
             });
         }
@@ -215,7 +219,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                                     )}
                                 />
 
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                         control={formProjects.control}
                                         name="data_inicio"
@@ -242,7 +246,19 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                                             </FormItem>
                                         )}
                                     />
-
+                                    <FormField
+                                        control={formProjects.control}
+                                        name="horas_previstas"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Horas Previstas</FormLabel>
+                                                <FormControl>
+                                                    <Input className="" type="number" placeholder="Ex: 160" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                     <FormField
                                         control={formProjects.control}
                                         name="status"

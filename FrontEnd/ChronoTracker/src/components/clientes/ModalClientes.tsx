@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { Switch } from "../ui/switch"
 import {toast} from "sonner"
-import { Description } from "@radix-ui/react-dialog"
+// import { Description } from "@radix-ui/react-dialog"
 
 interface ModalClienteProps {
     open: boolean

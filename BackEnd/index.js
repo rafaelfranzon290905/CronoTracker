@@ -707,7 +707,6 @@ app.put('/colaboradores/:id', async (req, res) => {
 
 // DELETE /colaboradores/:id - Exclui um colaborador
 app.delete('/colaboradores/:id', async (req, res) => {
-  console.log(`[DELETE] Recebida solicitação para ID: ${req.params.id}`); // Log no terminal do servidor
 
   const id = parseInt(req.params.id);
 
@@ -721,8 +720,6 @@ app.delete('/colaboradores/:id', async (req, res) => {
     await prisma.colaboradores.delete({
       where: { colaborador_id: id },
     });
-
-    console.log(`[DELETE] Sucesso ao excluir ID: ${id}`);
     res.status(200).json({ message: 'Colaborador excluído com sucesso.' });
 
   } catch (error) {

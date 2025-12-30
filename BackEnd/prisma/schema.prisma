@@ -36,14 +36,15 @@ model clientes {
 }
 
 model colaboradores {
-  colaborador_id       Int                    @id @default(autoincrement())
-  nome_colaborador     String                 @db.VarChar(100)
-  cargo                String                 @db.VarChar(50)
-  email                String                 @unique @db.VarChar(100)
-  data_admissao        DateTime?              @default(now()) @db.Timestamp(6)
-  foto                 Bytes?
-  status               Boolean?               @default(true)
-  lancamentos_de_horas lancamentos_de_horas[]
+  colaborador_id        Int                     @id @default(autoincrement())
+  nome_colaborador      String                  @db.VarChar(100)
+  cargo                 String                  @db.VarChar(50)
+  email                 String                  @unique @db.VarChar(100)
+  data_admissao         DateTime?               @default(now()) @db.Timestamp(6)
+  foto                  Bytes?
+  status                Boolean?                @default(true)
+  lancamentos_de_horas  lancamentos_de_horas[]
+  projeto_colaboradores projeto_colaboradores[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -67,17 +68,18 @@ model lancamentos_de_horas {
 }
 
 model projetos {
-  projeto_id           Int                    @id @default(autoincrement())
-  cliente_id           Int
-  nome_projeto         String                 @db.VarChar(100)
-  descricao            String
-  data_inicio          DateTime?              @default(now()) @db.Timestamp(6)
-  data_fim             DateTime?              @default(now()) @db.Timestamp(6)
-  status               Boolean?               @default(true)
-  horas_previstas      Int?                   @default(0)
-  atividades           atividades[]
-  lancamentos_de_horas lancamentos_de_horas[]
-  clientes             clientes               @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_projeto_cliente")
+  projeto_id            Int                     @id @default(autoincrement())
+  cliente_id            Int
+  nome_projeto          String                  @db.VarChar(100)
+  descricao             String
+  data_inicio           DateTime?               @default(now()) @db.Timestamp(6)
+  data_fim              DateTime?               @default(now()) @db.Timestamp(6)
+  status                Boolean?                @default(true)
+  horas_previstas       Int?                    @default(0)
+  atividades            atividades[]
+  lancamentos_de_horas  lancamentos_de_horas[]
+  projeto_colaboradores projeto_colaboradores[]
+  clientes              clientes                @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_projeto_cliente")
 }
 
 model usuarios {
@@ -90,4 +92,13 @@ model usuarios {
   status        Boolean @default(true)
 
   @@map("usuarios")
+}
+
+model projeto_colaboradores {
+  projeto_id     Int
+  colaborador_id Int
+  colaboradores  colaboradores @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade, onUpdate: NoAction)
+  projetos       projetos      @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([projeto_id, colaborador_id])
 }

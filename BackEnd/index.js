@@ -482,6 +482,11 @@ app.get('/projetos', async (req, res) => {
                         nome_atividade: true,
                         status: true
                     }
+                },
+                projeto_colaboradores: {
+                  include: {
+                    colaboradores: true
+                  }
                 }
             },
             orderBy: { projeto_id: 'desc' }
@@ -496,7 +501,7 @@ app.get('/projetos', async (req, res) => {
 
 // POST /projetos - Criar Projeto
 app.post('/projetos', async (req, res) => {
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas } = req.body;
+    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;
 
     if (!cliente_id || !nome_projeto || !data_inicio || !data_fim) {
         return res.status(400).json({ error: 'Campos obrigatórios: Cliente, Nome, Data Início, Data Fim.' });
@@ -531,7 +536,12 @@ app.post('/projetos', async (req, res) => {
                 data_inicio: inicio,
                 data_fim: fim,
                 horas_previstas: horas_previstas ? parseInt(horas_previstas) : 0,
-                status: status ?? true 
+                status: status ?? true ,
+                projeto_colaboradores: {
+                  create: (colaboradores_ids || []).map(id => ({
+                    colaborador_id: id
+                  }))
+                }
             }
         });
 

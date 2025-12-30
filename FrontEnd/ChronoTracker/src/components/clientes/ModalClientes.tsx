@@ -41,7 +41,20 @@ interface FormErrors {
 
 const API_BASE_URL = 'http://localhost:3001'
 
+const formatarCNPJ = (valor: string) => {
+  const v = valor.replace(/\D/g, ""); // Remove tudo que não é dígito
+  return v
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+    .substring(0, 18); // Limita ao tamanho do CNPJ formatado
+};
 
+const formatarCEP = (valor: string) => {
+  const v = valor.replace(/\D/g, "");
+  return v.replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
+};
 
 export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: ModalClienteProps) {
 
@@ -67,9 +80,15 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formData) return;
     const {id, value, type, checked} = e.target;
+
+    let valorFormatado = value;
+    if (id === "cnpj") valorFormatado = formatarCNPJ(value);
+    if (id === "cep") valorFormatado = formatarCEP(value);
+    if (id === "estado") valorFormatado = value.toUpperCase().slice(0, 2);
+
     setFormData(prev => ({
       ...(prev as Cliente),
-      [id]: type === 'checkbox' ? checked : value,
+      [id]: type === 'checkbox' ? checked : valorFormatado,
     }));
 
     if (id === 'cnpj' || id === 'cep' || id === 'estado') {
@@ -171,7 +190,7 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
                     </div>
                      <div>
                         <Label htmlFor="cep">CEP</Label>
-                        <Input id="cep" name="cep" value={formData.cep} onChange={handleChange} maxLength={9}/>
+                        <Input id="cep" name="cep" value={formData.cep} onChange={handleChange}/>
                         {errors.cep && <span className="text-sm font-medium text-red-500 mt-2">{errors.cep}</span>}
                     </div>
                     <div>
@@ -193,7 +212,7 @@ export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: Mod
           </div>
           <div>
               <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" placeholder="0000000" value={formData.cnpj} onChange={handleChange} required maxLength={14}/>
+              <Input id="cnpj" placeholder="0000000" value={formData.cnpj} onChange={handleChange} required/>
               {errors.cnpj && <span className="text-sm font-medium text-red-500 mt-2">{errors.cnpj}</span>}
             </div>
           {/* Linha 7: Status (Switch/Alternador) */}

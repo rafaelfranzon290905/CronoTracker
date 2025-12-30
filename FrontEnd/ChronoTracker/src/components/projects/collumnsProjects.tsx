@@ -80,6 +80,37 @@ export const getColumns = (
       cell: ({ row }) => <span className="" title={row.getValue("descricao")}>{row.getValue("descricao")}</span>,
     },
     {
+  accessorKey: "equipe",
+  header: "Equipe",
+  cell: ({ row }) => {
+    // 1. Pegamos os dados da linha
+    const projeto = row.original;
+    
+    // 2. Acessamos a lista de vínculos
+    const equipe = projeto.projeto_colaboradores || [];
+
+    console.log(`Projeto ${projeto.nome_projeto}`, equipe);
+
+    if (equipe.length === 0) {
+      return <span className="text-muted-foreground text-xs italic">Sem equipe</span>;
+    }
+
+    return (
+      <div className="flex -space-x-2 overflow-hidden">
+        {equipe.map((item, index) => (
+          <div 
+            key={index}
+            title={item.colaboradores?.nome_colaborador || "Colaborador"}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-900 text-[10px] font-bold text-white uppercase"
+          >
+            {item.colaboradores?.nome_colaborador?.substring(0, 2) || "??"}
+          </div>
+        ))}
+      </div>
+    );
+  }
+},
+    {
       accessorKey: "data_inicio",
       header: "Data de Início",
       cell: ({ row }) => {

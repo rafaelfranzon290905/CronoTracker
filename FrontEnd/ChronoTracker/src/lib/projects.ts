@@ -14,4 +14,10 @@ export type Projeto = {
     nome_atividade: string;
     status: boolean;
   }[];
+  projeto_colaboradores?: {
+      colaboradores: {
+        colaborador_id: number;
+        nome_colaborador: string;
+      }
+    }[];
 };

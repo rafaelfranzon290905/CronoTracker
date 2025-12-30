@@ -35,6 +35,21 @@ interface DialogClientesProps {
     aoSalvar: () => void;
 }
 
+const formatarCNPJ = (valor: string) => {
+  const v = valor.replace(/\D/g, ""); // Remove tudo que não é dígito
+  return v
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+    .substring(0, 18); // Limita ao tamanho do CNPJ formatado
+};
+
+const formatarCEP = (valor: string) => {
+  const v = valor.replace(/\D/g, "");
+  return v.replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
+};
+
 export default function DialogClientes({open, onOpenChange, aoSalvar}): DialogClientesProps {
     // 1. ESTADO DO FORMULÁRIO: Inicializa com valores vazios e status TRUE por padrão (ativo)
     const [formData, setFormData] = useState<ClienteFormData>({
@@ -57,7 +72,11 @@ export default function DialogClientes({open, onOpenChange, aoSalvar}): DialogCl
      // Função genérica para atualizar os inputs
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        let valorFormatado = value;
+        if (name === "cnpj") valorFormatado = formatarCNPJ(value);
+        if (name === "cep") valorFormatado = formatarCEP(value);
+        if (name === "estado") valorFormatado = value.toUpperCase().slice(0, 2);
+        setFormData(prev => ({ ...prev, [name]: valorFormatado }));
         setErrors(prev => ({ ...prev, [name]: "" }));
     };
 
@@ -184,7 +203,7 @@ export default function DialogClientes({open, onOpenChange, aoSalvar}): DialogCl
                     
                     <div>
                         <Label htmlFor="cnpj-1">CNPJ</Label>
-                        <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleChange} required maxLength={14}/>
+                        <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleChange} required maxLength={18}/>
                         {errors.cnpj && <span className="text-sm font-medium text-red-500 mt-2">{errors.cnpj}</span>}
                     </div>
                     {/* Linha 7: Status (Switch/Alternador) */}

@@ -78,11 +78,20 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
   // 2. COLUNA: Projeto Vinculado (Se a API retorna apenas o ID)
   // NOTA: Se a API retornar o objeto de projeto, troque "projeto_id" por "projetos.nome"
   {
-    accessorKey: "projeto_id",
+    accessorKey: "projetos.nome_projeto",
     header: "Projeto Vinculado",
     cell: ({ row }) => {
-      const projetoId = row.getValue("projeto_id") as number | string;
-      return <Badge variant="outline">{projetoId}</Badge>; // Exibe o ID (ou o nome, se ajustado)
+      const atividade = row.original;
+      console.log("Dados da linha", atividade);
+    const projeto = atividade.projetos?.nome_projeto; 
+    
+    return (
+      <Badge variant="outline" className="">
+        {projeto || "Sem Projeto"}
+      </Badge>
+    );
+      // const projetoId = row.getValue("projeto_id") as number | string;
+      // return <Badge variant="outline">{projetoId}</Badge>; // Exibe o ID (ou o nome, se ajustado)
     },
   },
 

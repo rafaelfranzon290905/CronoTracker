@@ -278,6 +278,13 @@ app.post('/colaboradores', async (req, res) => {
   app.get('/atividades', async (req, res) => {
   try {
     const todasAtividades = await prisma.atividades.findMany({
+      include: {
+        projetos: { // Nome da relação definida no seu schema.prisma
+          select: {
+            nome_projeto: true // Buscamos apenas o nome para performance
+          }
+        }
+      },
       // Opcional: ordenar por atividade_id para garantir a ordem
       orderBy: {
         atividade_id: 'asc', 
@@ -468,10 +475,18 @@ app.get('/projetos', async (req, res) => {
             include: {
                 clientes: {
                     select: { nome_cliente: true } 
+                },
+                atividades: { 
+                    select: {
+                        atividade_id: true,
+                        nome_atividade: true,
+                        status: true
+                    }
                 }
             },
             orderBy: { projeto_id: 'desc' }
         });
+        // console.log("Exemplo de projeto: ", JSON.stringify(projetos[0], null, 2));
         res.status(200).json(projetos);
     } catch (error) {
         console.error('Erro ao buscar projetos:', error);

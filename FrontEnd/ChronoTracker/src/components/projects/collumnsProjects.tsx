@@ -13,6 +13,14 @@ import {
 import { type Projeto } from "@/lib/projects";
 import { AddProjectDialog } from "./addProjectDialog";
 import { toast } from "sonner";
+import { ListChecks, ClipboardList } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const deleteProject = async (id: number) => {
   if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
@@ -115,6 +123,7 @@ export const getColumns = (
       header: () => <div className="text-center w-full">Ações</div>,
       cell: ({ row }) => {
         const projeto = row.original;
+        const atividades = projeto.atividades || [];
 
         return (
           <div className="flex justify-center items-center w-full">
@@ -127,6 +136,43 @@ export const getColumns = (
               <DropdownMenuContent align="end" className="bg-white border shadow-lg z-50 min-w-[160px] rounded-md p-1">
                 <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold text-center">Ações</DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-gray-100 h-px my-1" />
+                <Dialog>
+              <DialogTrigger asChild>
+                <DropdownMenuItem 
+                  onSelect={(e) => e.preventDefault()} // Impede o dropdown de fechar antes do modal abrir
+                  className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-slate-100 transition-colors"
+                >
+                  <ListChecks className="mr-2 h-4 w-4 text-blue-600" /> Ver Atividades
+                </DropdownMenuItem>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5 text-blue-600" />
+                    Atividades: {projeto.nome_projeto}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  {atividades.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic text-center py-4">
+                      Este projeto ainda não possui atividades vinculadas.
+                    </p>
+                  ) : (
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                      {atividades.map((atv) => (
+                        <div key={atv.atividade_id} className="flex items-center justify-between p-2 border rounded-lg bg-slate-50">
+                          <span className="text-sm font-medium">{atv.nome_atividade}</span>
+                          <Badge variant={atv.status ? "default" : "secondary"} className="text-[10px]">
+                            {atv.status ? "Ativa" : "Pendente"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
                 <AddProjectDialog
                   clientes={clientes}
                   onSuccess={onSuccess}

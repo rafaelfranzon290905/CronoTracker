@@ -25,12 +25,14 @@ import { Search } from "lucide-react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  filterColumn?: string;
   meta?: any;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  filterColumn = "nome_colaborador",
   meta,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -62,9 +64,9 @@ export function DataTable<TData, TValue>({
         <div className="relative w-full">
           <Input
             placeholder="Filtrar por nome..."
-            value={(table.getColumn("nome_colaborador")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("nome_colaborador")?.setFilterValue(event.target.value)
+              table.getColumn(filterColumn)?.setFilterValue(event.target.value)
             }
             className="w-full rounded-full pr-14 pl-4 h-12 border-gray-200"
           />

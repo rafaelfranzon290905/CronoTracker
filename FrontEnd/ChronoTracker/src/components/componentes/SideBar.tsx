@@ -9,7 +9,7 @@ export default function SideBar() {
     return (
         <>
         {/* Sidebar */}
-      <aside className="w-64 bg-sidebar shadow-2xl flex flex-col rounded-4xl m-4 hidden md:block" aria-label="Sidebar">
+      <aside className="hidden md:flex flex-col w-64 bg-sidebar shadow-2xl rounded-4xl m-4" aria-label="Sidebar">
         <div className="p-6 flex items-center space-x-2 font-bold text-lg">
           <img src={ChronosAzulFundoRemovido} alt="Logo do ChronoTracker" className="h-12 w-12" />
           <span>CHRONO TRACKER</span>
@@ -44,6 +44,11 @@ export default function SideBar() {
             <Button 
               variant={isActive("/atividades") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Atividades"><Activity className="mr-2 scale-120" /> Atividades</Button>
+          </Link>
+          <Link to="/usuarios">
+            <Button 
+              variant={isActive("/usuarios") ? "default" : "ghost"}
+              className="w-full justify-start" aria-label="Botão para acessar Usuários"><Activity className="mr-2 scale-120" /> Usuários</Button>
           </Link>
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Relatórios"><FileText className="mr-2 scale-120" /> Relatórios</Button>
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Despesas"><DollarSign className="mr-2 scale-120" /> Despesas</Button>

@@ -21,6 +21,17 @@ export interface Projeto {
     clientes?: {
         nome_cliente: string;
     };
+    atividades?: {
+      atividade_id: number;
+        nome_atividade: string;
+        status: boolean;
+    }[];
+    projeto_colaboradores?: {
+      colaboradores: {
+        colaborador_id: number;
+        nome_colaborador: string;
+      }
+    }[];
 }
 
 function Projetos() {

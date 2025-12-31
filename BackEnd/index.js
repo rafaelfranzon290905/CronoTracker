@@ -278,6 +278,13 @@ app.post('/colaboradores', async (req, res) => {
   app.get('/atividades', async (req, res) => {
   try {
     const todasAtividades = await prisma.atividades.findMany({
+      include: {
+        projetos: { // Nome da relação definida no seu schema.prisma
+          select: {
+            nome_projeto: true // Buscamos apenas o nome para performance
+          }
+        }
+      },
       // Opcional: ordenar por atividade_id para garantir a ordem
       orderBy: {
         atividade_id: 'asc', 
@@ -468,10 +475,23 @@ app.get('/projetos', async (req, res) => {
             include: {
                 clientes: {
                     select: { nome_cliente: true } 
+                },
+                atividades: { 
+                    select: {
+                        atividade_id: true,
+                        nome_atividade: true,
+                        status: true
+                    }
+                },
+                projeto_colaboradores: {
+                  include: {
+                    colaboradores: true
+                  }
                 }
             },
             orderBy: { projeto_id: 'desc' }
         });
+        // console.log("Exemplo de projeto: ", JSON.stringify(projetos[0], null, 2));
         res.status(200).json(projetos);
     } catch (error) {
         console.error('Erro ao buscar projetos:', error);
@@ -481,7 +501,7 @@ app.get('/projetos', async (req, res) => {
 
 // POST /projetos - Criar Projeto
 app.post('/projetos', async (req, res) => {
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas } = req.body;
+    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;
 
     if (!cliente_id || !nome_projeto || !data_inicio || !data_fim) {
         return res.status(400).json({ error: 'Campos obrigatórios: Cliente, Nome, Data Início, Data Fim.' });
@@ -516,7 +536,12 @@ app.post('/projetos', async (req, res) => {
                 data_inicio: inicio,
                 data_fim: fim,
                 horas_previstas: horas_previstas ? parseInt(horas_previstas) : 0,
-                status: status ?? true 
+                status: status ?? true ,
+                projeto_colaboradores: {
+                  create: (colaboradores_ids || []).map(id => ({
+                    colaborador_id: id
+                  }))
+                }
             }
         });
 
@@ -531,7 +556,7 @@ app.post('/projetos', async (req, res) => {
 // PUT /projetos/:id - Atualizar Projeto
 app.put('/projetos/:id', async (req, res) => {
     const { id } = req.params;
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas } = req.body;
+    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;
 
     try {
         if (data_inicio && data_fim) {
@@ -560,7 +585,20 @@ app.put('/projetos/:id', async (req, res) => {
                 data_inicio: data_inicio ? new Date(data_inicio) : undefined,
                 data_fim: data_fim ? new Date(data_fim) : undefined,
                 horas_previstas: horas_previstas !== undefined ? parseInt(horas_previstas) : undefined,
-                status
+                status,
+                projeto_colaboradores: {
+                    deleteMany: {},
+                    create: (colaboradores_ids || []).map(idColab => ({
+                        colaborador_id: parseInt(idColab)
+                    }))
+                }
+            },
+             include: {
+                projeto_colaboradores: {
+                    include: {
+                        colaboradores: true
+                    }
+                }
             }
         });
 

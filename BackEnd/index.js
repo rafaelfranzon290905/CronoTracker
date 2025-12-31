@@ -556,7 +556,7 @@ app.post('/projetos', async (req, res) => {
 // PUT /projetos/:id - Atualizar Projeto
 app.put('/projetos/:id', async (req, res) => {
     const { id } = req.params;
-    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas } = req.body;
+    const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;
 
     try {
         if (data_inicio && data_fim) {
@@ -585,7 +585,20 @@ app.put('/projetos/:id', async (req, res) => {
                 data_inicio: data_inicio ? new Date(data_inicio) : undefined,
                 data_fim: data_fim ? new Date(data_fim) : undefined,
                 horas_previstas: horas_previstas !== undefined ? parseInt(horas_previstas) : undefined,
-                status
+                status,
+                projeto_colaboradores: {
+                    deleteMany: {},
+                    create: (colaboradores_ids || []).map(idColab => ({
+                        colaborador_id: parseInt(idColab)
+                    }))
+                }
+            },
+             include: {
+                projeto_colaboradores: {
+                    include: {
+                        colaboradores: true
+                    }
+                }
             }
         });
 

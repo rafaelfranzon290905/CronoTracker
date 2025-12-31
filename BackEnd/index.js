@@ -778,6 +778,116 @@ app.delete('/colaboradores/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro interno ao excluir colaborador.' });
   }
 });
+
+// ----------------------------------------------------
+// 🎯 ROTAS DE USUÁRIOS (GESTÃO E PERMISSÕES)
+// ----------------------------------------------------
+
+// GET /usuarios - Listar Usuários
+app.get('/usuarios', async (req, res) => {
+    try {
+        const usuarios = await prisma.usuarios.findMany({
+            select: {
+                usuario_id: true,
+                nome_usuario: true,
+                nome_completo: true,
+                email: true,
+                cargo: true,
+                status: true,
+                // hash_senha: false <-- Segurança: Nunca enviar o hash
+            },
+            orderBy: { nome_completo: 'asc' }
+        });
+        res.status(200).json(usuarios);
+    } catch (error) {
+        console.error('Erro ao listar usuários:', error);
+        res.status(500).json({ error: 'Erro interno ao listar usuários.' });
+    }
+});
+
+// POST /usuarios - Criar novo usuário
+app.post('/usuarios', async (req, res) => {
+    const { nome_usuario, senha, nome_completo, email, cargo } = req.body;
+
+    if (!nome_usuario || !senha || !email) {
+        return res.status(400).json({ error: 'Usuário, senha e e-mail são obrigatórios.' });
+    }
+
+    try {
+        const salt = await bcrypt.genSalt(10);
+        const hash_senha = await bcrypt.hash(senha, salt);
+
+        const novoUsuario = await prisma.usuarios.create({
+            data: {
+                nome_usuario,
+                hash_senha,
+                nome_completo,
+                email,
+                cargo: cargo || 'Colaborador',
+                status: true
+            }
+        });
+
+        // Remove a senha do objeto de retorno
+        const { hash_senha: _, ...userSemSenha } = novoUsuario;
+        res.status(201).json(userSemSenha);
+
+    } catch (error) {
+        if (error.code === 'P2002') {
+            return res.status(409).json({ error: 'Usuário ou E-mail já cadastrados.' });
+        }
+        res.status(500).json({ error: 'Erro ao criar usuário.' });
+    }
+});
+
+// PUT /usuarios/:id 
+app.put('/usuarios/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nome_completo, email, cargo, status, senha, nome_usuario } = req.body;
+
+    try {
+        const dadosParaAtualizar = {
+            nome_completo,
+            email,
+            cargo,
+            status,
+            nome_usuario
+        };
+
+        if (senha && senha.trim() !== "") {
+            const salt = await bcrypt.genSalt(10);
+            dadosParaAtualizar.hash_senha = await bcrypt.hash(senha, salt);
+        }
+
+        const usuarioAtualizado = await prisma.usuarios.update({
+            where: { usuario_id: parseInt(id) },
+            data: dadosParaAtualizar
+        });
+
+        const { hash_senha: _, ...userSemSenha } = usuarioAtualizado;
+        res.status(200).json(userSemSenha);
+
+    } catch (error) {
+        if (error.code === 'P2002') {
+            return res.status(409).json({ error: 'Conflito: Usuário ou E-mail já existem.' });
+        }
+        res.status(500).json({ error: 'Erro ao atualizar usuário.' });
+    }
+});
+
+
+app.delete('/usuarios/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.usuarios.update({
+            where: { usuario_id: parseInt(id) },
+            data: { status: false }
+        });
+        res.status(200).json({ message: 'Usuário inativado com sucesso.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao inativar usuário.' });
+    }
+});
 // roda o servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);

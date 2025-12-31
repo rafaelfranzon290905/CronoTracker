@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import { ModalCliente } from "@/components/clientes/ModalClientes";
-import DialogClientes from "@/components/componentes/DialogClientes";
+import  DialogClientes  from "@/components/componentes/DialogClientes";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface Cliente {

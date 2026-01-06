@@ -14,4 +14,5 @@ export type Atividades = {
   data_prevista_inicio: string | null; 
   data_prevista_fim: string | null;
   status: boolean; 
+  projetos?: {nome_projeto: string};
 };

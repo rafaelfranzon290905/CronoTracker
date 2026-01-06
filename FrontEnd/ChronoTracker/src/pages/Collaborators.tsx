@@ -50,6 +50,27 @@ function Collaborators() {
     setIsEditModalOpen(true);
   };
 
+const handleDelete = async (id: number) => {
+  if (!confirm("Tem certeza que deseja excluir este colaborador?")) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/colaboradores/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      fetchData();
+      alert("Colaborador excluído com sucesso!");
+    } else {
+      const errorData = await response.json();
+      alert(errorData.error || "Erro ao excluir colaborador.");
+    }
+  } catch (error) {
+    console.error("Erro na requisição de exclusão:", error);
+    alert("Erro interno ao tentar excluir.");
+  }
+};
+
   return (
     <div className="flex h-screen bg-background text-foreground">
       <SideBar />
@@ -72,7 +93,7 @@ function Collaborators() {
             <DataTable 
                 columns={getColaboradorColumns(isGerente)} 
                 data={data} 
-                meta={{ onEdit: handleEdit }} 
+                meta={{ onEdit: handleEdit, onDelete: handleDelete }} 
             />
           )}
         </main>

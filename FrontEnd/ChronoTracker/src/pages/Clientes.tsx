@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
 import { ModalCliente } from "@/components/clientes/ModalClientes";
-import DialogClientes from "@/components/componentes/DialogClientes";
+import  DialogClientes  from "@/components/componentes/DialogClientes";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface Cliente {
@@ -24,6 +24,21 @@ interface Cliente {
     estado: string;
     status: boolean; // Corrigido para boolean, como está no banco
 }
+
+const formatarCNPJ = (valor: string) => {
+  const v = valor.replace(/\D/g, ""); // Remove tudo que não é dígito
+  return v
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+    .substring(0, 18); // Limita ao tamanho do CNPJ formatado
+};
+
+const formatarCEP = (valor: string) => {
+  const v = valor.replace(/\D/g, "");
+  return v.replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
+};
 
 // Base da API
 const API_BASE_URL = 'http://localhost:3001';
@@ -152,11 +167,11 @@ function Clientes() {
                         <TableCell className="py-1">{c.cliente_id}</TableCell>
                         <TableCell>{c.nome_cliente}</TableCell>
                         <TableCell>{c.nome_contato}</TableCell>
-                        <TableCell>{c.cep}</TableCell>
+                        <TableCell>{formatarCEP(c.cep)}</TableCell>
                         <TableCell>{c.endereco}</TableCell>
                         <TableCell>{c.cidade}</TableCell>
                         <TableCell>{c.estado}</TableCell>
-                        <TableCell>{c.cnpj}</TableCell>
+                        <TableCell>{formatarCNPJ(c.cnpj)}</TableCell>
                         <TableCell>{getStatusDisplay(c.status)}</TableCell>
                         {isGerente &&
                           <TableCell>

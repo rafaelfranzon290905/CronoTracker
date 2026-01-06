@@ -34,7 +34,10 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { type Projeto } from "@/lib/projects"
-
+import { Checkbox } from "@/components/ui/checkbox"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 
 const formSchema = z.object({
     nome_projeto: z.string().min(3, { message: "O nome do projeto deve ter pelo menos 3 caracteres." }),
@@ -42,6 +45,7 @@ const formSchema = z.object({
     descricao: z.string().optional(),
     data_inicio: z.string().min(1, { message: "A data de início é obrigatória." }),
     data_fim: z.string().min(1, { message: "A data de fim é obrigatória." }),
+    horas_previstas: z.coerce.number().min(1, {message: "Mínimo 1 hora."}),
     status: z.boolean(),
 }).refine((data) => {
     const inicio = new Date(data.data_inicio);
@@ -64,6 +68,9 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false)
 
+    const [listaColaboradores, setListaColaboradores] = useState<any[]>([]);
+    const [selectedColaboradores, setSelectedColaboradores] = useState<number[]>([]);
+
     console.log("Componente Modal Renderizado. Estado open:", open);
 
     const isEditMode = !!projectToEdit; // Verifica se está em modo de edição
@@ -76,31 +83,64 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
             descricao: "",
             data_inicio: "",
             data_fim: "",
+            horas_previstas: 0,
             status: true,
         },
     });
 
-    useEffect(() => {
-        if (open && projectToEdit) {
+    // UNIFICADO: Sincroniza o formulário e a lista de colaboradores ao abrir o modal
+useEffect(() => {
+    if (open) {
+        if (projectToEdit) {
+            // 1. Preenche os campos de texto/data
             formProjects.reset({
                 nome_projeto: projectToEdit.nome_projeto,
                 cliente_id: projectToEdit.cliente_id.toString(),
                 descricao: projectToEdit.descricao || "",
                 data_inicio: projectToEdit.data_inicio ? new Date(projectToEdit.data_inicio).toISOString().split('T')[0] : "",
                 data_fim: projectToEdit.data_fim ? new Date(projectToEdit.data_fim).toISOString().split('T')[0] : "",
+                horas_previstas: projectToEdit.horas_previstas || 0,
                 status: projectToEdit.status,
             });
-        } else if (open && !projectToEdit) {
+
+            // 2. Preenche a equipe selecionada (IDs)
+            const idsExistentes = projectToEdit.projeto_colaboradores?.map(
+                (pc: any) => pc.colaborador_id
+            ) || [];
+            setSelectedColaboradores(idsExistentes);
+            
+        } else {
+            // Se for um novo projeto, limpa tudo
             formProjects.reset({
                 nome_projeto: "",
                 cliente_id: "",
                 descricao: "",
                 data_inicio: "",
                 data_fim: "",
+                horas_previstas: 0,
                 status: true,
             });
+            setSelectedColaboradores([]);
         }
-    }, [open, projectToEdit, formProjects]);
+    }
+}, [open, projectToEdit, formProjects]);
+
+// 1. Este useEffect busca a lista global de colaboradores do banco (Faltava este!)
+useEffect(() => {
+    async function carregarColaboradores() {
+        try {
+            const response = await fetch("http://localhost:3001/colaboradores");
+            if (response.ok) {
+                const data = await response.json();
+                setListaColaboradores(data);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar colaboradores:", error);
+        }
+    }
+
+    carregarColaboradores();
+}, []); // Executa apenas uma vez ao montar o componente
 
     async function onSubmit(values: ProjetoFormValues) {
         setIsLoading(true);
@@ -125,7 +165,8 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...values,
-                    cliente_id: parseInt(values.cliente_id)
+                    cliente_id: parseInt(values.cliente_id),
+                    colaboradores_ids: selectedColaboradores
                 }),
             });
 
@@ -215,7 +256,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                                     )}
                                 />
 
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                         control={formProjects.control}
                                         name="data_inicio"
@@ -242,7 +283,21 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                                             </FormItem>
                                         )}
                                     />
-
+                                    <FormField
+                                        control={formProjects.control}
+                                        name="horas_previstas"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Horas Previstas</FormLabel>
+                                                <FormControl>
+                                                    <Input className="" type="number" placeholder="Ex: 160" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    
+    
                                     <FormField
                                         control={formProjects.control}
                                         name="status"
@@ -265,6 +320,56 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
                                         )}
                                     />
                                 </div>
+
+                                {/* Campo de Equipe fora do grid para ocupar largura total */}
+<div className="space-y-3 border-t pt-4">
+    <Label className="text-sm font-semibold">Equipe do Projeto</Label>
+    <Popover>
+        <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-between font-normal">
+                {selectedColaboradores.length > 0 
+                    ? `${selectedColaboradores.length} selecionado(s)` 
+                    : "Selecionar colaboradores..."}
+                <PlusCircle className="ml-2 h-4 w-4 opacity-50" />
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[300px] p-0" align="start">
+            <ScrollArea className="h-60 p-2">
+                {listaColaboradores.map((colab) => (
+                    <div key={colab.colaborador_id} className="flex items-center space-x-2 p-2 hover:bg-slate-100 rounded-md">
+                        <Checkbox 
+                            id={`colab-${colab.colaborador_id}`}
+                            checked={selectedColaboradores.includes(colab.colaborador_id)}
+                            onCheckedChange={(checked) => {
+                                if (checked) {
+                                    setSelectedColaboradores([...selectedColaboradores, colab.colaborador_id]);
+                                } else {
+                                    setSelectedColaboradores(selectedColaboradores.filter(id => id !== colab.colaborador_id));
+                                }
+                            }}
+                        />
+                        <label htmlFor={`colab-${colab.colaborador_id}`} className="text-sm cursor-pointer flex-1">
+                            {colab.nome_colaborador}
+                            <span className="text-[10px] text-muted-foreground block">{colab.cargo}</span>
+                        </label>
+                    </div>
+                ))}
+            </ScrollArea>
+        </PopoverContent>
+    </Popover>
+
+    <div className="flex flex-wrap gap-1.5">
+        {selectedColaboradores.map(id => {
+            const colab = listaColaboradores.find(c => c.colaborador_id === id);
+            return (
+                <Badge key={id} variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100">
+                    {colab?.nome_colaborador.split(' ')[0]}
+                </Badge>
+            );
+        })}
+    </div>
+</div>
+
                                 <FormField
                                     control={formProjects.control}
                                     name="descricao"

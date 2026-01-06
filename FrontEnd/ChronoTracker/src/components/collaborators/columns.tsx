@@ -98,8 +98,8 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => (table.options.meta as any)?.onEdit(colaborador)}>Editar Colaborador</DropdownMenuItem>
-            <DropdownMenuItem>
-              Excluir Colaborador
+            <DropdownMenuItem onClick={() => (table.options.meta as any)?.onDelete(colaborador.colaborador_id)}>
+              Excluir Colaborador 
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -11,12 +11,14 @@ datasource db {
 model atividades {
   atividade_id         Int                    @id @default(autoincrement())
   projeto_id           Int
+  colaborador_id       Int?
   nome_atividade       String                 @db.VarChar(100)
-  descr_atividade      String
+  descr_atividade      String?
   data_prevista_inicio DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   status               Boolean?               @default(true)
   projetos             projetos               @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_atividade_projeto")
+  responsavel          colaboradores?         @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_atividade_colaborador")
   lancamentos_de_horas lancamentos_de_horas[]
 }
 
@@ -45,6 +47,7 @@ model colaboradores {
   status                Boolean?                @default(true)
   lancamentos_de_horas  lancamentos_de_horas[]
   projeto_colaboradores projeto_colaboradores[]
+  atividades            atividades[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.

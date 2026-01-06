@@ -9,4 +9,15 @@ export type Projeto = {
   data_inicio: string; 
   data_fim: string;
   status: boolean;
+  atividades?: {
+    atividade_id: number;
+    nome_atividade: string;
+    status: boolean;
+  }[];
+  projeto_colaboradores?: {
+      colaboradores: {
+        colaborador_id: number;
+        nome_colaborador: string;
+      }
+    }[];
 };

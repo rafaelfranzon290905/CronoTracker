@@ -9,6 +9,31 @@ import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getProjetosColumns } from "@/components/projects/collumnsProjects";
 
+export interface Projeto {
+    projeto_id: number;
+    cliente_id: number;
+    nome_projeto: string;
+    descricao?: string;
+    data_inicio: string;
+    data_fim: string;
+    status: boolean;
+    horas_previstas: number; // <-- Novo campo
+    clientes?: {
+        nome_cliente: string;
+    };
+    atividades?: {
+      atividade_id: number;
+        nome_atividade: string;
+        status: boolean;
+    }[];
+    projeto_colaboradores?: {
+      colaboradores: {
+        colaborador_id: number;
+        nome_colaborador: string;
+      }
+    }[];
+}
+
 function Projetos() {
   const [data, setData] = useState<Projeto[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);

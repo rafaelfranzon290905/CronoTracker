@@ -24,6 +24,7 @@ const API_BASE_URL = 'http://localhost:3001'
 const activitySchema = z.object({
     nome_atividade: z.string().min(1, { message: "O nome é obrigatório." }),
     projeto_id: z.string().min(1, {message: "Selecione um projeto"}),
+    colaborador_id: z.string().optional().nullable(),
     descr_atividade: z.string().optional().nullable(),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
@@ -40,9 +41,15 @@ type ActivityFormValues = z.infer<typeof activitySchema>
 type ProjetoSelect = {
     projeto_id: number;
     nome_projeto: string;
+    projeto_colaboradores?: Array<{
+        colaboradores: {
+            colaborador_id: number;
+            nome_colaborador: string;
+        };
+    }>;
 }
 
-// --- Definição do Componente (PROPS AJUSTADAS) ---
+// --- Definição do Componente---
 // O projetoId é essencial para a criação da atividade
 export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: ProjetoSelect[]; onSuccess: () => void }) {
     const [open, setOpen] = useState(false)
@@ -58,21 +65,28 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
             data_prevista_fim: "",
             status: true,
             projeto_id: "",
+            colaborador_id: "",
         },
     })
+
+    const selectedProjetoId = formActivities.watch("projeto_id");
+    const projetoSelecionado = projetos.find(p => String(p.projeto_id) === selectedProjetoId);
+    const equipeDisponivel = projetoSelecionado?.projeto_colaboradores || [];
+
 
     async function onSubmit(data: ActivityFormValues) {
 
         setIsSubmitting(true)
         setApiError(null)
         
-        // 💡 AJUSTE: O projeto_id vem do formulário (como string) e precisa ser convertido
-        const projetoIdNumerico = parseInt(data.projeto_id, 10);
+//         // 💡 AJUSTE: O projeto_id vem do formulário (como string) e precisa ser convertido
+//         const projetoIdNumerico = parseInt(data.projeto_id, 10);
 
         
         const payload = {
             ...data,
-            projeto_id: projetoIdNumerico, // ✅ ID do projeto incluído
+            projeto_id: parseInt(data.projeto_id, 10),
+            colaborador_id: data.colaborador_id ? parseInt(data.colaborador_id, 10) : null,
             descr_atividade: data.descr_atividade || null,
             data_prevista_fim: data.data_prevista_fim || null,
         };
@@ -158,6 +172,39 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                 </FormItem>
                             )}
                             />
+                            <FormField control={formActivities.control} name="colaborador_id" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Responsável</FormLabel>
+                                    <Select 
+                                        onValueChange={field.onChange} 
+                                        value={field.value || ""} 
+                                        disabled={!selectedProjetoId || equipeDisponivel.length === 0}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={
+                                                    !selectedProjetoId 
+                                                    ? "Selecione um projeto primeiro" 
+                                                    : equipeDisponivel.length > 0 
+                                                        ? "Selecione o responsável" 
+                                                        : "Este projeto não tem equipe"
+                                                } />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {equipeDisponivel.map((vinc) => (
+                                                <SelectItem 
+                                                    key={vinc.colaboradores.colaborador_id} 
+                                                    value={String(vinc.colaboradores.colaborador_id)}
+                                                >
+                                                    {vinc.colaboradores.nome_colaborador}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
 
                             {/* Data Prevista de Início */}
                             <FormField control={formActivities.control} name="data_prevista_inicio"

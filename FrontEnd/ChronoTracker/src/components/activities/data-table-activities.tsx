@@ -34,6 +34,7 @@ export function DataTable<TData, TValue>({
  const [sorting, setSorting] = React.useState<SortingState>([]);
  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
  const [rowSelection, setRowSelection] = React.useState({});
+ const [globalFilter, setGlobalFilter] = React.useState("");
 
  const table = useReactTable({
   data,
@@ -44,10 +45,12 @@ export function DataTable<TData, TValue>({
   onColumnFiltersChange: setColumnFilters,
   getFilteredRowModel: getFilteredRowModel(),
   onRowSelectionChange: setRowSelection,
+  onGlobalFilterChange: setGlobalFilter,
   state: {
    sorting,
    columnFilters,
    rowSelection,
+   globalFilter,
   },
  });
 
@@ -55,18 +58,18 @@ export function DataTable<TData, TValue>({
   <div className="w-full">
    {/* Filtro por nome da atividade (Chave corrigida de "name" para "nome_atividade") */}
    <div className="flex items-center py-4">
-    <Input
-            placeholder="Filtrar por nome..."
-            value={(table.getColumn("nome_projeto")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("nome_projeto")?.setFilterValue(event.target.value)
-            }
-            className="w-full rounded-full pr-14 pl-4 h-12 border-gray-200"
-          />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2">
-            <div className="bg-blue-950 text-white p-2 rounded-full flex items-center justify-center w-10 h-10 hover:bg-blue-800 transition-colors cursor-pointer">
-              <Search size={20} />
-            </div></div>
+    <div className="relative w-full">
+      <Input
+              placeholder="Filtrar por nome de atividade ou projeto..."
+              value={(table.getState().globalFilter as string) ?? ""}
+              onChange={(event) => table.setGlobalFilter(event.target.value)}
+              className="w-full rounded-full pr-14 pl-4 h-12 border-gray-200"
+            />
+            <div className="absolute right-1 top-1/2 -translate-y-1/2">
+              <div className="bg-blue-950 text-white p-2 rounded-full flex items-center justify-center w-10 h-10 hover:bg-blue-800 transition-colors cursor-pointer">
+                <Search size={20} />
+              </div></div>
+    </div>
    </div>
 
    {/* Tabela */}

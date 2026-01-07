@@ -28,12 +28,19 @@ const API_BASE_URL = 'http://localhost:3001';
 type ProjetoSelect = {
     projeto_id: number;
     nome_projeto: string;
+    projeto_colaboradores?: Array<{
+        colaboradores: {
+            colaborador_id: number;
+            nome_colaborador: string;
+        };
+    }>;
 }
 
 // 1. Defina o Status como Booleano no Schema de Edição
 const editActivitySchema = z.object({
     nome_atividade: z.string().min(1, { message: "O nome é obrigatório." }),
     projeto_id: z.string().min(1, {message: "Selecione um projeto"}),
+    colaborador_id: z.string().optional().nullable(),
     descr_atividade: z.string().optional().nullable(),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
@@ -50,23 +57,22 @@ const editActivitySchema = z.object({
 type EditActivityFormValues = z.infer<typeof editActivitySchema>
 
 // 2. Defina a Interface dos Dados Iniciais (Atividades)
-// Use a interface 'Atividades' que você já tem, mas com status: boolean
-// Se você não tem acesso à interface, defina-a aqui:
 export type AtividadesInitialData = {
     atividade_id: number;
     nome_atividade: string;
     descr_atividade: string | null;
-    data_prevista_inicio: string; // Esperamos uma string 'YYYY-MM-DD'
-    data_prevista_fim: string | null; // Esperamos uma string 'YYYY-MM-DD' ou null
-    status: boolean; // ✅ Status como boolean
+    data_prevista_inicio: string | null;
+    data_prevista_fim: string | null; 
+    status: boolean; 
     projeto_id: number;
+    colaborador_id?: number | null;
 };
 
 interface EditActivitiesDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void; // Para fechar o modal
     initialData: AtividadesInitialData; // Os dados da atividade a ser editada
-    projetos: ProjetoSelect;
+    projetos: ProjetoSelect[];
     onSuccess: () => void; // Recarrega os dados na tabela
 }
 
@@ -80,23 +86,28 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
         defaultValues: {
             nome_atividade: initialData.nome_atividade,
             projeto_id: String(initialData.projeto_id),
+            colaborador_id: initialData.colaborador_id ? String(initialData.colaborador_id) : "",
             descr_atividade: initialData.descr_atividade || "", // Garante string vazia se null
             data_prevista_inicio: initialData.data_prevista_inicio ? new Date(initialData.data_prevista_inicio).toISOString().split('T')[0] : "",
             data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
             status: initialData.status, // ✅ Passando o booleano
         },
     });
+    const selectedProjetoId = formActivities.watch("projeto_id");
+    const projetoSelecionado = projetos.find(p => String(p.projeto_id) === selectedProjetoId);
+    const equipeDisponivel = projetoSelecionado?.projeto_colaboradores || [];
 
     // Resetar o formulário quando os dados iniciais mudarem (garante que os dados da atividade correta sejam carregados)
     useEffect(() => {
         if (open) {
             formActivities.reset({
                 nome_atividade: initialData.nome_atividade,
+                projeto_id: String(initialData.projeto_id),
+                colaborador_id: initialData.colaborador_id ? String(initialData.colaborador_id) : "",
                 descr_atividade: initialData.descr_atividade || "",
                 data_prevista_inicio: initialData.data_prevista_inicio ? new Date(initialData.data_prevista_inicio).toISOString().split('T')[0] : "",
                 data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
                 status: initialData.status,
-                projeto_id: String(initialData.projeto_id),
             });
             setApiError(null);
         }
@@ -161,6 +172,48 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                             {/* Nome da atividade */}
                             <FormField control={formActivities.control} name="nome_atividade"
                                 render={({ field }) => (<FormItem><FormLabel>Nome da Atividade</FormLabel><FormControl><Input placeholder="Ex: Implementar login" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={formActivities.control} name="projeto_id" render={({field}) => (
+                                <FormItem>
+                                    <FormLabel>Projeto vinculado</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione um projeto"/></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {projetos.map((p) => (
+                                                <SelectItem key={p.projeto_id} value={String(p.projeto_id)}>
+                                                    {p.nome_projeto}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+
+                            {/* NOVO Campo de Responsável (Dinâmico) */}
+                            <FormField control={formActivities.control} name="colaborador_id" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Responsável</FormLabel>
+                                    <Select 
+                                        onValueChange={field.onChange} 
+                                        value={field.value || ""} 
+                                        disabled={equipeDisponivel.length === 0}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={equipeDisponivel.length > 0 ? "Selecione o responsável" : "Projeto sem equipe"} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {equipeDisponivel.map((v) => (
+                                                <SelectItem key={v.colaboradores.colaborador_id} value={String(v.colaboradores.colaborador_id)}>
+                                                    {v.colaboradores.nome_colaborador}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
 
                             {/* Descrição */}
                             <FormField control={formActivities.control} name="descr_atividade"

@@ -1,7 +1,7 @@
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { PageHeader } from "@/components/componentes/TituloPagina";
-import { type Atividades } from "@/lib/activities";
+import { type Atividades as AtividadeType } from "@/lib/activities";
 import { DataTable } from "@/components/activities/data-table-activities";
 import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
 import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
@@ -17,6 +17,7 @@ type ProjetoSelect = {
     nome_projeto: string;
     status: boolean;
     data_inicio: string;
+    projeto_colaboradores?: any[];
 }
 
 function Atividades() {
@@ -31,7 +32,7 @@ function Atividades() {
 //     }
 
     // ESTADOS PARA OS DADOS DA ATIVIDADE
-    const [atividades, setAtividades] = useState<Atividades[]>([]);
+    const [atividades, setAtividades] = useState<AtividadeType[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [projetos, setProjetos] = useState<ProjetoSelect[]>([]);
@@ -79,6 +80,7 @@ function Atividades() {
                 nome_projeto: p.nome_projeto,
                 status: p.status,
                 data_inicio: p.data_inicio,
+                projeto_colaboradores: p.projeto_colaboradores || [],
             }));
             
             setProjetos(projetosMapeados);
@@ -154,6 +156,7 @@ function Atividades() {
     );
 
 
+
   return (
     <div className="flex h-screen w-full">
         <SideBar />
@@ -176,7 +179,7 @@ function Atividades() {
             {loading ? (
                 <div className="text-center py-12">Carregando atividades...</div>
             ) : (
-                <DataTable<Atividades, unknown> columns={tableColumns} data={atividades} />
+                <DataTable<AtividadeType, unknown> columns={tableColumns} data={atividades} />
             )}
         </main>
       </div>

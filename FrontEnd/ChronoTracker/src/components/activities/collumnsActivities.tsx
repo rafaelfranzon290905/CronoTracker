@@ -14,13 +14,6 @@ import {
 import { type Atividades } from "@/lib/activities"; 
 import { usePermissions } from "@/hooks/usePermissions";
 
-// --- Funções Auxiliares de Formatação ---
-
-/**
- * Formata a data de uma string para o formato DD/MM/AAAA (pt-BR).
- * @param dateString A string de data vinda da API.
- * @returns A data formatada ou uma string vazia se a data for inválida.
- */
 const formatarData = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
   try {
@@ -30,23 +23,7 @@ const formatarData = (dateString: string | null | undefined): string => {
   }
 };
 
-/**
- * Define o rótulo e a variante da Badge com base no status.
- * @param status O valor do status da atividade (ex: "em_andamento").
- * @returns Um objeto contendo label (texto) e variant (estilo da badge).
- */
-// const getStatusBadgeProps = (status: string | null | undefined) => {
-//   switch (status) {
-//     case "em_andamento":
-//       return { label: "Em andamento", variant: "default" as const };
-//     case "concluido":
-//       return { label: "Concluído", variant: "secondary" as const };
-//     case "a_fazer":
-//       return { label: "A Fazer", variant: "outline" as const };
-//     default:
-//       return { label: "Não Definido", variant: "outline" as const };
-//   }
-// };
+
 
 // --- Definição das Colunas ---
 
@@ -84,7 +61,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     enableGlobalFilter: true,
     cell: ({ row }) => {
       const atividade = row.original;
-      console.log("Dados da linha", atividade);
+      // console.log("Dados da linha", atividade);
     const projeto = atividade.projetos?.nome_projeto; 
     
     return (
@@ -95,6 +72,30 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
       // const projetoId = row.getValue("projeto_id") as number | string;
       // return <Badge variant="outline">{projetoId}</Badge>; // Exibe o ID (ou o nome, se ajustado)
     },
+  },
+  {
+    accessorKey: "responsavel",
+    header: "Responsável",
+    cell: ({ row }) => {
+      const atividade = row.original;
+      
+      const responsavel = atividade.responsavel;
+
+      if (!responsavel) {
+      return <span className="text-muted-foreground text-xs italic">Sem responsável</span>;
+    }
+
+      return (
+      <div className="flex justify-center">
+        <div 
+          title={responsavel.nome_colaborador}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-900 text-[10px] font-bold text-white uppercase"
+        >
+          {responsavel.nome_colaborador?.substring(0, 2) || "??"}
+        </div>
+      </div>
+    );
+    }
   },
 
   // 3. COLUNA: Descrição

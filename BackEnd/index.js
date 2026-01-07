@@ -279,13 +279,13 @@ app.post('/colaboradores', async (req, res) => {
   try {
     const todasAtividades = await prisma.atividades.findMany({
       include: {
-        projetos: { // Nome da relação definida no seu schema.prisma
+        responsavel: true, 
+        projetos: { 
           select: {
-            nome_projeto: true // Buscamos apenas o nome para performance
+            nome_projeto: true
           }
         }
       },
-      // Opcional: ordenar por atividade_id para garantir a ordem
       orderBy: {
         atividade_id: 'asc', 
       },
@@ -324,21 +324,20 @@ app.get('/atividades/:atividade_id', async (req, res) => {
 
 // POST /atividades - Cadastra um novo cliente
 app.post('/atividades', async (req, res) => {
-  // Nota: 'status' foi REMOVIDO da desestruturação, pois será forçado como 'true'
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id} = req.body;
+  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id } = req.body;
   
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
   }
   
   try {
-    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO (Já corrigido)
-   const projetoIdNumerico = Number(projeto_id); 
-    if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
-      return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
-    }
-
-    // 2. CONVERSÃO DAS DATAS PARA OBJETO Date (Já corrigido)
+    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO 
+//    const projetoIdNumerico = Number(projeto_id); 
+//     if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
+//       return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
+//     }
+    const projetoIdNumerico = Number(projeto_id); 
+    // 2. CONVERSÃO DAS DATAS PARA OBJETO Date 
     const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null; 
     const statusBoolean = true;
@@ -348,11 +347,21 @@ app.post('/atividades', async (req, res) => {
     const novaAtividade = await prisma.atividades.create({
       data: {
         nome_atividade,
-        descr_atividade,
+        descr_atividade: descr_atividade || "",
         data_prevista_inicio: dataInicio, 
         data_prevista_fim: dataFim,
         status: statusBoolean, // ✅ Agora envia o valor booleano esperado pelo Postgres
-        projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
+//         projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
+//         colaborador_id: colaborador_id ? Number(colaborador_id) : null,
+        projetos: {
+          connect: { projeto_id: projetoIdNumerico }
+        },
+
+        ...(colaborador_id && {
+          responsavel: {
+            connect: { colaborador_id: Number(colaborador_id) }
+          }
+        })
       }
     });
 
@@ -407,43 +416,49 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         data_prevista_inicio, // String 'YYYY-MM-DD' ou null
         data_prevista_fim, // String 'YYYY-MM-DD' ou null
         status, 
-        projeto_id 
+        projeto_id,
+        colaborador_id 
     } = req.body;
 
     try {
-        const atividadeIdNumerico = parseInt(atividade_id, 10);
-        if (isNaN(atividadeIdNumerico)) {
-            return res.status(400).json({ error: "ID da atividade inválido." });
-        }
+        // const atividadeIdNumerico = parseInt(atividade_id, 10);
+        // if (isNaN(atividadeIdNumerico)) {
+        //     return res.status(400).json({ error: "ID da atividade inválido." });
+        // }
 
         // Conversão dos dados de entrada
-        const dataInicio = data_prevista_inicio 
-            ? new Date(data_prevista_inicio + 'T00:00:00Z') 
-            : null;
-        const dataFim = data_prevista_fim 
-            ? new Date(data_prevista_fim + 'T00:00:00Z') 
-            : null;
+        // const dataInicio = data_prevista_inicio 
+        //     ? new Date(data_prevista_inicio + 'T00:00:00Z') 
+        //     : null;
+        // const dataFim = data_prevista_fim 
+        //     ? new Date(data_prevista_fim + 'T00:00:00Z') 
+        //     : null;
 
-        const projetoIdNumerico = projeto_id ? parseInt(projeto_id, 10) : null;
-        if (projeto_id && isNaN(projetoIdNumerico)) {
-             return res.status(400).json({ error: "ID do projeto deve ser um número válido." });
-        }
-        const statusBooleano = typeof status === 'string' 
-            ? status.toLowerCase() === 'true' 
-            : Boolean(status);
+        // const projetoIdNumerico = projeto_id ? parseInt(projeto_id, 10) : null;
+        // if (projeto_id && isNaN(projetoIdNumerico)) {
+        //      return res.status(400).json({ error: "ID do projeto deve ser um número válido." });
+        // }
+        // const statusBooleano = typeof status === 'string' 
+        //     ? status.toLowerCase() === 'true' 
+        //     : Boolean(status);
+        const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T00:00:00Z') : null;
+        const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
 
 
         const atividadeAtualizada = await prisma.atividades.update({
-            where: {
-                atividade_id: atividadeIdNumerico,
-            },
+            where: { atividade_id: Number(atividade_id) },
             data: {
-                nome_atividade: nome_atividade,
-                descr_atividade: descr_atividade,
+                nome_atividade,
+                descr_atividade: descr_atividade || "",
                 data_prevista_inicio: dataInicio,
                 data_prevista_fim: dataFim,
-                status: statusBooleano, // Deve ser um enum string ('a_fazer', 'em_andamento', 'concluido')
-                projeto_id: projetoIdNumerico, 
+                status: Boolean(status),
+                projetos: {
+                    connect: { projeto_id: Number(projeto_id) }
+                },
+                responsavel: colaborador_id 
+                    ? { connect: { colaborador_id: Number(colaborador_id) } } 
+                    : { disconnect: true }
             },
         });
 

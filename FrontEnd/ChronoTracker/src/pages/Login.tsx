@@ -80,7 +80,7 @@ export default function Login() {
                         Faça login na sua conta
                     </CardTitle>  
                 </CardHeader>
-                <form className="space-y-6" onSubmit={handleSubmit}>
+                <form className="space-y-2" onSubmit={handleSubmit}>
                     <div className="space-y-2">
                         <label htmlFor="username" className="text-md font-medium leading-none">Nome de usuário</label>
                         <Input
@@ -89,11 +89,15 @@ export default function Login() {
                         placeholder="Nome de usuário"
                         required
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => {
+                            setUsername(e.target.value);
+                            if (error) setError(null);
+                        }}
+                            
                         className="h-10 border-gray-300 focus:border-blue-500"
                         />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         <label htmlFor="password" className="text-md font-medium leading-none">Senha</label>
                         <Input
                         id="password"
@@ -101,13 +105,23 @@ export default function Login() {
                         placeholder="Senha"
                         required
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (error) setError(null);
+                        }}
                         className="h-10 border-gray-300 focus:border-blue-500"
                         />
+                        {error && (
+                            <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded shadow-sm">
+                                <p className="text-sm text-red-600 font-medium">
+                                    {error}
+                                </p>
+                            </div>
+                        )}
                     </div>
                     <Button
                     type="submit"
-                    className="w-full bg-botao-dark text-white hover:bg-botao-light">
+                    className="my-0.5 w-full bg-botao-dark text-white hover:bg-botao-light">
                         Entrar
                     </Button>
                 </form>

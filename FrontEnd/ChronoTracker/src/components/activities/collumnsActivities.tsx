@@ -73,6 +73,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
       <span className="font-medium text-left">{row.getValue("nome_atividade")}</span>
     ),
     enableHiding: false, // Geralmente útil manter o nome visível
+    enableGlobalFilter: true,
   },
 
   // 2. COLUNA: Projeto Vinculado (Se a API retorna apenas o ID)
@@ -80,6 +81,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
   {
     accessorKey: "projetos.nome_projeto",
     header: "Projeto Vinculado",
+    enableGlobalFilter: true,
     cell: ({ row }) => {
       const atividade = row.original;
       console.log("Dados da linha", atividade);

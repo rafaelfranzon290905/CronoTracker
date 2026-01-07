@@ -74,8 +74,9 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
   {
-    accessorKey: "responsavel",
+    accessorKey: "responsavel.nome_colaborador",
     header: "Responsável",
+    enableGlobalFilter: true,
     cell: ({ row }) => {
       const atividade = row.original;
       

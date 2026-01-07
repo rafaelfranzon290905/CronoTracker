@@ -72,11 +72,11 @@ const handleDelete = async (id: number) => {
 };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-screen w-full">
       <SideBar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex-1 p-6 overflow-auto">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 ">
+        <main className="mt-4">
           <PageHeader
             title="Gerenciar Colaboradores"
             subtitle="Adicione, edite e visualize os membros da sua equipe."

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "../ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { useEffect } from "react"
 
 const API_BASE_URL = 'http://localhost:3001'
 
@@ -40,6 +41,7 @@ type ActivityFormValues = z.infer<typeof activitySchema>
 type ProjetoSelect = {
     projeto_id: number;
     nome_projeto: string;
+    data_inicio: string;
 }
 
 // --- Definição do Componente (PROPS AJUSTADAS) ---
@@ -61,11 +63,29 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
         },
     })
 
+
     async function onSubmit(data: ActivityFormValues) {
 
         setIsSubmitting(true)
         setApiError(null)
         
+        // RN06: Localizar o projeto selecionado para comparar as datas
+    const projetoSelecionado = projetos.find(p => String(p.projeto_id) === data.projeto_id);
+
+    if (projetoSelecionado && data.data_prevista_inicio) {
+        const dataInicioProjeto = projetoSelecionado.data_inicio.split('T')[0];
+        const dataInicioAtividade = data.data_prevista_inicio;
+
+        if (dataInicioAtividade < dataInicioProjeto) {
+            formActivities.setError("data_prevista_inicio", {
+                type: "manual",
+                message: `A atividade não pode iniciar antes do projeto (${dataInicioProjeto})`,
+            });
+            setIsSubmitting(false);
+            return; // Bloqueia o envio
+        }
+    }
+
         // 💡 AJUSTE: O projeto_id vem do formulário (como string) e precisa ser convertido
         const projetoIdNumerico = parseInt(data.projeto_id, 10);
 

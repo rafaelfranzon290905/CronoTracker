@@ -15,6 +15,8 @@ const API_BASE_URL = 'http://localhost:3001';
 type ProjetoSelect = {
     projeto_id: number;
     nome_projeto: string;
+    status: boolean;
+    data_inicio: string;
 }
 
 function Atividades() {
@@ -75,6 +77,8 @@ function Atividades() {
             const projetosMapeados: ProjetoSelect[] = data.map((p: any) => ({
                 projeto_id: p.projeto_id,
                 nome_projeto: p.nome_projeto,
+                status: p.status,
+                data_inicio: p.data_inicio,
             }));
             
             setProjetos(projetosMapeados);
@@ -84,6 +88,8 @@ function Atividades() {
             console.error("Erro ao buscar projetos:", err);
         }
     };
+
+    const projetosAtivos = projetos.filter(p => p.status === true);
     
     // ⬅️ ADIÇÃO CRUCIAL: Chama fetchAtividades apenas uma vez ao montar o componente
     useEffect(() => {
@@ -149,17 +155,17 @@ function Atividades() {
 
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <SideBar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-0 md:p-0 ">
-          <PageHeader
-            title="Atividades"
-            subtitle="Adicione, edite e visualize suas atividades."
+    <div className="flex h-screen w-full">
+        <SideBar />
+        <div className="flex-1 p-6 overflow-auto">
+            <Header />
+            <main className="mt-4">
+                <PageHeader
+                    title="Atividades"
+                    subtitle="Adicione, edite e visualize suas atividades."
           >
             {isGerente && (
-            <AddActivitiesDialog projetos={projetos} onSuccess={handleAddSuccess}/>
+            <AddActivitiesDialog projetos={projetosAtivos} onSuccess={handleAddSuccess}/>
             )}
 
 {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
@@ -180,7 +186,7 @@ function Atividades() {
                     open={isEditModalOpen} 
                     onOpenChange={setIsEditModalOpen}
                     initialData={activityToEdit}
-                    projetos={projetos}
+                    projetos={projetosAtivos}
                     onSuccess={handleEditSuccess}
                 />
             )}

@@ -21,50 +21,50 @@ type ProjetoSelect = {
 }
 
 function Atividades() {
-    // ESTADOS PARA O MODAL (Adicionar/Editar)
-//     const [aberto, setAberto] = useState(false);
-//     const [tipo, setTipo] = useState<"add" | "edit" | null>(null);
-    
-    // Função para abrir o modal e definir o tipo (add ou edit)
-//     const openModal = (type: "add" | "edit") => {
-//         setTipo(type)
-//         setAberto(true)
-//     }
+    // ESTADOS PARA O MODAL (Adicionar/Editar)
+    //     const [aberto, setAberto] = useState(false);
+    //     const [tipo, setTipo] = useState<"add" | "edit" | null>(null);
 
-    // ESTADOS PARA OS DADOS DA ATIVIDADE
-    const [atividades, setAtividades] = useState<AtividadeType[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Função para abrir o modal e definir o tipo (add ou edit)
+    //     const openModal = (type: "add" | "edit") => {
+    //         setTipo(type)
+    //         setAberto(true)
+    //     }
+
+    // ESTADOS PARA OS DADOS DA ATIVIDADE
+    const [atividades, setAtividades] = useState<AtividadeType[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const [projetos, setProjetos] = useState<ProjetoSelect[]>([]);
 
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false); 
-    
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
     const [activityToEdit, setActivityToEdit] = useState<AtividadesInitialData | null>(null);
 
-    const {isGerente} = usePermissions()
-    // const [error, setError] = useState(null);
+    const { isGerente } = usePermissions()
+    // const [error, setError] = useState(null);
 
-    // ----------------------------------------------------------------------
-    // 2. Função para buscar os dados da API (GET /atividades)
-    const fetchAtividades = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(`${API_BASE_URL}/atividades`);
+    // ----------------------------------------------------------------------
+    // 2. Função para buscar os dados da API (GET /atividades)
+    const fetchAtividades = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/atividades`);
 
-            if (!response.ok){
-                throw new Error(`Erro HTTP: ${response.status}`)
-            }
-            const data = await response.json();
-            setAtividades(data);
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`)
+            }
+            const data = await response.json();
+            setAtividades(data);
             // Opcional: Para debugar, veja o que a API retornou
             console.log("Atividades carregadas:", data.length);
 
-        } catch (err) {
-            console.error("Erro ao buscar atividades:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        } catch (err) {
+            console.error("Erro ao buscar atividades:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchProjetos = async () => {
         try {
@@ -73,7 +73,7 @@ function Atividades() {
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
             const data = await response.json();
-            
+
             // Mapeia os dados para a interface mais simples
             const projetosMapeados: ProjetoSelect[] = data.map((p: any) => ({
                 projeto_id: p.projeto_id,
@@ -82,7 +82,7 @@ function Atividades() {
                 data_inicio: p.data_inicio,
                 projeto_colaboradores: p.projeto_colaboradores || [],
             }));
-            
+
             setProjetos(projetosMapeados);
             console.log("Projetos carregados:", projetosMapeados.length);
 
@@ -92,28 +92,28 @@ function Atividades() {
     };
 
     const projetosAtivos = projetos.filter(p => p.status === true);
-    
-    // ⬅️ ADIÇÃO CRUCIAL: Chama fetchAtividades apenas uma vez ao montar o componente
+
+    // ⬅️ ADIÇÃO CRUCIAL: Chama fetchAtividades apenas uma vez ao montar o componente
     useEffect(() => {
         fetchAtividades();
         fetchProjetos();
-    }, []); 
+    }, []);
 
     // 💡 1. DEFINIR A FUNÇÃO DE SUCESSO: Recarrega os dados após o cadastro
     const handleAddSuccess = () => {
         // Recarrega a lista de atividades para mostrar a nova atividade
-        fetchAtividades(); 
+        fetchAtividades();
     };
 
     const handleDeleteActivity = async (atividadeId: number) => {
-        if(!confirm(`Tem certeza que deseja deletar a atividade ${atividadeId}`)){
+        if (!confirm(`Tem certeza que deseja deletar a atividade ${atividadeId}`)) {
             return;
         }
         try {
             const response = await fetch(`${API_BASE_URL}/atividades/${atividadeId}`, {
                 method: 'DELETE',
             });
-            if(response.status === 204) {
+            if (response.status === 204) {
                 window.alert(`Atividade ${atividadeId} deletada com sucesso`);
                 console.log(`Atividade ${atividadeId} deletada com sucesso`);
                 fetchAtividades()
@@ -122,18 +122,18 @@ function Atividades() {
                 alert(`Erro ao deletar: ${errorData.error}`);
             } else {
                 throw new Error(`Erro HTTP: ${response.status}`);
-            } 
-        } catch (err) {
-                console.log("Erro ao deletar atividade:", err);
-                alert("Erro ao deletar atividade. Verifique o console.");
             }
-        };
+        } catch (err) {
+            console.log("Erro ao deletar atividade:", err);
+            alert("Erro ao deletar atividade. Verifique o console.");
+        }
+    };
 
-        const handleEditActivity = (activity: AtividadesInitialData) => {
+    const handleEditActivity = (activity: AtividadesInitialData) => {
         // Converte a data_prevista_inicio/fim para string 'YYYY-MM-DD'
         const dataInicio = activity.data_prevista_inicio ? new Date(activity.data_prevista_inicio).toISOString().split('T')[0] : '';
         const dataFim = activity.data_prevista_fim ? new Date(activity.data_prevista_fim).toISOString().split('T')[0] : '';
-        
+
         // Define os dados iniciais, garantindo o formato de data correto
         setActivityToEdit({
             ...activity,
@@ -157,44 +157,43 @@ function Atividades() {
 
 
 
-  return (
-    <div className="flex h-screen w-full">
-        <SideBar />
-        <div className="flex-1 p-6 overflow-auto">
-            <Header />
-            <main className="mt-4">
-                <PageHeader
-                    title="Atividades"
-                    subtitle="Adicione, edite e visualize suas atividades."
-          >
-            {isGerente && (
-            <AddActivitiesDialog projetos={projetosAtivos} onSuccess={handleAddSuccess}/>
-            )}
+    return (
+        <div className="flex h-screen w-full">
+            <SideBar />
+            <div className="flex-1 p-6 overflow-auto">
+                <Header />
+                <main className="mt-4">
+                    <PageHeader
+                        title="Atividades"
+                        subtitle="Adicione, edite e visualize suas atividades."
+                    >
+                        {isGerente && 
+                            <AddActivitiesDialog projetos={projetosAtivos} onSuccess={handleAddSuccess} />
+                        }
 
-{/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-            
-          </PageHeader>
+                        {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
 
-            {/* Opcional: Adicionar um loading state simples */}
-            {loading ? (
-                <div className="text-center py-12">Carregando atividades...</div>
-            ) : (
-                <DataTable<AtividadeType, unknown> columns={tableColumns} data={atividades} />
-            )}
-        </main>
-      </div>
-        {/* NOVO: Componente de Edição */}
+                    </PageHeader>
+
+                    {loading ? (
+                        <div className="text-center py-12">Carregando atividades...</div>
+                    ) : (
+                        <DataTable<AtividadeType, unknown> columns={tableColumns} data={atividades} />
+                    )}
+                </main>
+            </div>
+            {/* NOVO: Componente de Edição */}
             {activityToEdit && (
-                <EditActivitiesDialog 
-                    open={isEditModalOpen} 
+                <EditActivitiesDialog
+                    open={isEditModalOpen}
                     onOpenChange={setIsEditModalOpen}
                     initialData={activityToEdit}
                     projetos={projetosAtivos}
                     onSuccess={handleEditSuccess}
                 />
             )}
-    </div>
-  )
+        </div>
+    )
 }
 
 export default Atividades

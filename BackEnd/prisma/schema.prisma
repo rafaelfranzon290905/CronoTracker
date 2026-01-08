@@ -45,6 +45,9 @@ model colaboradores {
   data_admissao         DateTime?               @default(now()) @db.Timestamp(6)
   foto                  Bytes?
   status                Boolean?                @default(true)
+
+  usuario               usuarios?
+
   lancamentos_de_horas  lancamentos_de_horas[]
   projeto_colaboradores projeto_colaboradores[]
   atividades            atividades[]
@@ -93,6 +96,9 @@ model usuarios {
   email         String? @unique @db.VarChar(100)
   cargo         String? @db.VarChar(20)
   status        Boolean @default(true)
+
+  colaborador_id Int?    @unique
+  colaborador    colaboradores? @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade)
 
   @@map("usuarios")
 }

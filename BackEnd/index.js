@@ -238,39 +238,38 @@ app.get('/colaboradores/email/:email', async (req, res) => {
 
 // POST /colaboradores - Cadastra um novo colaborador
 app.post('/colaboradores', async (req, res) => {
-  // Nota: Os nomes aqui devem ser idênticos aos do req.body (JSON enviado pelo front)
-  const { nome_colaborador, cargo, email, data_admissao, status, foto } = req.body;
+    const { nome_colaborador, cargo, email, data_admissao, status, foto } = req.body;
 
-  // Validação básica
-  if (!email || !nome_colaborador || !cargo) {
-    return res.status(400).json({ error: 'Nome, Cargo e E-mail são obrigatórios.' });
-  }
-
-  try {
-    // Prisma: Criação do registro
-    const novoColaborador = await prisma.colaboradores.create({
-      data: {
-        nome_colaborador,
-        cargo,
-        email, 
-        data_admissao: data_admissao ? new Date(data_admissao) : new Date(),
-        status: status !== undefined ? status : true, // Se não vier, assume true (conforme default do banco)
-        foto: foto ? Buffer.from(foto, 'base64') : null, 
-      }
-    });
-
-    res.status(201).json(novoColaborador);
-
-  } catch (error) {
-    // Tratamento de Erro de Chave Única (Email Duplicado)
-    if (error.code === 'P2002')
-      return res.status(409).json({ error: 'Este e-mail já está cadastrado para outro colaborador.' });
+    if (!email || !nome_colaborador || !cargo) {
+        return res.status(400).json({ error: 'Nome, Cargo e E-mail são obrigatórios.' });
     }
-    
-    console.error('Erro ao cadastrar colaborador:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
-  }
-);
+
+    try {
+        const novoColaborador = await prisma.colaboradores.create({
+            data: {
+                nome_colaborador,
+                cargo,
+                email,
+                data_admissao: data_admissao ? new Date(data_admissao) : new Date(),
+                status: status !== undefined ? status : true,
+                foto: foto ? Buffer.from(foto, 'base64') : null,
+            }
+        });
+
+        // Adicionamos o 'return' aqui para parar a execução
+        return res.status(201).json(novoColaborador);
+
+    } catch (error) {
+        // O bloco catch agora envolve TODA a lógica de erro
+        if (error.code === 'P2002') {
+            return res.status(409).json({ error: 'Este e-mail já está cadastrado para outro colaborador.' });
+        }
+
+        console.error('Erro ao cadastrar colaborador:', error);
+        // O return aqui impede que qualquer código abaixo (se houvesse) rodasse
+        return res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+});
 
 // Rota de Atividades
  // GET /atividades - Lista todas as atividades
@@ -421,26 +420,6 @@ app.put('/atividades/:atividade_id', async (req, res) => {
     } = req.body;
 
     try {
-        // const atividadeIdNumerico = parseInt(atividade_id, 10);
-        // if (isNaN(atividadeIdNumerico)) {
-        //     return res.status(400).json({ error: "ID da atividade inválido." });
-        // }
-
-        // Conversão dos dados de entrada
-        // const dataInicio = data_prevista_inicio 
-        //     ? new Date(data_prevista_inicio + 'T00:00:00Z') 
-        //     : null;
-        // const dataFim = data_prevista_fim 
-        //     ? new Date(data_prevista_fim + 'T00:00:00Z') 
-        //     : null;
-
-        // const projetoIdNumerico = projeto_id ? parseInt(projeto_id, 10) : null;
-        // if (projeto_id && isNaN(projetoIdNumerico)) {
-        //      return res.status(400).json({ error: "ID do projeto deve ser um número válido." });
-        // }
-        // const statusBooleano = typeof status === 'string' 
-        //     ? status.toLowerCase() === 'true' 
-        //     : Boolean(status);
         const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T00:00:00Z') : null;
         const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
 
@@ -832,20 +811,44 @@ app.post('/usuarios', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hash_senha = await bcrypt.hash(senha, salt);
 
-        const novoUsuario = await prisma.usuarios.create({
-            data: {
-                nome_usuario,
-                hash_senha,
-                nome_completo,
-                email,
-                cargo: cargo || 'Colaborador',
-                status: true
-            }
+        const novoUsuario = await prisma.$transaction(async (tx) =>{
+            // data: {
+            //     nome_usuario,
+            //     hash_senha,
+            //     nome_completo,
+            //     email,
+            //     cargo: cargo || 'Colaborador',
+            //     status: true
+            // }
+            const colaborador = await tx.colaboradores.create({
+                data: {
+                    nome_colaborador: nome_completo,
+                    email: email,
+                    cargo: cargo || 'Colaborador',
+                    data_admissao: new Date(), // Data padrão de hoje
+                    status: true
+                }
+            });
+
+            // Cria o usuário vinculado ao colaborador criado acima
+            const usuario = await tx.usuarios.create({
+                data: {
+                    nome_usuario,
+                    hash_senha,
+                    nome_completo,
+                    email,
+                    cargo: cargo || 'Colaborador',
+                    status: true,
+                    colaborador_id: colaborador.colaborador_id 
+                }
+            });
+
+            return usuario;
         });
 
         // Remove a senha do objeto de retorno
         const { hash_senha: _, ...userSemSenha } = novoUsuario;
-        res.status(201).json(userSemSenha);
+        res.status(201).json({ message: "Usuário e Colaborador criados com sucesso!", userSemSenha });
 
     } catch (error) {
         if (error.code === 'P2002') {

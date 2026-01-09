@@ -32,6 +32,7 @@ function Collaborators() {
       if (!response.ok) throw new Error("Erro ao buscar dados");
       
       const result = await response.json();
+      console.log("DADOS DOS COLABORADORES: ", result);
       setData(result); 
     } catch (error) {
       console.error("Erro no fetch:", error);

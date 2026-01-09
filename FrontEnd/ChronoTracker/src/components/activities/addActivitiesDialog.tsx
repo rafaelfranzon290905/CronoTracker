@@ -75,6 +75,21 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
     const projetoSelecionado = projetos.find(p => String(p.projeto_id) === selectedProjetoId);
     const equipeDisponivel = projetoSelecionado?.projeto_colaboradores || [];
 
+    useEffect(() => {
+        if (!open) {
+            formActivities.reset({
+                nome_atividade: "",
+                descr_atividade: "",
+                data_prevista_inicio: new Date().toISOString().split('T')[0],
+                data_prevista_fim: "",
+                status: true,
+                projeto_id: "",
+            });
+            formActivities.clearErrors();
+        
+            setApiError(null);
+        }
+    }, [open, formActivities.reset]);
 
     async function onSubmit(data: ActivityFormValues) {
 

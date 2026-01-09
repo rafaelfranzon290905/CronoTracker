@@ -11,21 +11,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type Collaborador } from "@/lib/types";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { ListTodo, Info, Briefcase } from "lucide-react"
+
 
 export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
  // 2. Coluna de Nome 
   {
     accessorKey: "nome_colaborador",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Nome
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => <div className="font-medium capitalize">{row.getValue("nome_colaborador")}</div>,
+    header: "Nome",
+    cell: ({ row }) => {
+      const isAtivo = row.original.status;
+      return (
+        <div className={`font-medium capitalize ${!isAtivo ? "text-muted-foreground line-through opacity-70" : ""}`}>
+          {row.getValue("nome_colaborador")}
+        </div>
+      );
+    },
   },
 
   // 4. Coluna de Cargo
@@ -48,7 +54,85 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
       return <div className="font-medium capitalize">{email}</div>
     },
   },
+  // Coluna de projetos associados
+  {
+  id: "projetos",
+  header: "Projetos",
+  cell: ({ row }) => {
+    const nomes = (row.original as any).listaProjetos || [];
+    const total = nomes.length;
+    if (total === 0) return <span className="text-muted-foreground text-xs italic">Nenhum</span>;
 
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8 gap-2 border-dashed">
+            <Briefcase/>
+            <span className="font-bold">{total}</span> 
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-0">
+          <div className="bg-botao-light p-2 px-3 rounded-t-md">
+            <h4 className="text-white text-sm font-semibold flex items-center gap-2">
+              Projetos Vinculados
+            </h4>
+          </div>
+          <div className="max-h-[300px] overflow-y-auto p-2">
+            <ul className="space-y-1">
+              {nomes.map((nome: string, i: number) => (
+                <li
+                key={i}
+                className="flex items-center justify-between p-2 rounded-md text-xs border-b last:border-0 border-slate-100">
+                  <span className="font-medium text-slate-700 truncate max-w-[180px]" title={nome}>
+                    {nome}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  },
+},
+
+// Coluna de atividades
+{
+  id: "atividades_equipe",
+  header: "Atividades",
+  cell: ({ row }) => {
+    const atividades = (row.original as any).atividadesEquipe || [];
+    if (atividades.length === 0) return <span className="text-muted-foreground text-xs italic">Sem projetos/equipe</span>;
+
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8 gap-2 border-dashed">
+            <ListTodo />
+            <span className="font-bold">{atividades.length}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-0">
+          <div className="bg-botao-light p-2 px-3 rounded-t-md">
+            <h4 className="text-white text-sm font-semibold flex items-center gap-2">
+              Atividades Disponíveis
+            </h4>
+          </div>
+          <div className="max-h-[300px] overflow-y-auto p-2">
+            <ul className="space-y-1">
+              {atividades.map((atv: any) => (
+              <li key={atv.atividade_id} className="flex items-center justify-between p-2 rounded-md text-xs border-b last:border-0 border-slate-100">
+                <span className="font-medium text-slate-700 truncate max-w-[180px]" title={atv.nome_atividade}>{atv.nome_atividade}</span>
+              </li>
+            ))}
+            </ul>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  },
+},
     // 6. Coluna de Data de admissao formatada
   {
     accessorKey: "data_admissao",
@@ -65,6 +149,7 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
       return <span>{dataFormatada}</span>;
     },
   },
+  
 // 6. Coluna de Status 
   {
     accessorKey: "status",
@@ -79,6 +164,7 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
       );
     }
   },
+  
   // 6. Coluna de Ações com Dropdown Menu
   {
     id: "actions",

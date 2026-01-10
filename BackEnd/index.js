@@ -188,6 +188,31 @@ app.put('/clientes/:id', async (req, res) => {
 
 })
 
+// GET /clientes/:id/projetos - Lista todos os projetos de um cliente específico
+app.get('/clientes/:id/projetos', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID do cliente inválido.' });
+  }
+
+  try {
+    const projetosDoCliente = await prisma.projetos.findMany({
+      where: {
+        cliente_id: clienteId,
+      },
+      orderBy: {
+        projeto_id: 'desc', 
+      },
+    });
+
+    res.status(200).json(projetosDoCliente);
+  } catch (error) {
+    console.error(`Erro ao buscar projetos do cliente ${clienteId}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar projetos do cliente.' });
+  }
+});
+
 // Rotas de Colaboradores
 
 //get para listagem
@@ -670,8 +695,6 @@ app.post('/login', async (req, res) => {
     }
 });
   
-
-
 
 // PUT /colaboradores/:id - Atualiza colaborador
 app.put('/colaboradores/:id', async (req, res) => {

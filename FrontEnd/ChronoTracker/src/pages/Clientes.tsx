@@ -12,6 +12,7 @@ import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 import { ModalCliente } from "@/components/clientes/ModalClientes";
 import  DialogClientes  from "@/components/componentes/DialogClientes";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ModalProjetos } from "@/components/clientes/ModalVerProjetos";
 
 interface Cliente {
     cliente_id: number;
@@ -22,7 +23,7 @@ interface Cliente {
     endereco: string;
     cidade: string;
     estado: string;
-    status: boolean; // Corrigido para boolean, como está no banco
+    status: boolean;
 }
 
 const formatarCNPJ = (valor: string) => {
@@ -48,12 +49,19 @@ function Clientes() {
   const [aberto, setAberto] = useState(false);
   const [tipo, setTipo] = useState<"add" | "edit" | null>(null);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
+  const [projetoModalAberto, setProjetoModalAberto] = useState(false);
+  const [clienteParaProjetos, setClienteParaProjetos] = useState<{id: number, nome: string} | null>(null);
 
   const openModal = (type: "add" | "edit", cliente?: Cliente ) => {
     setTipo(type);
     setClienteEditando(type === 'edit' ? cliente || null : null);
     setAberto(true);
   }
+
+  const abrirProjetos = (id: number, nome: string) => {
+    setClienteParaProjetos({ id, nome });
+    setProjetoModalAberto(true);
+  };
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,22 +157,23 @@ function Clientes() {
                 <Table className="w-full">
                   <TableHeader className="border-b-2">
                     <TableRow>
-                      <TableHead>ID</TableHead>
+                      {/* <TableHead>ID</TableHead> */}
                       <TableHead>Empresa</TableHead>
                       <TableHead>Nome do contato</TableHead>
-                      <TableHead>CEP</TableHead>
+                      {/* <TableHead>CEP</TableHead> */}
                       <TableHead>Endereço</TableHead>
                       <TableHead>Cidade</TableHead>
                       <TableHead>Estado</TableHead>
                       <TableHead>CNPJ</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Projetos</TableHead>
                       {isGerente && <TableHead>Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {clientes.map((c) => (
                       <TableRow key={c.cliente_id} className="text-center odd:bg-sidebar even:bg-card">
-                        <TableCell className="py-1">{c.cliente_id}</TableCell>
+                        {/* <TableCell className="py-1">{c.cliente_id}</TableCell> */}
                         <TableCell>{c.nome_cliente}</TableCell>
                         <TableCell>{c.nome_contato}</TableCell>
                         <TableCell>{formatarCEP(c.cep)}</TableCell>
@@ -172,6 +181,15 @@ function Clientes() {
                         <TableCell>{c.cidade}</TableCell>
                         <TableCell>{c.estado}</TableCell>
                         <TableCell>{formatarCNPJ(c.cnpj)}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => abrirProjetos(c.cliente_id, c.nome_cliente)}
+                          >
+                            Visualizar
+                          </Button>
+                        </TableCell>
                         <TableCell>{getStatusDisplay(c.status)}</TableCell>
                         {isGerente &&
                           <TableCell>
@@ -195,6 +213,11 @@ function Clientes() {
               </CardContent>
             </Card>
             <ModalCliente open={aberto} onOpenChange={setAberto} type={tipo} clienteInicial={clienteEditando} aoSalvar={fetchClientes}/>
+            <ModalProjetos 
+          open={projetoModalAberto} 
+          onOpenChange={setProjetoModalAberto} 
+          cliente={clienteParaProjetos} 
+        />
         </main>
          
       </div>

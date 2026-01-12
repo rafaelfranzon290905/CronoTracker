@@ -352,7 +352,11 @@ app.get('/atividades/:atividade_id', async (req, res) => {
 
   try {
     const atividade = await prisma.atividades.findUnique({
-      where: { atividade_id: atividadeId }
+      where: { atividade_id: atividadeId },
+      include: {
+        responsavel: true, 
+        projetos: true  
+      }
     });
 
     if (!atividade) {
@@ -485,6 +489,10 @@ app.put('/atividades/:atividade_id', async (req, res) => {
                     ? { connect: { colaborador_id: Number(colaborador_id) } } 
                     : { disconnect: true }
             },
+            include: {         
+              responsavel: true,
+              projetos: true
+            }
         });
 
         res.status(200).json(atividadeAtualizada);
@@ -763,7 +771,11 @@ app.put('/colaboradores/:id', async (req, res) => {
   }
 
   try {
-    
+    const colaboradorAtualizado = await prisma.colaboradores.update({
+      where: { colaborador_id: id },
+      data: dadosParaAtualizar,
+    });
+      
     console.log('[PUT] Sucesso ID:', colaboradorAtualizado.colaborador_id);
     res.status(200).json(colaboradorAtualizado);
 

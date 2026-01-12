@@ -8,9 +8,11 @@ import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPOR
 import { EditActivitiesDialog, type AtividadesInitialData } from "@/components/activities/EditActivitiesDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getAtividadesColumns } from "@/components/activities/collumnsActivities";
+import { API_BASE_URL } from  "@/apiConfig"
+
 
 // Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
-const API_BASE_URL = 'http://localhost:3001';
+// const API_BASE_URL = 'http://localhost:3001';
 
 type ProjetoSelect = {
     projeto_id: number;

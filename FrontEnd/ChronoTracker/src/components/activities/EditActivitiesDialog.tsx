@@ -17,10 +17,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { API_BASE_URL } from  "@/apiConfig"
 
 
 // Supondo que você use o mesmo URL base
-const API_BASE_URL = 'http://localhost:3001';
+// const API_BASE_URL = 'http://localhost:3001';
 
 // ... (Coloque editActivitySchema e EditActivityFormValues aqui ou no arquivo de schemas) ...
 // No arquivo de definição dos schemas (ou no topo do componente EditActivitiesDialog)

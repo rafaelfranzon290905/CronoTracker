@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { type Collaborador } from "@/lib/types"
+import { API_BASE_URL } from  "@/apiConfig"
 
 // Reutilizando o schema do componente de Adicionar
 const formSchema = z.object({
@@ -102,7 +103,7 @@ export function ModalColaboradores({
 
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/colaboradores/${colaboradorInicial.colaborador_id}`, {
+      const response = await fetch(`${API_BASE_URL}/colaboradores/${colaboradorInicial.colaborador_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),

@@ -53,22 +53,22 @@ model colaboradores {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model lancamentos_de_horas {
-  lancamento_id   Int                      @id @default(autoincrement())
-  cliente_id      Int
-  colaborador_id  Int
-  atividade_id    Int
-  projeto_id      Int
-  tipo_registro   String                   @db.VarChar(50)
-  justificativa   String?                  @db.VarChar(255)
-  data_lancamento DateTime?                @default(now()) @db.Timestamp(6)
-  hora_inicio     DateTime                 @db.Time(6)
-  hora_fim        DateTime                 @db.Time(6)
-  duracao_total   Unsupported("interval")? @default(dbgenerated("(hora_fim - hora_inicio)"))
-  status          Boolean?                 @default(true)
-  atividades      atividades               @relation(fields: [atividade_id], references: [atividade_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_atividade")
-  clientes        clientes                 @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_cliente")
-  colaboradores   colaboradores            @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_colaborador")
-  projetos        projetos                 @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_projeto")
+  lancamento_id    Int                      @id @default(autoincrement())
+  colaborador_id   Int
+  projeto_id       Int
+  cliente_id       Int
+  atividade_id     Int
+  data_lancamento  DateTime                 @default(dbgenerated("CURRENT_DATE")) @db.Date
+  hora_inicio      DateTime                 @db.Time(6)
+  hora_fim         DateTime                 @db.Time(6)
+  duracao_total    Unsupported("interval")?
+  descricao        String?
+  status_aprovacao String                   @default("pendente") @db.VarChar(20)
+  criado_em        DateTime?                @default(now()) @db.Timestamp(6)
+  atividades       atividades               @relation(fields: [atividade_id], references: [atividade_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_atividade")
+  clientes         clientes                 @relation(fields: [cliente_id], references: [cliente_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_cliente")
+  colaboradores    colaboradores            @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_colaborador")
+  projetos         projetos                 @relation(fields: [projeto_id], references: [projeto_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_projeto")
 }
 
 model projetos {

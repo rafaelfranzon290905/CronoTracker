@@ -12,10 +12,12 @@ model atividades {
   atividade_id         Int                    @id @default(autoincrement())
   projeto_id           Int
   nome_atividade       String                 @db.VarChar(100)
-  descr_atividade      String
+  descr_atividade      String?
   data_prevista_inicio DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   status               Boolean?               @default(true)
+  colaborador_id       Int?
+  responsavel          colaboradores?         @relation(fields: [colaborador_id], references: [colaborador_id], onUpdate: NoAction, map: "fk_atividade_colaborador")
   projetos             projetos               @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_atividade_projeto")
   lancamentos_de_horas lancamentos_de_horas[]
 }
@@ -43,8 +45,10 @@ model colaboradores {
   data_admissao         DateTime?               @default(now()) @db.Timestamp(6)
   foto                  Bytes?
   status                Boolean?                @default(true)
+  atividades            atividades[]
   lancamentos_de_horas  lancamentos_de_horas[]
   projeto_colaboradores projeto_colaboradores[]
+  usuario               usuarios?
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -83,13 +87,15 @@ model projetos {
 }
 
 model usuarios {
-  usuario_id    Int     @id @default(autoincrement())
-  nome_usuario  String  @unique @db.VarChar(50)
-  hash_senha    String
-  nome_completo String? @db.VarChar(100)
-  email         String? @unique @db.VarChar(100)
-  cargo         String? @db.VarChar(20)
-  status        Boolean @default(true)
+  usuario_id     Int            @id @default(autoincrement())
+  nome_usuario   String         @unique @db.VarChar(50)
+  hash_senha     String
+  nome_completo  String?        @db.VarChar(100)
+  email          String?        @unique @db.VarChar(100)
+  cargo          String?        @db.VarChar(20)
+  status         Boolean        @default(true)
+  colaborador_id Int?           @unique
+  colaborador    colaboradores? @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade)
 
   @@map("usuarios")
 }

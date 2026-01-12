@@ -138,7 +138,7 @@ export function DataTable<TData, TValue>({
           {table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
         </div>
         <div className="flex items-center space-x-2">
-          <Button
+          <Button 
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}

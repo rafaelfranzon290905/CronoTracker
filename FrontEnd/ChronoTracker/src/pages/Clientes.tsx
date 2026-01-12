@@ -13,6 +13,8 @@ import { ModalCliente } from "@/components/clientes/ModalClientes";
 import  DialogClientes  from "@/components/componentes/DialogClientes";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ModalProjetos } from "@/components/clientes/ModalVerProjetos";
+import { API_BASE_URL } from  "@/apiConfig"
+
 
 interface Cliente {
     cliente_id: number;
@@ -42,7 +44,7 @@ const formatarCEP = (valor: string) => {
 };
 
 // Base da API
-const API_BASE_URL = 'http://localhost:3001';
+// const API_BASE_URL = 'http://localhost:3001';
 
 function Clientes() {
   const [addModalAberto, setAddModalAberto] = useState(false);

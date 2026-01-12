@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001';
+
+// const API_BASE_URL = 'http://localhost:3001';
 const LOGIN_API_URL = `${API_BASE_URL}/login`;
 
 

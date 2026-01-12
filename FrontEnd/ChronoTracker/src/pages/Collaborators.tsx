@@ -10,8 +10,10 @@ import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaborato
 import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getColaboradorColumns } from "@/components/collaborators/columns";
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001';
+
+// const API_BASE_URL = 'http://localhost:3001';
 
 function Collaborators() {
   {/* armazena os colaboradores vindo da api */ }

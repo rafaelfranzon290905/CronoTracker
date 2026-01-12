@@ -18,8 +18,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "../ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useEffect } from "react"
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001'
+// const API_BASE_URL = 'http://localhost:3001'
 
 // --- Zod Schema e Tipagem (PROJETO_ID ADICIONADO) ---
 const activitySchema = z.object({

@@ -11,8 +11,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "../ui/button"
 import { Switch } from "../ui/switch"
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001'
+
+// const API_BASE_URL = 'http://localhost:3001'
 
 // Definindo o tipo de dados do colaborador
 interface ColaboradorFormData {

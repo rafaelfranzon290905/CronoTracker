@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { Switch } from "../ui/switch"
 import {toast} from "sonner"
+import { API_BASE_URL } from  "@/apiConfig"
 // import { Description } from "@radix-ui/react-dialog"
 
 interface ModalClienteProps {
@@ -39,7 +40,7 @@ interface FormErrors {
     estado: string;
 }
 
-const API_BASE_URL = 'http://localhost:3001'
+// const API_BASE_URL = 'http://localhost:3001'
 
 const formatarCNPJ = (valor: string) => {
   const v = valor.replace(/\D/g, ""); // Remove tudo que não é dígito

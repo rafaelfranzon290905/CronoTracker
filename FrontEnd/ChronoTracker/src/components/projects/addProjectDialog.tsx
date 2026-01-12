@@ -38,6 +38,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { API_BASE_URL } from  "@/apiConfig"
+
 
 const formSchema = z.object({
     nome_projeto: z.string().min(3, { message: "O nome do projeto deve ter pelo menos 3 caracteres." }),
@@ -129,7 +131,7 @@ useEffect(() => {
 useEffect(() => {
     async function carregarColaboradores() {
         try {
-            const response = await fetch("http://localhost:3001/colaboradores");
+            const response = await fetch(`${API_BASE_URL}/colaboradores`);
             if (response.ok) {
                 const data = await response.json();
                 setListaColaboradores(data);
@@ -146,8 +148,8 @@ useEffect(() => {
         setIsLoading(true);
         try {
             const url = isEditMode
-                ? `http://localhost:3001/projetos/${projectToEdit?.projeto_id}`
-                : "http://localhost:3001/projetos";
+                ? `${API_BASE_URL}/projetos/${projectToEdit?.projeto_id}`
+                : `${API_BASE_URL}/projetos`;
 
             const method = isEditMode ? "PUT" : "POST";
 

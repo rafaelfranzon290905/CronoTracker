@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { API_BASE_URL } from  "@/apiConfig"
 
 interface Projeto {
   projeto_id: number;
@@ -37,7 +38,7 @@ export function ModalProjetos({ open, onOpenChange, cliente }: ModalProjetosProp
         setLoading(true);
         try {
           // Ajuste a URL conforme sua API (ex: /clientes/1/projetos ou /projetos?cliente_id=1)
-          const response = await fetch(`http://localhost:3001/clientes/${cliente.id}/projetos`);
+          const response = await fetch(`${API_BASE_URL}/clientes/${cliente.id}/projetos`);
           const data = await response.json();
           setProjetos(data);
         } catch (error) {

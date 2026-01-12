@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { z } from "zod";
 import { toast } from "sonner";
+import { API_BASE_URL } from  "@/apiConfig"
+
 
 const userSchema = z.object({
     nome_completo: z.string()
@@ -72,8 +74,8 @@ export function UserModal({ open, onOpenChange, user, currentUser, onSave }: Use
         setFieldErrors({});
         const isEditing = !!user;
         const url = isEditing
-            ? `http://localhost:3001/usuarios/${user.usuario_id}`
-            : `http://localhost:3001/usuarios`;
+            ? `${API_BASE_URL}/usuarios/${user.usuario_id}`
+            : `${API_BASE_URL}/usuarios`;
 
         const method = isEditing ? 'PUT' : 'POST';
 

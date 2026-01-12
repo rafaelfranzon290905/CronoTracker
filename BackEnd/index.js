@@ -188,19 +188,65 @@ app.put('/clientes/:id', async (req, res) => {
 
 })
 
+// GET /clientes/:id/projetos - Lista todos os projetos de um cliente específico
+app.get('/clientes/:id/projetos', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID do cliente inválido.' });
+  }
+
+  try {
+    const projetosDoCliente = await prisma.projetos.findMany({
+      where: {
+        cliente_id: clienteId,
+      },
+      orderBy: {
+        projeto_id: 'desc', 
+      },
+    });
+
+    res.status(200).json(projetosDoCliente);
+  } catch (error) {
+    console.error(`Erro ao buscar projetos do cliente ${clienteId}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar projetos do cliente.' });
+  }
+});
+
 // Rotas de Colaboradores
 
 //get para listagem
 app.get('/colaboradores', async (req, res) => {
   try {
     const colaboradores = await prisma.colaboradores.findMany({
+      include: {
+        projeto_colaboradores: {
+          include: {
+            projetos: {
+              include: { 
+                atividades: true // Traz as atividades de cada projeto
+              }
+            }
+          }
+        }
+      },
       orderBy: { colaborador_id: 'asc' }
     });
     
-    const colaboradoresFormatados = colaboradores.map(col => ({
+    const colaboradoresFormatados = colaboradores.map(col => {
+      // Extrai apenas os nomes dos projetos em um array simples de strings
+      const projetosNomes = col.projeto_colaboradores.map(pc => pc.projetos?.nome_projeto).filter(Boolean);
+      
+      // Extrai todas as atividades de todos os projetos que ele participa
+      const atividadesEquipe = col.projeto_colaboradores.flatMap(pc => pc.projetos?.atividades || []);
+
+      return {
         ...col,
-        foto: col.foto ? col.foto.toString('base64') : null
-    }));
+        foto: col.foto ? col.foto.toString('base64') : null,
+        listaProjetos: projetosNomes,
+        atividadesEquipe: atividadesEquipe // Nova propriedade com a lista da equipe
+      };
+    });
 
     res.status(200).json(colaboradoresFormatados);
   } catch (error) {
@@ -238,39 +284,38 @@ app.get('/colaboradores/email/:email', async (req, res) => {
 
 // POST /colaboradores - Cadastra um novo colaborador
 app.post('/colaboradores', async (req, res) => {
-  // Nota: Os nomes aqui devem ser idênticos aos do req.body (JSON enviado pelo front)
-  const { nome_colaborador, cargo, email, data_admissao, status, foto } = req.body;
+    const { nome_colaborador, cargo, email, data_admissao, status, foto } = req.body;
 
-  // Validação básica
-  if (!email || !nome_colaborador || !cargo) {
-    return res.status(400).json({ error: 'Nome, Cargo e E-mail são obrigatórios.' });
-  }
-
-  try {
-    // Prisma: Criação do registro
-    const novoColaborador = await prisma.colaboradores.create({
-      data: {
-        nome_colaborador,
-        cargo,
-        email, 
-        data_admissao: data_admissao ? new Date(data_admissao) : new Date(),
-        status: status !== undefined ? status : true, // Se não vier, assume true (conforme default do banco)
-        foto: foto ? Buffer.from(foto, 'base64') : null, 
-      }
-    });
-
-    res.status(201).json(novoColaborador);
-
-  } catch (error) {
-    // Tratamento de Erro de Chave Única (Email Duplicado)
-    if (error.code === 'P2002')
-      return res.status(409).json({ error: 'Este e-mail já está cadastrado para outro colaborador.' });
+    if (!email || !nome_colaborador || !cargo) {
+        return res.status(400).json({ error: 'Nome, Cargo e E-mail são obrigatórios.' });
     }
-    
-    console.error('Erro ao cadastrar colaborador:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
-  }
-);
+
+    try {
+        const novoColaborador = await prisma.colaboradores.create({
+            data: {
+                nome_colaborador,
+                cargo,
+                email,
+                data_admissao: data_admissao ? new Date(data_admissao) : new Date(),
+                status: status !== undefined ? status : true,
+                foto: foto ? Buffer.from(foto, 'base64') : null,
+            }
+        });
+
+        // Adicionamos o 'return' aqui para parar a execução
+        return res.status(201).json(novoColaborador);
+
+    } catch (error) {
+        // O bloco catch agora envolve TODA a lógica de erro
+        if (error.code === 'P2002') {
+            return res.status(409).json({ error: 'Este e-mail já está cadastrado para outro colaborador.' });
+        }
+
+        console.error('Erro ao cadastrar colaborador:', error);
+        // O return aqui impede que qualquer código abaixo (se houvesse) rodasse
+        return res.status(500).json({ error: 'Erro interno do servidor.' });
+    }
+});
 
 // Rota de Atividades
  // GET /atividades - Lista todas as atividades
@@ -279,13 +324,13 @@ app.post('/colaboradores', async (req, res) => {
   try {
     const todasAtividades = await prisma.atividades.findMany({
       include: {
-        projetos: { // Nome da relação definida no seu schema.prisma
+        responsavel: true, 
+        projetos: { 
           select: {
-            nome_projeto: true // Buscamos apenas o nome para performance
+            nome_projeto: true
           }
         }
       },
-      // Opcional: ordenar por atividade_id para garantir a ordem
       orderBy: {
         atividade_id: 'asc', 
       },
@@ -324,21 +369,20 @@ app.get('/atividades/:atividade_id', async (req, res) => {
 
 // POST /atividades - Cadastra um novo cliente
 app.post('/atividades', async (req, res) => {
-  // Nota: 'status' foi REMOVIDO da desestruturação, pois será forçado como 'true'
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id} = req.body;
+  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id } = req.body;
   
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
   }
   
   try {
-    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO (Já corrigido)
-   const projetoIdNumerico = Number(projeto_id); 
-    if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
-      return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
-    }
-
-    // 2. CONVERSÃO DAS DATAS PARA OBJETO Date (Já corrigido)
+    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO 
+//    const projetoIdNumerico = Number(projeto_id); 
+//     if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
+//       return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
+//     }
+    const projetoIdNumerico = Number(projeto_id); 
+    // 2. CONVERSÃO DAS DATAS PARA OBJETO Date 
     const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null; 
     const statusBoolean = true;
@@ -348,11 +392,21 @@ app.post('/atividades', async (req, res) => {
     const novaAtividade = await prisma.atividades.create({
       data: {
         nome_atividade,
-        descr_atividade,
+        descr_atividade: descr_atividade || "",
         data_prevista_inicio: dataInicio, 
         data_prevista_fim: dataFim,
         status: statusBoolean, // ✅ Agora envia o valor booleano esperado pelo Postgres
-        projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
+//         projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
+//         colaborador_id: colaborador_id ? Number(colaborador_id) : null,
+        projetos: {
+          connect: { projeto_id: projetoIdNumerico }
+        },
+
+        ...(colaborador_id && {
+          responsavel: {
+            connect: { colaborador_id: Number(colaborador_id) }
+          }
+        })
       }
     });
 
@@ -407,43 +461,29 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         data_prevista_inicio, // String 'YYYY-MM-DD' ou null
         data_prevista_fim, // String 'YYYY-MM-DD' ou null
         status, 
-        projeto_id 
+        projeto_id,
+        colaborador_id 
     } = req.body;
 
     try {
-        const atividadeIdNumerico = parseInt(atividade_id, 10);
-        if (isNaN(atividadeIdNumerico)) {
-            return res.status(400).json({ error: "ID da atividade inválido." });
-        }
-
-        // Conversão dos dados de entrada
-        const dataInicio = data_prevista_inicio 
-            ? new Date(data_prevista_inicio + 'T00:00:00Z') 
-            : null;
-        const dataFim = data_prevista_fim 
-            ? new Date(data_prevista_fim + 'T00:00:00Z') 
-            : null;
-
-        const projetoIdNumerico = projeto_id ? parseInt(projeto_id, 10) : null;
-        if (projeto_id && isNaN(projetoIdNumerico)) {
-             return res.status(400).json({ error: "ID do projeto deve ser um número válido." });
-        }
-        const statusBooleano = typeof status === 'string' 
-            ? status.toLowerCase() === 'true' 
-            : Boolean(status);
+        const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T00:00:00Z') : null;
+        const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
 
 
         const atividadeAtualizada = await prisma.atividades.update({
-            where: {
-                atividade_id: atividadeIdNumerico,
-            },
+            where: { atividade_id: Number(atividade_id) },
             data: {
-                nome_atividade: nome_atividade,
-                descr_atividade: descr_atividade,
+                nome_atividade,
+                descr_atividade: descr_atividade || "",
                 data_prevista_inicio: dataInicio,
                 data_prevista_fim: dataFim,
-                status: statusBooleano, // Deve ser um enum string ('a_fazer', 'em_andamento', 'concluido')
-                projeto_id: projetoIdNumerico, 
+                status: Boolean(status),
+                projetos: {
+                    connect: { projeto_id: Number(projeto_id) }
+                },
+                responsavel: colaborador_id 
+                    ? { connect: { colaborador_id: Number(colaborador_id) } } 
+                    : { disconnect: true }
             },
         });
 
@@ -677,11 +717,11 @@ app.post('/login', async (req, res) => {
 });
   
 
-
-
 // PUT /colaboradores/:id - Atualiza colaborador
 app.put('/colaboradores/:id', async (req, res) => {
   const id = parseInt(req.params.id);
+  const { nome_colaborador, cargo, email, status, foto, data_admissao } = req.body;
+
   console.log(`[PUT] Tentativa de atualização para ID: ${id}`);
 
   if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
@@ -704,7 +744,6 @@ app.put('/colaboradores/:id', async (req, res) => {
     return res.status(400).json({ error: 'Nenhum dado recebido. O corpo da requisição está vazio.' });
   }
 
-  const { nome_colaborador, cargo, email, status, foto, data_admissao } = req.body;
   console.log('[PUT] Dados recebidos:', { nome_colaborador, cargo, email, status, temFoto: !!foto });
 
   const dadosParaAtualizar = { 
@@ -724,10 +763,7 @@ app.put('/colaboradores/:id', async (req, res) => {
   }
 
   try {
-    const colaboradorAtualizado = await prisma.colaboradores.update({
-      where: { colaborador_id: id },
-      data: dadosParaAtualizar,
-    });
+    
     console.log('[PUT] Sucesso ID:', colaboradorAtualizado.colaborador_id);
     res.status(200).json(colaboradorAtualizado);
 
@@ -817,20 +853,44 @@ app.post('/usuarios', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hash_senha = await bcrypt.hash(senha, salt);
 
-        const novoUsuario = await prisma.usuarios.create({
-            data: {
-                nome_usuario,
-                hash_senha,
-                nome_completo,
-                email,
-                cargo: cargo || 'Colaborador',
-                status: true
-            }
+        const novoUsuario = await prisma.$transaction(async (tx) =>{
+            // data: {
+            //     nome_usuario,
+            //     hash_senha,
+            //     nome_completo,
+            //     email,
+            //     cargo: cargo || 'Colaborador',
+            //     status: true
+            // }
+            const colaborador = await tx.colaboradores.create({
+                data: {
+                    nome_colaborador: nome_completo,
+                    email: email,
+                    cargo: cargo || 'Colaborador',
+                    data_admissao: new Date(), // Data padrão de hoje
+                    status: true
+                }
+            });
+
+            // Cria o usuário vinculado ao colaborador criado acima
+            const usuario = await tx.usuarios.create({
+                data: {
+                    nome_usuario,
+                    hash_senha,
+                    nome_completo,
+                    email,
+                    cargo: cargo || 'Colaborador',
+                    status: true,
+                    colaborador_id: colaborador.colaborador_id 
+                }
+            });
+
+            return usuario;
         });
 
         // Remove a senha do objeto de retorno
         const { hash_senha: _, ...userSemSenha } = novoUsuario;
-        res.status(201).json(userSemSenha);
+        res.status(201).json({ message: "Usuário e Colaborador criados com sucesso!", userSemSenha });
 
     } catch (error) {
         if (error.code === 'P2002') {

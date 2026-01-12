@@ -50,7 +50,7 @@ const formatarCEP = (valor: string) => {
   return v.replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
 };
 
-export default function DialogClientes({open, onOpenChange, aoSalvar}): DialogClientesProps {
+export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogClientesProps) {
     // 1. ESTADO DO FORMULÁRIO: Inicializa com valores vazios e status TRUE por padrão (ativo)
     const [formData, setFormData] = useState<ClienteFormData>({
         cnpj: "",

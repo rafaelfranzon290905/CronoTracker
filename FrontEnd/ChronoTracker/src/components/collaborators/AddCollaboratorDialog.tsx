@@ -26,6 +26,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "../ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // URL da  API
 const API_BASE_URL = 'http://localhost:3001'
@@ -37,6 +44,14 @@ const formSchema = z.object({
   data_admissao: z.string().min(1, { message: "A data de entrada é obrigatória." }),
   status: z.boolean(),
 });
+
+const cargos = [
+  "Desenvolvedor Frontend",
+  "Desenvolvedor Backend",
+  "Designer UX/UI",
+  "Gerente de Projetos",
+  "Analista de QA",
+] as const;
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -140,10 +155,20 @@ export function AddCollaboratorDialog({onSuccess}: AddCollaboratorDialogProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cargo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Desenvolvedor Frontend" {...field} />
-                    </FormControl>
-                    <FormMessage />
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o cargo" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          {cargos.map((cargo) => (
+            <SelectItem key={cargo} value={cargo}>
+              {cargo}
+            </SelectItem>
+          ))}
+        </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />

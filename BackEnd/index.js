@@ -1,3 +1,4 @@
+require('dotenv').config();
 // Importações
 const express = require('express');
 const cors = require('cors');
@@ -6,8 +7,8 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-muito-segura';
 
-require('dotenv').config();
-const { PrismaClient } = require('./generated/prisma');
+
+const { PrismaClient } = require('@prisma/client');
 const { boolean } = require('fast-check');
 const { error } = require('effect/Brand');
 

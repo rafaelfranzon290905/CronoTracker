@@ -152,7 +152,7 @@ export function ModalColaboradores({
                 )}
               />
 
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="cargo"
                 render={({ field }) => (
@@ -175,7 +175,7 @@ export function ModalColaboradores({
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <FormField
                 control={form.control}
@@ -205,7 +205,7 @@ export function ModalColaboradores({
                 )}
               />
 
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="status"
                 render={({ field }) => (
@@ -222,7 +222,7 @@ export function ModalColaboradores({
                     </FormControl>
                   </FormItem>
                 )}
-              />
+              /> */}
             </form>
           </Form>
         </ScrollArea>

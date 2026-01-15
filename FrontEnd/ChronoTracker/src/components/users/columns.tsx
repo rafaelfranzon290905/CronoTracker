@@ -46,7 +46,7 @@ export const columns = (
       cell: ({ row }) => {
         const active = row.original.status;
         return (
-          <Badge className={active ? "bg-green-600" : "bg-gray-400"}>
+          <Badge className={active ?"bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}>
             {active ? "Ativo" : "Inativo"}
           </Badge>
         );

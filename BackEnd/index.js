@@ -10,6 +10,7 @@ require('dotenv').config();
 const { PrismaClient } = require('./generated/prisma');
 const { boolean } = require('fast-check');
 const { error } = require('effect/Brand');
+const database = require('mime-db');
 
 // Inicialização do Prisma Client
 const prisma = new PrismaClient();
@@ -199,7 +200,8 @@ app.get('/colaboradores', async (req, res) => {
           include: {
             projetos: {
               include: { 
-                atividades: true // Traz as atividades de cada projeto
+                atividades: true, // Traz as atividades de cada projeto
+                clientes: true
               }
             }
           }
@@ -478,11 +480,9 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         res.status(500).json({ error: "Erro interno do servidor ao tentar atualizar a atividade." });
     }
 });
-
 // ----------------------------------------------------
 // 🎯 ROTAS DE PROJETOS
 // ----------------------------------------------------
-
 // GET /projetos - Listar Projetos (com dados do Cliente)
 app.get('/projetos', async (req, res) => {
     try {
@@ -513,7 +513,6 @@ app.get('/projetos', async (req, res) => {
         res.status(500).json({ error: 'Erro ao listar projetos.' });
     }
 });
-
 // POST /projetos - Criar Projeto
 app.post('/projetos', async (req, res) => {
     const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;
@@ -667,7 +666,8 @@ app.post('/login', async (req, res) => {
             { 
                 usuarioId: usuario.usuario_id, 
                 cargo: usuario.cargo, // ✅ Incluir o cargo para RBAC
-                nomeUsuario: usuario.nome_usuario 
+                nomeUsuario: usuario.nome_usuario,
+                colaborador_id: usuario.colaborador_id 
             }, 
             JWT_SECRET, 
             { expiresIn: '8h' } // Token expira em 8 horas
@@ -682,6 +682,7 @@ app.post('/login', async (req, res) => {
                 nome_usuario: usuario.nome_usuario,
                 cargo: usuario.cargo,
                 nome_completo: usuario.nome_completo,
+                colaborador_id: usuario.colaborador_id,
             }
         });
 
@@ -925,6 +926,130 @@ app.delete('/usuarios/:id', async (req, res) => {
         res.status(500).json({ error: 'Erro ao inativar usuário.' });
     }
 });
+
+// ROTAS DE TIMESHEETS
+
+// GET /lancamentos - Lista as horas (Filtra por usuário ou traz tudo se for gerente)
+app.get('/lancamentos', async (req, res) => {
+  const { usuario_id, cargo } = req.query;
+
+  try {
+    let whereClause = {};
+    
+    // Se NÃO for gerente OU se for gerente mas NÃO estiver pedindo para ver a equipe
+    if (cargo !== 'gerente' && usuario_id) {
+      const usuario = await prisma.usuarios.findUnique({
+        where: { usuario_id: Number(usuario_id) },
+        select: { colaborador_id: true }
+      });
+      
+      if (usuario?.colaborador_id) {
+        whereClause.colaborador_id = usuario.colaborador_id;
+      }
+    }
+
+    const lancamentos = await prisma.lancamentos_de_horas.findMany({
+      where: whereClause,
+      include: {
+        colaboradores: { select: { nome_colaborador: true } },
+        projetos: { select: { nome_projeto: true } },
+        clientes: { select: { nome_cliente: true } },
+        atividades: { select: { nome_atividade: true } }
+      },
+      orderBy: { data_lancamento: 'desc' } // Ordenar pela data do trabalho, não da criação
+    });
+
+    res.status(200).json(lancamentos);
+  } catch (error) {
+    console.error('Erro ao buscar lançamentos:', error);
+    res.status(500).json({ error: 'Erro ao listar horas.' });
+  }
+});
+
+// POST /lancamentos
+app.post('/lancamentos', async (req, res) => {
+  // Ajustado para receber 'data' e 'cliente_id' vindos do front
+  const { 
+    usuario_id, projeto_id, atividade_id, cliente_id,
+    data, hora_inicio, hora_fim, descricao 
+  } = req.body;
+
+  console.log("Dados recebidos no backend:", req.body); // Log para debug
+
+  try {
+    if (!usuario_id) {
+      return res.status(400).json({ error: "ID do usuário não fornecido." });
+    }
+    // Busca o usuário para confirmar o cargo e o ID do colaborador vinculado
+    const usuario = await prisma.usuarios.findUnique({
+      where: { usuario_id: Number(usuario_id) }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    if (!usuario.colaborador_id) {
+      return res.status(400).json({ error: "Este usuário não possui um colaborador vinculado." });
+    }
+
+    // Regra: Gerentes têm aprovação automática
+    const statusInicial = usuario.cargo === 'gerente' ? 'aprovado' : 'aguardando aprovação';
+
+    // 1. Preparar a data base para as horas (evita confusão de fuso horário)
+    const dataBase = data; // '2026-01-14'
+
+    // 2. Converter as strings "12:00" em objetos Date válidos para o Prisma
+    const inicioDate = new Date(`${dataBase}T${hora_inicio}:00Z`);
+    const fimDate = new Date(`${dataBase}T${hora_fim}:00Z`);
+
+    // 3. Calcular a duracao_total (opcional, mas recomendado já que a coluna existe)
+    const diffMs = fimDate.getTime() - inicioDate.getTime();
+    const duracaoHoras = diffMs / (1000 * 60 * 60);
+
+    const novoLancamento = await prisma.lancamentos_de_horas.create({
+      data: {
+        colaborador_id: usuario.colaborador_id,
+        projeto_id: Number(projeto_id),
+        atividade_id: Number(atividade_id),
+        cliente_id: Number(cliente_id),
+        data_lancamento: new Date(`${dataBase}T12:00:00Z`), // 'data' vindo do front
+        hora_inicio: inicioDate,
+        hora_fim: fimDate,
+        duracao_total: duracaoHoras,
+        descricao: descricao || "",
+        status_aprovacao: statusInicial
+      }
+    });
+
+    res.status(201).json(novoLancamento);
+  } catch (error) {
+    console.error("Erro Prisma:", error);
+    res.status(500).json({ error: 'Erro interno ao registrar horas.' });
+  }
+});
+
+// PATCH /lancamentos/:id/status - Aprovar ou Rejeitar (Apenas Gerentes)
+app.patch('/lancamentos/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status, cargo } = req.body; // status: 'aprovado' ou 'rejeitado'
+
+  if (cargo !== 'gerente') {
+    return res.status(403).json({ error: "Apenas gerentes podem aprovar horas." });
+  }
+
+  try {
+    const atualizado = await prisma.lancamentos_de_horas.update({
+      where: { lancamento_id: parseInt(id) },
+      data: { status_aprovacao: status }
+    });
+    res.status(200).json(atualizado);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar status do lançamento.' });
+  }
+});
+
+
 // roda o servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);

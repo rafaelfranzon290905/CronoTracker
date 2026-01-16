@@ -21,6 +21,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { API_BASE_URL } from  "@/apiConfig"
+
 
 export default function UsersPage() {
     const [data, setData] = useState<Usuario[]>([]);
@@ -37,7 +39,7 @@ export default function UsersPage() {
 
     const fetchData = async () => {
         try {
-            const response = await fetch('http://localhost:3001/usuarios');
+            const response = await fetch(`${API_BASE_URL}/usuarios`);
 
             if (!response.ok) {
                 console.error("Servidor respondeu com erro:", response.status);
@@ -98,7 +100,7 @@ export default function UsersPage() {
         if (!userToInactivate) return;
 
         try {
-            const response = await fetch(`http://localhost:3001/usuarios/${userToInactivate.usuario_id}`, {
+            const response = await fetch(`${API_BASE_URL}/usuarios/${userToInactivate.usuario_id}`, {
                 method: 'DELETE',
             });
 

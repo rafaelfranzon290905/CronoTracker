@@ -1,3 +1,4 @@
+require('dotenv').config();
 // Importações
 const express = require('express');
 const cors = require('cors');
@@ -6,8 +7,8 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-muito-segura';
 
-require('dotenv').config();
-const { PrismaClient } = require('./generated/prisma');
+
+const { PrismaClient } = require('@prisma/client');
 const { boolean } = require('fast-check');
 const { error } = require('effect/Brand');
 
@@ -188,19 +189,65 @@ app.put('/clientes/:id', async (req, res) => {
 
 })
 
+// GET /clientes/:id/projetos - Lista todos os projetos de um cliente específico
+app.get('/clientes/:id/projetos', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID do cliente inválido.' });
+  }
+
+  try {
+    const projetosDoCliente = await prisma.projetos.findMany({
+      where: {
+        cliente_id: clienteId,
+      },
+      orderBy: {
+        projeto_id: 'desc', 
+      },
+    });
+
+    res.status(200).json(projetosDoCliente);
+  } catch (error) {
+    console.error(`Erro ao buscar projetos do cliente ${clienteId}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar projetos do cliente.' });
+  }
+});
+
 // Rotas de Colaboradores
 
 //get para listagem
 app.get('/colaboradores', async (req, res) => {
   try {
     const colaboradores = await prisma.colaboradores.findMany({
+      include: {
+        projeto_colaboradores: {
+          include: {
+            projetos: {
+              include: { 
+                atividades: true // Traz as atividades de cada projeto
+              }
+            }
+          }
+        }
+      },
       orderBy: { colaborador_id: 'asc' }
     });
     
-    const colaboradoresFormatados = colaboradores.map(col => ({
+    const colaboradoresFormatados = colaboradores.map(col => {
+      // Extrai apenas os nomes dos projetos em um array simples de strings
+      const projetosNomes = col.projeto_colaboradores.map(pc => pc.projetos?.nome_projeto).filter(Boolean);
+      
+      // Extrai todas as atividades de todos os projetos que ele participa
+      const atividadesEquipe = col.projeto_colaboradores.flatMap(pc => pc.projetos?.atividades || []);
+
+      return {
         ...col,
-        foto: col.foto ? col.foto.toString('base64') : null
-    }));
+        foto: col.foto ? col.foto.toString('base64') : null,
+        listaProjetos: projetosNomes,
+        atividadesEquipe: atividadesEquipe // Nova propriedade com a lista da equipe
+      };
+    });
 
     res.status(200).json(colaboradoresFormatados);
   } catch (error) {
@@ -306,7 +353,11 @@ app.get('/atividades/:atividade_id', async (req, res) => {
 
   try {
     const atividade = await prisma.atividades.findUnique({
-      where: { atividade_id: atividadeId }
+      where: { atividade_id: atividadeId },
+      include: {
+        responsavel: true, 
+        projetos: true  
+      }
     });
 
     if (!atividade) {
@@ -439,6 +490,10 @@ app.put('/atividades/:atividade_id', async (req, res) => {
                     ? { connect: { colaborador_id: Number(colaborador_id) } } 
                     : { disconnect: true }
             },
+            include: {         
+              responsavel: true,
+              projetos: true
+            }
         });
 
         res.status(200).json(atividadeAtualizada);
@@ -671,11 +726,11 @@ app.post('/login', async (req, res) => {
 });
   
 
-
-
 // PUT /colaboradores/:id - Atualiza colaborador
 app.put('/colaboradores/:id', async (req, res) => {
   const id = parseInt(req.params.id);
+  const { nome_colaborador, cargo, email, status, foto, data_admissao } = req.body;
+
   console.log(`[PUT] Tentativa de atualização para ID: ${id}`);
 
   if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
@@ -698,7 +753,6 @@ app.put('/colaboradores/:id', async (req, res) => {
     return res.status(400).json({ error: 'Nenhum dado recebido. O corpo da requisição está vazio.' });
   }
 
-  const { nome_colaborador, cargo, email, status, foto, data_admissao } = req.body;
   console.log('[PUT] Dados recebidos:', { nome_colaborador, cargo, email, status, temFoto: !!foto });
 
   const dadosParaAtualizar = { 
@@ -722,6 +776,7 @@ app.put('/colaboradores/:id', async (req, res) => {
       where: { colaborador_id: id },
       data: dadosParaAtualizar,
     });
+      
     console.log('[PUT] Sucesso ID:', colaboradorAtualizado.colaborador_id);
     res.status(200).json(colaboradorAtualizado);
 

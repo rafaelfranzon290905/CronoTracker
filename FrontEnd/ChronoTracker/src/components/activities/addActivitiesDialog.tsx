@@ -18,8 +18,9 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "../ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { useEffect } from "react"
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001'
+// const API_BASE_URL = 'http://localhost:3001'
 
 // --- Zod Schema e Tipagem (PROJETO_ID ADICIONADO) ---
 const activitySchema = z.object({
@@ -75,6 +76,21 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
     const projetoSelecionado = projetos.find(p => String(p.projeto_id) === selectedProjetoId);
     const equipeDisponivel = projetoSelecionado?.projeto_colaboradores || [];
 
+    useEffect(() => {
+        if (!open) {
+            formActivities.reset({
+                nome_atividade: "",
+                descr_atividade: "",
+                data_prevista_inicio: new Date().toISOString().split('T')[0],
+                data_prevista_fim: "",
+                status: true,
+                projeto_id: "",
+            });
+            formActivities.clearErrors();
+        
+            setApiError(null);
+        }
+    }, [open, formActivities.reset]);
 
     async function onSubmit(data: ActivityFormValues) {
 

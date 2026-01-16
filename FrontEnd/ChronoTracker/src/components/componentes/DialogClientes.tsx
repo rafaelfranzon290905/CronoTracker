@@ -11,11 +11,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "../ui/button"
 import { Switch } from "../ui/switch"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+// import { Loader2 } from "lucide-react"
+// import { useEffect } from "react"
 import { toast } from "sonner"
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001'
+
+// const API_BASE_URL = 'http://localhost:3001'
 
 // Definindo o tipo de dados do cliente para o estado do formulário
 interface ClienteFormData {
@@ -50,7 +52,7 @@ const formatarCEP = (valor: string) => {
   return v.replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
 };
 
-export default function DialogClientes({open, onOpenChange, aoSalvar}): DialogClientesProps {
+export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogClientesProps) {
     // 1. ESTADO DO FORMULÁRIO: Inicializa com valores vazios e status TRUE por padrão (ativo)
     const [formData, setFormData] = useState<ClienteFormData>({
         cnpj: "",

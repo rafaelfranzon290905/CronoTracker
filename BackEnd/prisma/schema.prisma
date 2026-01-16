@@ -11,14 +11,14 @@ datasource db {
 model atividades {
   atividade_id         Int                    @id @default(autoincrement())
   projeto_id           Int
-  colaborador_id       Int?
   nome_atividade       String                 @db.VarChar(100)
   descr_atividade      String?
   data_prevista_inicio DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   status               Boolean?               @default(true)
+  colaborador_id       Int?
+  responsavel          colaboradores?         @relation(fields: [colaborador_id], references: [colaborador_id], onUpdate: NoAction, map: "fk_atividade_colaborador")
   projetos             projetos               @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_atividade_projeto")
-  responsavel          colaboradores?         @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: SetNull, onUpdate: NoAction, map: "fk_atividade_colaborador")
   lancamentos_de_horas lancamentos_de_horas[]
 }
 
@@ -45,32 +45,30 @@ model colaboradores {
   data_admissao         DateTime?               @default(now()) @db.Timestamp(6)
   foto                  Bytes?
   status                Boolean?                @default(true)
-
-  usuario               usuarios?
-
+  atividades            atividades[]
   lancamentos_de_horas  lancamentos_de_horas[]
   projeto_colaboradores projeto_colaboradores[]
-  atividades            atividades[]
+  usuario               usuarios?
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model lancamentos_de_horas {
-  lancamento_id   Int                      @id @default(autoincrement())
-  cliente_id      Int
-  colaborador_id  Int
-  atividade_id    Int
-  projeto_id      Int
-  tipo_registro   String                   @db.VarChar(50)
-  justificativa   String?                  @db.VarChar(255)
-  data_lancamento DateTime?                @default(now()) @db.Timestamp(6)
-  hora_inicio     DateTime                 @db.Time(6)
-  hora_fim        DateTime                 @db.Time(6)
-  duracao_total   Unsupported("interval")? @default(dbgenerated("(hora_fim - hora_inicio)"))
-  status          Boolean?                 @default(true)
-  atividades      atividades               @relation(fields: [atividade_id], references: [atividade_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_atividade")
-  clientes        clientes                 @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_cliente")
-  colaboradores   colaboradores            @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_colaborador")
-  projetos        projetos                 @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lancamento_projeto")
+  lancamento_id    Int                      @id @default(autoincrement())
+  colaborador_id   Int
+  projeto_id       Int
+  cliente_id       Int
+  atividade_id     Int
+  data_lancamento  DateTime                 @default(dbgenerated("CURRENT_DATE")) @db.Date
+  hora_inicio      DateTime                 @db.Time(6)
+  hora_fim         DateTime                 @db.Time(6)
+  duracao_total    Unsupported("interval")?
+  descricao        String?
+  status_aprovacao String                   @default("pendente") @db.VarChar(20)
+  criado_em        DateTime?                @default(now()) @db.Timestamp(6)
+  atividades       atividades               @relation(fields: [atividade_id], references: [atividade_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_atividade")
+  clientes         clientes                 @relation(fields: [cliente_id], references: [cliente_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_cliente")
+  colaboradores    colaboradores            @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_colaborador")
+  projetos         projetos                 @relation(fields: [projeto_id], references: [projeto_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_projeto")
 }
 
 model projetos {
@@ -89,15 +87,14 @@ model projetos {
 }
 
 model usuarios {
-  usuario_id    Int     @id @default(autoincrement())
-  nome_usuario  String  @unique @db.VarChar(50)
-  hash_senha    String
-  nome_completo String? @db.VarChar(100)
-  email         String? @unique @db.VarChar(100)
-  cargo         String? @db.VarChar(20)
-  status        Boolean @default(true)
-
-  colaborador_id Int?    @unique
+  usuario_id     Int            @id @default(autoincrement())
+  nome_usuario   String         @unique @db.VarChar(50)
+  hash_senha     String
+  nome_completo  String?        @db.VarChar(100)
+  email          String?        @unique @db.VarChar(100)
+  cargo          String?        @db.VarChar(20)
+  status         Boolean        @default(true)
+  colaborador_id Int?           @unique
   colaborador    colaboradores? @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade)
 
   @@map("usuarios")

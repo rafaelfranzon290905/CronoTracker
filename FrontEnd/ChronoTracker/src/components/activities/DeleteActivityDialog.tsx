@@ -12,8 +12,10 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001'
+
+// const API_BASE_URL = 'http://localhost:3001'
 
 interface DeleteActivityProps {
     activityId: string;

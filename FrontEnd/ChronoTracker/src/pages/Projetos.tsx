@@ -8,6 +8,8 @@ import { DataTable } from "@/components/projects/data-table-projects";
 import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getProjetosColumns } from "@/components/projects/collumnsProjects";
+import { API_BASE_URL } from  "@/apiConfig"
+
 
 export interface Projeto {
     projeto_id: number;
@@ -43,8 +45,8 @@ function Projetos() {
   const fetchData = async () => {
     try {
       const [projRes, cliRes] = await Promise.all([
-        fetch('http://localhost:3001/projetos'),
-        fetch('http://localhost:3001/clientes')
+        fetch(`${API_BASE_URL}/projetos`),
+        fetch(`${API_BASE_URL}/clientes`)
       ]);
       
       const projetos = await projRes.json();

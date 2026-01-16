@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { type Usuario } from "@/lib/types";
 import { toast } from "sonner";
+import { API_BASE_URL } from  "@/apiConfig"
 
 const passwordSchema = z.object({
   novaSenha: z.string().min(6, "A nova senha deve ter no mínimo 6 caracteres"),
@@ -46,7 +47,7 @@ export function PasswordResetModal({ open, onOpenChange, user, onSave }: Passwor
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/usuarios/${user?.usuario_id}`, {
+      const response = await fetch(`${API_BASE_URL}/usuarios/${user?.usuario_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senha: formData.novaSenha }), 

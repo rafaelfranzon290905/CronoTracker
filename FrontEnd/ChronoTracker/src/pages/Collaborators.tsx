@@ -10,8 +10,10 @@ import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaborato
 import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getColaboradorColumns } from "@/components/collaborators/columns";
+import { API_BASE_URL } from  "@/apiConfig"
 
-const API_BASE_URL = 'http://localhost:3001';
+
+// const API_BASE_URL = 'http://localhost:3001';
 
 function Collaborators() {
   {/* armazena os colaboradores vindo da api */ }
@@ -32,6 +34,7 @@ function Collaborators() {
       if (!response.ok) throw new Error("Erro ao buscar dados");
       
       const result = await response.json();
+      console.log("DADOS DOS COLABORADORES: ", result);
       setData(result); 
     } catch (error) {
       console.error("Erro no fetch:", error);

@@ -1,6 +1,11 @@
 'use client'
 
 import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Loader2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,8 +15,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -20,12 +35,32 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { type Collaborador } from "@/lib/types"
+import { API_BASE_URL } from  "@/apiConfig"
+
+// Reutilizando o schema do componente de Adicionar
+const formSchema = z.object({
+  nome_colaborador: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
+  cargo: z.string().min(2, { message: "O cargo é obrigatório." }),
+  email: z.string().email({ message: "Insira um e-mail válido." }),
+  data_admissao: z.string().min(1, { message: "A data é obrigatória." }),
+  status: z.boolean(),
+});
+
+const cargos = [
+  "Desenvolvedor Frontend",
+  "Desenvolvedor Backend",
+  "Designer UX/UI",
+  "Gerente de Projetos",
+  "Analista de QA",
+] as const;
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface ModalColaboradoresProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   colaboradorInicial: Collaborador | null
-  aoSalvar: () => void 
+  aoSalvar: () => void
 }
 
 export function ModalColaboradores({
@@ -34,149 +69,177 @@ export function ModalColaboradores({
   colaboradorInicial,
   aoSalvar,
 }: ModalColaboradoresProps) {
-  const [loading, setLoading] = useState(false)
-  
-  const [nome, setNome] = useState("")
-  const [email, setEmail] = useState("")
-  const [cargo, setCargo] = useState("")
-  const [status, setStatus] = useState("true") 
+  const [isLoading, setIsLoading] = useState(false)
 
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nome_colaborador: "",
+      cargo: "",
+      email: "",
+      status: true,
+    },
+  });
+
+  // Atualiza o formulário quando o colaborador selecionado mudar
   useEffect(() => {
     if (colaboradorInicial) {
-      setNome(colaboradorInicial.nome_colaborador || "")
-      setEmail(colaboradorInicial.email || "")
-      setCargo(colaboradorInicial.cargo || "")
-      setStatus(colaboradorInicial.status ? "true" : "false")
+      const dataFormatada = colaboradorInicial.data_admissao 
+      ? new Date(colaboradorInicial.data_admissao).toISOString().split('T')[0]
+      : "";
+
+      form.reset({
+        nome_colaborador: colaboradorInicial.nome_colaborador || "",
+        cargo: colaboradorInicial.cargo || "",
+        email: colaboradorInicial.email || "",
+        data_admissao: dataFormatada,
+        status: !!colaboradorInicial.status,
+      });
     }
-  }, [colaboradorInicial])
+  }, [colaboradorInicial, form]);
 
-  // --- AÇÃO DE SALVAR (UPDATE) ---
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!colaboradorInicial?.colaborador_id) {
-      alert("Erro: ID do colaborador não encontrado.")
-      return
-    }
+  async function onSubmit(values: FormValues) {
+    if (!colaboradorInicial?.colaborador_id) return;
 
-    setLoading(true)
-
-    const dadosParaEnviar = {
-      nome_colaborador: nome,
-      email: email,
-      cargo: cargo,
-      status: status === "true", 
-    }
-
+    setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/colaboradores/${colaboradorInicial.colaborador_id}`, {
+      const response = await fetch(`${API_BASE_URL}/colaboradores/${colaboradorInicial.colaborador_id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dadosParaEnviar),
-      })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Erro ao atualizar colaborador")
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao atualizar colaborador");
       }
 
-      alert("Colaborador atualizado com sucesso!")
-      aoSalvar() 
-      onOpenChange(false) 
-
+      aoSalvar();
+      onOpenChange(false);
     } catch (error) {
-      console.error("Erro no update:", error)
-      alert(error instanceof Error ? error.message : "Erro desconhecido ao salvar")
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Erro desconhecido");
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Colaborador</DialogTitle>
           <DialogDescription>
-            Faça alterações no perfil do colaborador aqui. Clique em salvar quando terminar.
+            Faça alterações no perfil do colaborador. Clique em salvar quando terminar.
           </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            
-            {/* Campo Nome */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="nome" className="text-right">
-                Nome
-              </Label>
-              <Input
-                id="nome"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="col-span-3"
-                required
+
+        <ScrollArea className="max-h-[60vh] p-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              
+              <FormField
+                control={form.control}
+                name="nome_colaborador"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nome colaborador" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            {/* Campo Email */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                E-mail
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3"
-                required
+              <FormField
+                control={form.control}
+                name="cargo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cargo</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o cargo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {cargos.map((cargo) => (
+                          <SelectItem key={cargo} value={cargo}>
+                            {cargo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            {/* Campo Cargo */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cargo" className="text-right">
-                Cargo
-              </Label>
-              <Input
-                id="cargo"
-                value={cargo}
-                onChange={(e) => setCargo(e.target.value)}
-                className="col-span-3"
-                required
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="exemplo@chronotracker.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            {/* Campo Status */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Selecione o status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Ativo</SelectItem>
-                  <SelectItem value="false">Inativo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <FormField
+                control={form.control}
+                name="data_admissao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Admissão</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          </div>
-          
-       <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Salvando..." : "Salvar alterações"}
-            </Button>
-          </DialogFooter>
-        </form>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Colaborador Ativo</FormLabel>
+                      <FormDescription>Status atual no sistema.</FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </form>
+          </Form>
+        </ScrollArea>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
+            Cancelar
+          </Button>
+          <Button 
+            onClick={form.handleSubmit(onSubmit)}
+            className="bg-blue-950 rounded-2xl text-white hover:bg-blue-800"
+            disabled={isLoading}
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar Alterações
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -21,11 +21,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { API_BASE_URL } from  "@/apiConfig"
+
 
 const deleteProject = async (id: number) => {
   if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
     try {
-      const response = await fetch(`http://localhost:3001/projetos/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/projetos/${id}`, {
         method: 'DELETE',
       });
 

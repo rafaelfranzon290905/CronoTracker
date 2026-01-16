@@ -32,7 +32,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  filterColumn = "nome_colaborador",
+  filterColumn,
   meta,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -63,7 +63,7 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4 w-full">
         <div className="relative w-full">
           <Input
-            placeholder="Filtrar por nome..."
+            placeholder={`Filtrar por ${filterColumn}`}
             value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn(filterColumn)?.setFilterValue(event.target.value)

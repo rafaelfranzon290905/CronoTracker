@@ -77,7 +77,7 @@ export default function TimesheetPage() {
           <DataTable 
             columns={getTimesheetColumns(isGerente, verEquipe)} 
             data={data}
-            filterColumn="projetos_nome_projeto" // Adaptar filtro conforme necessidade
+            filterColumn="nome de projeto ou atividade" // Adaptar filtro conforme necessidade
             meta={{ 
               onApprove: (id: number) => handleStatusUpdate(id, 'aprovado'),
               onReject: (id: number) => handleStatusUpdate(id, 'rejeitado')

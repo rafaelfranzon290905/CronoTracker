@@ -47,7 +47,8 @@ export default function Login() {
                 // Armazena o token para uso futuro (Ex: LocalStorage)
                 localStorage.setItem('authToken', token); 
                 localStorage.setItem('currentUser', JSON.stringify({
-                    id: user.usuario_id,
+                    id: user.usuario_id || user.usuario_id,
+                    colaborador_id: user.colaborador_id,
                     username: user.nome_usuario,
                     cargo: user.cargo,
                     nomeCompleto: user.nome_completo

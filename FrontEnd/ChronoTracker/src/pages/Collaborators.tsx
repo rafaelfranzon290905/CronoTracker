@@ -96,6 +96,7 @@ const handleDelete = async (id: number) => {
             <DataTable 
                 columns={getColaboradorColumns(isGerente)} 
                 data={data} 
+                filterColumn="nome_colaborador"
                 meta={{ onEdit: handleEdit, onDelete: handleDelete }} 
             />
           )}

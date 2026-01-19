@@ -53,22 +53,22 @@ model colaboradores {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model lancamentos_de_horas {
-  lancamento_id    Int                      @id @default(autoincrement())
+  lancamento_id    Int           @id @default(autoincrement())
   colaborador_id   Int
   projeto_id       Int
   cliente_id       Int
   atividade_id     Int
-  data_lancamento  DateTime                 @default(dbgenerated("CURRENT_DATE")) @db.Date
-  hora_inicio      DateTime                 @db.Time(6)
-  hora_fim         DateTime                 @db.Time(6)
-  duracao_total    Unsupported("interval")?
+  data_lancamento  DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Date
+  hora_inicio      DateTime      @db.Time(6)
+  hora_fim         DateTime      @db.Time(6)
   descricao        String?
-  status_aprovacao String                   @default("pendente") @db.VarChar(20)
-  criado_em        DateTime?                @default(now()) @db.Timestamp(6)
-  atividades       atividades               @relation(fields: [atividade_id], references: [atividade_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_atividade")
-  clientes         clientes                 @relation(fields: [cliente_id], references: [cliente_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_cliente")
-  colaboradores    colaboradores            @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_colaborador")
-  projetos         projetos                 @relation(fields: [projeto_id], references: [projeto_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_projeto")
+  status_aprovacao String        @default("pendente") @db.VarChar(20)
+  criado_em        DateTime?     @default(now()) @db.Timestamp(6)
+  duracao_total    Float?
+  atividades       atividades    @relation(fields: [atividade_id], references: [atividade_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_atividade")
+  clientes         clientes      @relation(fields: [cliente_id], references: [cliente_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_cliente")
+  colaboradores    colaboradores @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_colaborador")
+  projetos         projetos      @relation(fields: [projeto_id], references: [projeto_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_projeto")
 }
 
 model projetos {
@@ -80,6 +80,7 @@ model projetos {
   data_fim              DateTime?               @default(now()) @db.Timestamp(6)
   status                Boolean?                @default(true)
   horas_previstas       Int?                    @default(0)
+  horas_gastas          Float?                  @default(0)
   atividades            atividades[]
   lancamentos_de_horas  lancamentos_de_horas[]
   projeto_colaboradores projeto_colaboradores[]

@@ -113,7 +113,7 @@ const formatarTempo = (totalSegundos: number) => {
       // 2. Usar Number() para garantir que a comparação não falhe por tipo
       const eu = data.find((c: any) => Number(c.colaborador_id) === Number(user.colaborador_id));
       
-      console.log("Colaborador encontrado no banco:", eu);
+      // console.log("Colaborador encontrado no banco:", eu);
 
       if (eu && eu.projeto_colaboradores) {
         // 3. Extrair os projetos e filtrar nulos

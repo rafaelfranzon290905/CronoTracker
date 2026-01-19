@@ -35,7 +35,12 @@ export function DataTable<TData, TValue>({
   filterColumn,
   meta,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+     {
+      id: "nome_colaborador",
+      desc: false,
+    },
+  ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
 

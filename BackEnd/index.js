@@ -136,6 +136,11 @@ app.delete('/clientes/:id', async (req, res) => {
     if (error.code == 'P2025') {
       return res.status(404).json({ error: `Cliente com ID ${clienteId} não encontrado` });
     }
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        error: 'Este cliente não pode ser excluído porque possui projetos ou horas lançadas no sistema.' 
+      });
+    }
     console.error('Erro ao deletar o cliente:', error);
     res.status(500).json({ error: 'Erro interno do servidor ao tentar deletar cliente' });
   }

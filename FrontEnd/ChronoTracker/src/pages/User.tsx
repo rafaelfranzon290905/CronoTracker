@@ -119,7 +119,7 @@ export default function UsersPage() {
     return (
         <div className="flex h-screen bg-background">
             <SideBar />
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 p-6 overflow-auto">
                 <Header />
                 <main className="flex-1 overflow-y-auto p-8">
                     <PageHeader title="Gestão de Usuários" subtitle="Controle de acessos e permissões do sistema.">

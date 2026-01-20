@@ -145,7 +145,7 @@ export const getColumns = (
         const status = row.getValue("status") as boolean;
         return (
           <Badge variant={status ? "default" : "destructive"}
-            className={!status ? "text-white" : ""}>
+            className={!status ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700 text-white"}>
             {status ? "Ativo" : "Inativo"}
           </Badge>
         );

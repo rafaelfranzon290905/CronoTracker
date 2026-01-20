@@ -133,7 +133,8 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     cell: ({ row }) => {
       const statusBool = row.getValue("status") as boolean;
       return (
-        <Badge variant={statusBool ? "default" : "secondary"}>
+        <Badge variant={statusBool ? "default" : "secondary"}
+          className={!statusBool ? "bg-green-600 hover:bg-green-700  text-white" : "bg-red-600 hover:bg-red-700 text-white"}>
           {statusBool ? "Ativo" : "Inativo"}
         </Badge>
       );

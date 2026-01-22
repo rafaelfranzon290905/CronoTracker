@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 
 function Clientes() {
   const [data, setData] = useState<Cliente[]>([]);
@@ -31,16 +32,20 @@ function Clientes() {
   const [clienteParaProjetos, setClienteParaProjetos] = useState<{ id: number; nome: string } | null>(null);
   const [confirmExclusaoAberta, setConfirmExclusaoAberta] = useState(false);
   const [idParaExcluir, setIdParaExcluir] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
   
   const { isGerente } = usePermissions();
 
   const fetchClientes = async () => {
+    setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/clientes`);
       const data = await response.json();
       setData(data);
     } catch (err) {
       toast.error("Erro ao carregar clientes.");
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -67,12 +72,19 @@ function Clientes() {
     }
   };
 
+  const clientesFiltrados = useMemo(() => {
+    if (isGerente) return data; 
+    return data.filter(cliente => cliente.status === true); 
+  }, [data, isGerente]);
+
   const columns = useMemo(() => getColumns(
     isGerente,
     (cli) => { setClienteEditando(cli); setEditModalAberto(true); },
     (id) => { setIdParaExcluir(id); setConfirmExclusaoAberta(true);},
     (id, nome) => { setClienteParaProjetos({ id, nome }); setProjetoModalAberto(true); }
   ), [isGerente]);
+
+  
 
   return (
     <div className="flex h-screen w-full">
@@ -83,8 +95,16 @@ function Clientes() {
           <PageHeader title="Clientes" subtitle="Gerencie sua base de clientes.">
             {isGerente && <DialogClientes open={addModalAberto} onOpenChange={setAddModalAberto} aoSalvar={fetchClientes} />}
           </PageHeader>
-
-          <DataTable columns={columns} data={data} />
+          {loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Carregando clientes...
+              </p>
+            </div>
+          ) : (
+            <DataTable columns={columns} data={clientesFiltrados} />
+          )}
         </main>
       </div>
 

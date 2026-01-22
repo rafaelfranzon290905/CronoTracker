@@ -8,7 +8,9 @@ import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPOR
 import { EditActivitiesDialog, type AtividadesInitialData } from "@/components/activities/EditActivitiesDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getAtividadesColumns } from "@/components/activities/collumnsActivities";
-import { API_BASE_URL } from  "@/apiConfig"
+import { API_BASE_URL } from  "@/apiConfig";
+import { Loader2 } from "lucide-react";
+
 
 
 // Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
@@ -95,7 +97,6 @@ function Atividades() {
 
     const projetosAtivos = projetos.filter(p => p.status === true);
 
-    // ⬅️ ADIÇÃO CRUCIAL: Chama fetchAtividades apenas uma vez ao montar o componente
     useEffect(() => {
         fetchAtividades();
         fetchProjetos();
@@ -173,12 +174,15 @@ function Atividades() {
                             <AddActivitiesDialog projetos={projetosAtivos} onSuccess={handleAddSuccess} />
                         }
 
-                        {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-
                     </PageHeader>
 
                     {loading ? (
-                        <div className="text-center py-12">Carregando atividades...</div>
+                        <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
+                            <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
+                            <p className="text-sm text-muted-foreground animate-pulse">
+                                Carregando atividades...
+                            </p>
+                        </div>
                     ) : (
                         <DataTable<AtividadeType, unknown> columns={tableColumns} data={atividades} />
                     )}

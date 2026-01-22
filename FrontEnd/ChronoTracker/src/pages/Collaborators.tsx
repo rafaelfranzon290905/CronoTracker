@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 
 
 // const API_BASE_URL = 'http://localhost:3001';
@@ -104,15 +105,20 @@ const confirmInactivation = async () => {
         <main className="mt-4">
           <PageHeader
             title="Gerenciar Colaboradores"
-            subtitle="Adicione, edite e visualize os membros da sua equipe."
+            subtitle="Visualize os membros da sua equipe."
           >
             {/* {isGerente &&
               <AddCollaboratorDialog onSuccess={fetchData} />
             } */}
           </PageHeader>
-          {loading ? (
-            <div className="p-10 text-center text-muted-foreground">Carregando colaboradores...</div>
-          ) : (
+          {loading ?(
+            <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Carregando colaboradores...
+              </p>
+            </div>
+          ): (
             <DataTable 
                 columns={getColaboradorColumns(isGerente)} 
                 data={data} 

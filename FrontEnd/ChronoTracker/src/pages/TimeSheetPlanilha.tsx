@@ -6,11 +6,12 @@ import { PageHeader } from "@/components/componentes/TituloPagina";
 import { DataTable } from "@/components/collaborators/data-table"; 
 import { getTimesheetColumns } from "../components/Timesheets/collums";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Users, User } from "lucide-react";
-import { AddTimeEntryDialog } from "../components/Timesheets/AddTimeEntryDialog"; // Criaremos a seguir
+import { Users, User, Loader2 } from "lucide-react";
+// import { AddTimeEntryDialog } from "../components/Timesheets/AddTimeEntryDialog"; // Criaremos a seguir
 import { Link } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
-const API_BASE_URL = 'http://localhost:3001';
+import { API_BASE_URL } from  "@/apiConfig"
+// const API_BASE_URL = 'http://localhost:3001';
 
 export default function TimesheetPage() {
   const [data, setData] = useState([]);
@@ -19,14 +20,23 @@ export default function TimesheetPage() {
   const { isGerente, user } = usePermissions();
 
   const fetchData = async () => {
+    const idParaBusca = (user as any)?.id || user?.usuario_id;
+    if (!idParaBusca) {
+      return; 
+    }
     setLoading(true);
     try {
-      // Passamos o cargo e id para o backend filtrar
       const params = new URLSearchParams({
-        usuario_id: user?.usuario_id?.toString() || "",
+        usuario_id: idParaBusca.toString() || "",
         cargo: verEquipe ? "gerente" : "colaborador"
       });
-      const response = await fetch(`${API_BASE_URL}/lancamentos?${params}`);
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_BASE_URL}/lancamentos?${params}`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error("Erro na requisição");
       const result = await response.json();
       setData(result);
     } catch (error) {
@@ -73,7 +83,15 @@ export default function TimesheetPage() {
                 Lançar horas</Button></Link>
             </div>
           </PageHeader>
-
+            
+          {loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Carregando lançamentos...
+              </p>
+            </div>
+          ) : (
           <DataTable 
             columns={getTimesheetColumns(isGerente, verEquipe)} 
             data={data}
@@ -83,6 +101,7 @@ export default function TimesheetPage() {
               onReject: (id: number) => handleStatusUpdate(id, 'rejeitado')
             }}
           />
+          )}
         </main>
       </div>
     </div>

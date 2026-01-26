@@ -12,6 +12,7 @@ import { useState, useEffect } from "react"
 import { Switch } from "../ui/switch"
 import {toast} from "sonner"
 import { API_BASE_URL } from  "@/apiConfig"
+import { PlusCircle } from "lucide-react"
 // import { Description } from "@radix-ui/react-dialog"
 
 interface ModalClienteProps {

@@ -1,5 +1,5 @@
 import { type ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react";
+import { ArrowUpDown, ExternalLink, MoreHorizontal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,7 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { API_BASE_URL } from  "@/apiConfig"
+import { API_BASE_URL } from "@/apiConfig";
+import { Link } from "react-router-dom";
 
 
 const deleteProject = async (id: number) => {
@@ -47,7 +48,7 @@ const deleteProject = async (id: number) => {
 
 export const getColumns = (
   clientes: { cliente_id: number; nome_cliente: string }[],
-  isGerente,
+  isGerente: boolean,
   onSuccess: () => void
 ): ColumnDef<Projeto>[] => [
     {
@@ -66,7 +67,18 @@ export const getColumns = (
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <span className="font-medium">{row.getValue("nome_projeto")}</span>,
+      cell: ({ row }) => {
+        const projeto = row.original;
+        return (
+          <Link
+            to={`/projetos/${projeto.projeto_id}`}
+            className="font-medium text-blue-950 hover:text-blue-850 hover:underline transition-all decoration-2 underline-offset-4"
+          >
+            {projeto.nome_projeto}
+            <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </Link>
+        );
+      },
     },
     {
       accessorKey: "clientes.nome_cliente",
@@ -77,18 +89,11 @@ export const getColumns = (
       },
     },
     {
-      accessorKey: "descricao",
-      header: "Descrição",
-      cell: ({ row }) => <span className="" title={row.getValue("descricao")}>{row.getValue("descricao")}</span>,
-    },
-    {
       accessorKey: "equipe",
       header: "Equipe",
       cell: ({ row }) => {
-        // 1. Pegamos os dados da linha
         const projeto = row.original;
-        
-        // 2. Acessamos a lista de vínculos
+
         const equipe = projeto.projeto_colaboradores || [];
 
         console.log(`Projeto ${projeto.nome_projeto}`, equipe);
@@ -98,9 +103,9 @@ export const getColumns = (
         }
 
         return (
-          <div className="flex -space-x-2 overflow-hidden">
+          <div className="flex -space-x-2 items-center justify-center overflow-hidden">
             {equipe.map((item, index) => (
-              <div 
+              <div
                 key={index}
                 title={item.colaboradores?.nome_colaborador || "Colaborador"}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-900 text-[10px] font-bold text-white uppercase"
@@ -134,10 +139,10 @@ export const getColumns = (
       accessorKey: "horas_previstas",
       header: "Horas Previstas",
       cell: ({ row }) => {
-          const horas = row.getValue("horas_previstas") as number;
-          return <span>{horas ? `${horas}h` : "0h"}</span>;
+        const horas = row.getValue("horas_previstas") as number;
+        return <span>{horas ? `${horas}h` : "0h"}</span>;
       },
-  },
+    },
     {
       accessorKey: "status",
       header: "Status",
@@ -170,46 +175,46 @@ export const getColumns = (
                 <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold text-center">Ações</DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-gray-100 h-px my-1" />
                 <Dialog>
-              <DialogTrigger asChild>
-                <DropdownMenuItem 
-                  onSelect={(e) => e.preventDefault()} // Impede o dropdown de fechar antes do modal abrir
-                  className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-slate-100 transition-colors"
-                >
-                  <ListChecks className="mr-2 h-4 w-4 text-blue-600" /> Ver Atividades
-                </DropdownMenuItem>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5 text-blue-600" />
-                    Atividades: {projeto.nome_projeto}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                  {atividades.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic text-center py-4">
-                      Este projeto ainda não possui atividades vinculadas.
-                    </p>
-                  ) : (
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                      {atividades.map((atv) => (
-                        <div key={atv.atividade_id} className="flex items-center justify-between p-2 border rounded-lg bg-slate-50">
-                          <span className="text-sm font-medium">{atv.nome_atividade}</span>
-                          <Badge variant={atv.status ? "default" : "secondary"} className="text-[10px]">
-                            {atv.status ? "Ativa" : "Pendente"}
-                          </Badge>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer rounded-sm hover:bg-slate-100 transition-colors"
+                    >
+                      <ListChecks className="mr-2 h-4 w-4 text-blue-600" /> Ver Atividades
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <ClipboardList className="h-5 w-5 text-blue-600" />
+                        Atividades: {projeto.nome_projeto}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                      {atividades.length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic text-center py-4">
+                          Este projeto ainda não possui atividades vinculadas.
+                        </p>
+                      ) : (
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                          {atividades.map((atv) => (
+                            <div key={atv.atividade_id} className="flex items-center justify-between p-2 border rounded-lg bg-slate-50">
+                              <span className="text-sm font-medium">{atv.nome_atividade}</span>
+                              <Badge variant={atv.status ? "default" : "secondary"} className="text-[10px]">
+                                {atv.status ? "Ativa" : "Pendente"}
+                              </Badge>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+                  </DialogContent>
+                </Dialog>
 
                 <AddProjectDialog
                   clientes={clientes}
                   onSuccess={onSuccess}
-                  projectToEdit={projeto} // Passamos o projeto da linha
+                  projectToEdit={projeto}
                 />
 
                 <DropdownMenuItem
@@ -227,20 +232,16 @@ export const getColumns = (
   ];
 
 export const getProjetosColumns = (
-  clientes: {cliente_id: number; nome_cliente: string}[],  
+  clientes: { cliente_id: number; nome_cliente: string }[],
   isGerente: boolean,
   onSuccess: () => void
 ): ColumnDef<Projeto>[] => {
-    
-    // 1. Gera o array COMPLETO de colunas, passando os handlers
-    const allColumns = getColumns(clientes ,isGerente, onSuccess);
 
-    if (isGerente) {
-        // Se for gerente, retorna todas as colunas
-        return allColumns;
-    }
-    
-    // 2. Se não for gerente, filtra a coluna 'actions' (pelo id: "actions")
-    // ATENÇÃO: O ID da coluna Ações é 'actions', não 'acoes'.
-    return allColumns.filter(column => column.id !== 'actions');
+  const allColumns = getColumns(clientes, isGerente, onSuccess);
+
+  if (isGerente) {
+    return allColumns;
+  }
+
+  return allColumns.filter(column => column.id !== 'actions');
 }

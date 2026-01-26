@@ -9,9 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-muito-segura';
 
 
 const { PrismaClient } = require('@prisma/client');
-const { boolean } = require('fast-check');
-const { error } = require('effect/Brand');
-const database = require('mime-db');
+// const { boolean } = require('fast-check');
+// const { error } = require('effect/Brand');
+// const database = require('mime-db');
 
 // Inicialização do Prisma Client
 const prisma = new PrismaClient();
@@ -552,6 +552,51 @@ app.get('/projetos', async (req, res) => {
     res.status(500).json({ error: 'Erro ao listar projetos.' });
   }
 });
+
+app.get('/projetos/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const projeto = await prisma.projetos.findUnique({
+      where: {
+        projeto_id: parseInt(id),
+      },
+      include: {
+        clientes: {
+          select: { nome_cliente: true }
+        },
+        atividades: {
+          orderBy: { atividade_id: 'asc' }
+        },
+        projeto_colaboradores: {
+          include: {
+            colaboradores: true
+          }
+        },
+        lancamentos_de_horas: {
+          select: { duracao_total: true }
+        }
+      }
+    });
+
+    if (!projeto) {
+      return res.status(404).json({ error: 'Projeto não encontrado.' });
+    }
+
+    const horasConsumidas = projeto.lancamentos_de_horas.reduce((acc, lanc) => {
+      return acc + (Number(lanc.duracao_total) || 0);
+    }, 0);
+
+    res.status(200).json({
+      ...projeto,
+      horas_consumidas: horasConsumidas
+    });
+  } catch (error) {
+    console.error(`Erro ao buscar projeto ${id}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar detalhes do projeto.' });
+  }
+});
+
 // POST /projetos - Criar Projeto
 app.post('/projetos', async (req, res) => {
   const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;

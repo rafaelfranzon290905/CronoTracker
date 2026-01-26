@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { API_BASE_URL } from  "@/apiConfig";
 import { Loader2 } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 
 export default function UsersPage() {
@@ -128,7 +129,9 @@ export default function UsersPage() {
                 <Header />
                 <main className="flex-1 overflow-y-auto p-8">
                     <PageHeader title="Gestão de Usuários" subtitle="Controle de acessos e permissões do sistema.">
-                        {isGerente && <Button onClick={() => { setEditingUser(null); setIsModalOpen(true) }}>Novo Usuário</Button>}
+                        {isGerente && <Button onClick={() => { setEditingUser(null); setIsModalOpen(true) }}>
+                            <PlusCircle/>
+                            Novo Usuário</Button>}
                     </PageHeader>
                     {loading ? (
                         <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">

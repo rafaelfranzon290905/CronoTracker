@@ -2,10 +2,25 @@ import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity, LogOut, Ghost } from "lucide-react"
 import ChronosAzulFundoRemovido from "../../imagens/ChronosAzulFundoRemovido.png"
+import { useNavigate } from "react-router-dom"
 
 export default function SideBar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = (path: string) => location.pathname === path;
+
+  // Função de Logout
+  const handleLogout = () => {
+    // 1. Limpa os dados de login
+    localStorage.removeItem('currentUser');
+    
+    // Se você usar sessionStorage ou tokens, limpe-os aqui também:
+    // localStorage.clear(); // Opcional: limpa TUDO no storage
+
+    // 2. Redireciona para o login (ou raiz)
+    navigate("/");
+  };
+
     return (
         <>
         {/* Sidebar */}
@@ -54,7 +69,7 @@ export default function SideBar() {
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Despesas"><DollarSign className="mr-2 scale-120" /> Despesas</Button>
         </nav>
         <div className="p-4">
-          <Button className="w-full" aria-label="Botão para sair do site"><LogOut className="mr-2 h-4 w-4 scale-120"/>Log Out</Button>
+          <Button className="w-full" aria-label="Botão para sair do site" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4 scale-120"/>Log Out</Button>
         </div>
       </aside>
         </>

@@ -555,42 +555,51 @@ app.get('/projetos', async (req, res) => {
 
 app.get('/projetos/:id', async (req, res) => {
   const { id } = req.params;
+  const projetoId = parseInt(id);
+
+  if (isNaN(projetoId)) {
+    return res.status(400).json({ error: "ID do projeto inválido." });
+  }
 
   try {
-    const projeto = await prisma.projetos.findUnique({
-      where: {
-        projeto_id: parseInt(id),
-      },
-      include: {
-        clientes: {
-          select: { nome_cliente: true }
-        },
-        atividades: {
-          orderBy: { atividade_id: 'asc' }
-        },
-        projeto_colaboradores: {
-          include: {
-            colaboradores: true
+    const [projeto, somaDespesas, somaHoras] = await Promise.all([
+      prisma.projetos.findUnique({
+        where: { projeto_id: projetoId },
+        include: {
+          clientes: { select: { nome_cliente: true } },
+          atividades: { orderBy: { atividade_id: 'asc' } },
+          projeto_colaboradores: { include: { colaboradores: true } },
+          despesas: { 
+            orderBy: { data_despesa: 'desc' },
+            include: { colaborador: { select: { nome_colaborador: true } } }
           }
-        },
-        lancamentos_de_horas: {
-          select: { duracao_total: true }
         }
-      }
-    });
+      }),
+
+      prisma.despesas.aggregate({
+        where: { 
+          projeto_id: projetoId,
+          status_aprovacao: "Aprovada" 
+        },
+        _sum: { valor: true }
+      }),
+
+      prisma.lancamentos_de_horas.aggregate({
+        where: { projeto_id: projetoId },
+        _sum: { duracao_total: true }
+      })
+    ]);
 
     if (!projeto) {
       return res.status(404).json({ error: 'Projeto não encontrado.' });
     }
 
-    const horasConsumidas = projeto.lancamentos_de_horas.reduce((acc, lanc) => {
-      return acc + (Number(lanc.duracao_total) || 0);
-    }, 0);
-
     res.status(200).json({
       ...projeto,
-      horas_consumidas: horasConsumidas
+      horas_consumidas: somaHoras._sum.duracao_total || 0,
+      total_despesas: Number(somaDespesas._sum.valor) || 0
     });
+
   } catch (error) {
     console.error(`Erro ao buscar projeto ${id}:`, error);
     res.status(500).json({ error: 'Erro interno ao buscar detalhes do projeto.' });
@@ -721,6 +730,116 @@ app.delete('/projetos/:id', async (req, res) => {
       return res.status(404).json({ error: 'Projeto não encontrado.' });
     }
     res.status(500).json({ error: 'Erro interno ao excluir projeto.' });
+  }
+});
+
+// POST /despesas - Cadastro de Despesa
+app.post('/despesas', async (req, res) => {
+  const { projeto_id, colaborador_id, tipo_despesa, data_despesa, valor, descricao, anexo } = req.body;
+
+  if (!projeto_id || !colaborador_id || !tipo_despesa || !data_despesa || !valor || !descricao || !anexo) {
+    return res.status(400).json({ error: "Todos os campos, incluindo o anexo, são obrigatórios." });
+  }
+
+  const tiposPermitidos = ["Transporte", "Refeição", "Estadia", "Outros"];
+  if (!tiposPermitidos.includes(tipo_despesa)) {
+    return res.status(400).json({ error: "Tipo de despesa inválido." });
+  }
+
+  const valorNumerico = parseFloat(valor);
+  if (isNaN(valorNumerico) || valorNumerico <= 0) {
+    return res.status(400).json({ error: "O valor da despesa deve ser maior que zero." });
+  }
+
+  const dataLancamento = new Date(data_despesa);
+  const hoje = new Date();
+  if (dataLancamento > hoje) {
+    return res.status(400).json({ error: "A data da despesa não pode ser futura." });
+  }
+
+  if (descricao.trim().length < 5) {
+    return res.status(400).json({ error: "A descrição deve ter no mínimo 5 caracteres." });
+  }
+
+  try {
+    const projeto = await prisma.projetos.findUnique({ where: { projeto_id: Number(projeto_id) } });
+    
+    if (!projeto) {
+      return res.status(404).json({ error: "Projeto não encontrado." });
+    }
+
+    if (projeto.status === false) { 
+      return res.status(400).json({ error: "Não é permitido lançar despesas em projetos inativos ou encerrados." });
+    }
+
+    const novaDespesa = await prisma.despesas.create({
+      data: {
+        projeto_id: Number(projeto_id),
+        colaborador_id: Number(colaborador_id),
+        tipo_despesa,
+        data_despesa: dataLancamento,
+        valor: valorNumerico,
+        descricao,
+        anexo, 
+        status_aprovacao: "Pendente" 
+      }
+    });
+
+    res.status(201).json(novaDespesa);
+  } catch (error) {
+    console.error("Erro ao cadastrar despesa:", error);
+    res.status(500).json({ error: "Erro interno ao processar o lançamento da despesa." });
+  }
+});
+
+// PATCH /despesas/:id/status - Aprovar ou Reprovar Despesa (Apenas Gerentes)
+app.patch('/despesas/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status, motivo_reprovacao, cargo } = req.body; 
+
+  if (!cargo || cargo.toLowerCase() !== 'gerente') {
+    return res.status(403).json({ error: "Acesso negado. Apenas gerentes podem aprovar despesas." });
+  }
+
+  const statusPermitidos = ["Aprovada", "Reprovada", "Pendente"];
+  if (!statusPermitidos.includes(status)) {
+    return res.status(400).json({ error: "Status inválido." });
+  }
+
+  try {
+    const despesaAtualizada = await prisma.despesas.update({
+      where: { despesa_id: parseInt(id) },
+      data: { 
+        status_aprovacao: status,
+        motivo_reprovacao: status === "Reprovada" ? motivo_reprovacao : null
+      }
+    });
+
+    res.status(200).json(despesaAtualizada);
+  } catch (error) {
+    console.error("Erro ao atualizar status da despesa:", error);
+    res.status(500).json({ error: 'Erro interno ao processar aprovação.' });
+  }
+});
+
+// GET /despesas - Lista todas as despesas 
+app.get('/despesas', async (req, res) => {
+  const { status } = req.query;
+  console.log("Filtro recebido na URL:", status);
+  try {
+    const despesas = await prisma.despesas.findMany({
+      where: status ? { status_aprovacao: status } : {},
+      include: {
+        colaborador: { select: { nome_colaborador: true } },
+        projeto: { select: { nome_projeto: true } }
+      },
+      orderBy: { data_despesa: 'desc' }
+    });
+    console.log(`Foram encontradas ${despesas.length} despesas.`);
+    res.status(200).json(despesas);
+  } catch (error) {
+    console.error("Erro ao listar despesas:", error);
+    res.status(500).json({ error: "Erro interno ao buscar despesas." });
   }
 });
 

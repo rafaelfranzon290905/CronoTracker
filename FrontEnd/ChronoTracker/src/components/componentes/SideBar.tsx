@@ -6,9 +6,9 @@ import ChronosAzulFundoRemovido from "../../imagens/ChronosAzulFundoRemovido.png
 export default function SideBar() {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
-    return (
-        <>
-        {/* Sidebar */}
+  return (
+    <>
+      {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-sidebar shadow-2xl rounded-4xl m-4" aria-label="Sidebar">
         <div className="p-6 flex items-center space-x-2 font-bold text-lg">
           <img src={ChronosAzulFundoRemovido} alt="Logo do ChronoTracker" className="h-12 w-12" />
@@ -21,42 +21,49 @@ export default function SideBar() {
               className="w-full justify-start " aria-label="Botão para acessar Dashboard"><Home className="mr-2 scale-120" /> Dashboard</Button>
           </Link>
           <Link to="/TimeSheet">
-            <Button 
-            variant={isActive("/TimeSheet") ? "default" : "ghost"}
-            className="w-full justify-start" aria-label="Botão para acessar TimeSheets"><Clock className="mr-2 scale-120" /> TimeSheet</Button>
+            <Button
+              variant={isActive("/TimeSheet") ? "default" : "ghost"}
+              className="w-full justify-start" aria-label="Botão para acessar TimeSheets"><Clock className="mr-2 scale-120" /> TimeSheet</Button>
           </Link>
           <Link to="/clientes">
-            <Button 
+            <Button
               variant={isActive("/clientes") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Clientes"><Users className="mr-2 scale-120" /> Clientes</Button>
           </Link>
           <Link to="/collaborators">
-            <Button 
-              variant={isActive("/collaborators") ? "default" : "ghost"} 
+            <Button
+              variant={isActive("/collaborators") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Colaboradores"><Users className="mr-2 scale-120" /> Colaboradores</Button>
           </Link>
           <Link to="/projetos">
-            <Button 
-              variant={isActive("/projetos") ? "default" : "ghost"} 
+            <Button
+              variant={isActive("/projetos") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Projetos"><Rocket className="mr-2 scale-120" /> Projetos</Button>
           </Link>
           <Link to="/atividades">
-            <Button 
+            <Button
               variant={isActive("/atividades") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Atividades"><Activity className="mr-2 scale-120" /> Atividades</Button>
           </Link>
           <Link to="/usuarios">
-            <Button 
+            <Button
               variant={isActive("/usuarios") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Usuários"><Activity className="mr-2 scale-120" /> Usuários</Button>
           </Link>
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Relatórios"><FileText className="mr-2 scale-120" /> Relatórios</Button>
-          <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Despesas"><DollarSign className="mr-2 scale-120" /> Despesas</Button>
+          <Link to="/gestao-despesas">
+            <Button
+              variant={isActive("/gestao-despesas") ? "default" : "ghost"}
+              className="w-full justify-start"
+            >
+              <DollarSign className="mr-2 scale-120" /> Despesas
+            </Button>
+          </Link>
         </nav>
         <div className="p-4">
-          <Button className="w-full" aria-label="Botão para sair do site"><LogOut className="mr-2 h-4 w-4 scale-120"/>Log Out</Button>
+          <Button className="w-full" aria-label="Botão para sair do site"><LogOut className="mr-2 h-4 w-4 scale-120" />Log Out</Button>
         </div>
       </aside>
-        </>
-    );
+    </>
+  );
 }

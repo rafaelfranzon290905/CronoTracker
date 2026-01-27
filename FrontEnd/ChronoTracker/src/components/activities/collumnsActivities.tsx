@@ -10,14 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// Assumindo que a interface Atividades reflete a estrutura de dados correta
-import { type Atividades } from "@/lib/activities"; 
-import { usePermissions } from "@/hooks/usePermissions";
+import { type Atividades } from "@/lib/activities";
+// import { usePermissions } from "@/hooks/usePermissions";
 
 const formatarData = (dateString: string | null | undefined): string => {
   if (!dateString) return '';
   try {
-    return new Date(dateString).toLocaleDateString("pt-BR");
+    return new Date(dateString).toLocaleDateString("pt-BR", { timeZone: 'UTC' });
   } catch {
     return dateString; // Retorna a string original em caso de erro
   }
@@ -32,7 +31,7 @@ type EditActivityHandler = (activity: Atividades) => void;
 
 
 export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditActivity: EditActivityHandler): ColumnDef<Atividades>[] => [
-  
+
   // 1. COLUNA: Nome da Atividade (Com Ordenação)
   {
     accessorKey: "nome_atividade",
@@ -53,7 +52,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     enableGlobalFilter: true,
   },
 
-  // 2. COLUNA: Projeto Vinculado (Se a API retorna apenas o ID)
+  // 2. COLUNA: Projeto Vinculado 
   // NOTA: Se a API retornar o objeto de projeto, troque "projeto_id" por "projetos.nome"
   {
     accessorKey: "projetos.nome_projeto",
@@ -62,13 +61,13 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     cell: ({ row }) => {
       const atividade = row.original;
       // console.log("Dados da linha", atividade);
-    const projeto = atividade.projetos?.nome_projeto; 
-    
-    return (
-      <Badge variant="outline" className="">
-        {projeto || "Sem Projeto"}
-      </Badge>
-    );
+      const projeto = atividade.projetos?.nome_projeto;
+
+      return (
+        <Badge variant="outline" className="">
+          {projeto || "Sem Projeto"}
+        </Badge>
+      );
       // const projetoId = row.getValue("projeto_id") as number | string;
       // return <Badge variant="outline">{projetoId}</Badge>; // Exibe o ID (ou o nome, se ajustado)
     },
@@ -79,23 +78,23 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     enableGlobalFilter: true,
     cell: ({ row }) => {
       const atividade = row.original;
-      
+
       const responsavel = atividade.responsavel;
 
       if (!responsavel) {
-      return <span className="text-muted-foreground text-xs italic">Sem responsável</span>;
-    }
+        return <span className="text-muted-foreground text-xs italic">Sem responsável</span>;
+      }
 
       return (
-      <div className="flex justify-center">
-        <div 
-          title={responsavel.nome_colaborador}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-900 text-[10px] font-bold text-white uppercase"
-        >
-          {responsavel.nome_colaborador?.substring(0, 2) || "??"}
+        <div className="flex justify-center">
+          <div
+            title={responsavel.nome_colaborador}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-900 text-[10px] font-bold text-white uppercase"
+          >
+            {responsavel.nome_colaborador?.substring(0, 2) || "??"}
+          </div>
         </div>
-      </div>
-    );
+      );
     }
   },
 
@@ -106,7 +105,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     cell: ({ row }) => <span className="text-sm">{row.getValue("descr_atividade")}</span>,
   },
 
-  // 4. COLUNA: Início Previsto (Com Formatação de Data)
+  // 4. COLUNA: Início Previsto
   {
     accessorKey: "data_prevista_inicio",
     header: "Início Previsto",
@@ -116,7 +115,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
 
-  // 5. COLUNA: Fim Previsto (Com Formatação de Data)
+  // 5. COLUNA: Fim Previsto 
   {
     accessorKey: "data_prevista_fim",
     header: "Fim Previsto",
@@ -126,7 +125,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
 
-  // 6. COLUNA: Status (Com Badge e Lógica Separada)
+  // 6. COLUNA: Status 
   {
     accessorKey: "status",
     header: "Status",
@@ -149,7 +148,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     cell: ({ row }) => {
       const atividade = row.original;
       const atividadeId = row.original.atividade_id;
-      
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -161,16 +160,16 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
           <DropdownMenuContent align="end" className="bg-white">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-                onClick={() => handleEditActivity(atividade)}
+            <DropdownMenuItem
+              onClick={() => handleEditActivity(atividade)}
             >
-                Editar Atividade
+              Editar Atividade
             </DropdownMenuItem>
-            <DropdownMenuItem 
-                className="text-red-600 focus:text-red-700"
-                onClick= { () => handleDeleteActivity(atividadeId)}
+            <DropdownMenuItem
+              className="text-red-600 focus:text-red-700"
+              onClick={() => handleDeleteActivity(atividadeId)}
             >
-                Excluir Atividade
+              Excluir Atividade
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -180,20 +179,19 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
 ];
 
 export const getAtividadesColumns = (
-    isGerente: boolean, 
-    handleDeleteActivity: DeleteActivityHandler, 
-    handleEditActivity: EditActivityHandler
+  isGerente: boolean,
+  handleDeleteActivity: DeleteActivityHandler,
+  handleEditActivity: EditActivityHandler
 ): ColumnDef<Atividades>[] => {
-    
-    // 1. Gera o array COMPLETO de colunas, passando os handlers
-    const allColumns = columns(handleDeleteActivity, handleEditActivity);
 
-    if (isGerente) {
-        // Se for gerente, retorna todas as colunas
-        return allColumns;
-    }
-    
-    // 2. Se não for gerente, filtra a coluna 'actions' (pelo id: "actions")
-    // ATENÇÃO: O ID da coluna Ações é 'actions', não 'acoes'.
-    return allColumns.filter(column => column.id !== 'actions');
+  // 1. Gera o array COMPLETO de colunas, passando os handlers
+  const allColumns = columns(handleDeleteActivity, handleEditActivity);
+
+  if (isGerente) {
+    // Se for gerente, retorna todas as colunas
+    return allColumns;
+  }
+
+  // 2. Se não for gerente, filtra a coluna 'actions' (pelo id: "actions")
+  return allColumns.filter(column => column.id !== 'actions');
 }

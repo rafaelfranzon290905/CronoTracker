@@ -66,7 +66,7 @@ export function ListaDespesasProjeto({ despesas }: Props) {
               {despesas.map((d) => (
                 <TableRow key={d.despesa_id} className="hover:bg-slate-50/50">
                   <TableCell className="font-medium">
-                    {new Date(d.data_despesa).toLocaleDateString('pt-BR')}
+                    {new Date(d.data_despesa).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                   </TableCell>
                   <TableCell className="text-xs">
                     {d.colaborador?.nome_colaborador}

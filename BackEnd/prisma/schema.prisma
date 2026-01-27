@@ -46,10 +46,10 @@ model colaboradores {
   foto                  Bytes?
   status                Boolean?                @default(true)
   atividades            atividades[]
+  despesas              despesas[]
   lancamentos_de_horas  lancamentos_de_horas[]
   projeto_colaboradores projeto_colaboradores[]
   usuario               usuarios?
-  despesas              despesas[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -83,10 +83,10 @@ model projetos {
   horas_previstas       Int?                    @default(0)
   horas_gastas          Float?                  @default(0)
   atividades            atividades[]
+  despesas              despesas[]
   lancamentos_de_horas  lancamentos_de_horas[]
   projeto_colaboradores projeto_colaboradores[]
   clientes              clientes                @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_projeto_cliente")
-  despesas              despesas[]
 }
 
 model usuarios {
@@ -112,21 +112,18 @@ model projeto_colaboradores {
   @@id([projeto_id, colaborador_id])
 }
 
-
 model despesas {
   despesa_id        Int           @id @default(autoincrement())
   projeto_id        Int
   colaborador_id    Int
-  tipo_despesa      String        @db.VarChar(50) 
-  data_despesa      DateTime      @db.Date        
-  valor             Float       
-  descricao         String        @db.Text        
-  anexo             String        
-  status_aprovacao  String        @default("Pendente") @db.VarChar(30) 
-  motivo_reprovacao String?       @db.Text        
+  tipo_despesa      String        @db.VarChar(50)
+  data_despesa      DateTime      @db.Date
+  valor             Float
+  descricao         String
+  anexo             String
+  status_aprovacao  String        @default("Pendente") @db.VarChar(30)
+  motivo_reprovacao String?
   criado_em         DateTime      @default(now()) @db.Timestamp(6)
-  
-  // Relações
-  projeto           projetos      @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade)
   colaborador       colaboradores @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction)
+  projeto           projetos      @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade)
 }

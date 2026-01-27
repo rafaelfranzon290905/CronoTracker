@@ -31,6 +31,7 @@ export interface Projeto {
     data_fim: string;
     status: boolean;
     horas_previstas: number; // <-- Novo campo
+    total_despesas?: number;
     horas_consumidas?: number;
     clientes?: {
         nome_cliente: string;
@@ -45,5 +46,17 @@ export interface Projeto {
         colaborador_id: number;
         nome_colaborador: string;
       }
+    }[];
+    despesas?: {
+        despesa_id: number;
+        tipo_despesa: string;
+        data_despesa: string;
+        valor: number;
+        status_aprovacao: string;
+        anexo: string;
+        motivo_reprovacao?: string;
+        colaborador?: {
+            nome_colaborador: string;
+        }
     }[];
 }

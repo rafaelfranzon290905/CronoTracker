@@ -15,24 +15,23 @@ export function usePermissions() {
     // 1. Obtém os dados do usuário do localStorage
     const userJson = typeof window !== 'undefined' ? localStorage.getItem('currentUser') : null;
     return useMemo(() => {
+        const userJson = typeof window !== 'undefined' ? localStorage.getItem('currentUser') : null;
         let userData: Usuario | null = null;
-        let cargo = null;
+        let isGerente = false;
         
         if (userJson) {
             try {
                 userData = JSON.parse(userJson);
-                cargo = userData?.cargo;
+                isGerente = userData?.cargo?.toLowerCase() === 'gerente';
             } catch (e) {
                 console.error("Erro ao fazer parse do usuário:", e);
             }
         }
-
-        const isGerente = cargo?.toLowerCase() === 'gerente';
         
         return { 
-            cargo, 
             isGerente,
+            isColaborador: userData?.cargo?.toLowerCase() === 'colaborador',
             user: userData,
         };
-    }, [userJson]);
+    }, []);
 }

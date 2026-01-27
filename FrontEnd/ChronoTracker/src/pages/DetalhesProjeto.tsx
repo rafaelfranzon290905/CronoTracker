@@ -18,19 +18,23 @@ import {
     ArrowLeft,
     Clock,
     Loader2,
-    AlertCircle
+    AlertCircle,
+    Receipt
 } from "lucide-react";
 import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { AddExpenseDialog } from "@/components/projects/AddExpenseDialog";
+import { ListaDespesasProjeto } from "@/components/projects/ListaDespesasProjeto";
 
 export default function DetalhesProjeto() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { isGerente } = usePermissions();
+    const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+
     const [projeto, setProjeto] = useState<Projeto | null>(null);
     const [clientes, setClientes] = useState<any[]>([])
     const [loading, setLoading] = useState(true);
-
     const loadData = async () => {
         try {
             setLoading(true);
@@ -40,7 +44,7 @@ export default function DetalhesProjeto() {
             ]);
 
             if (!projRes.ok) throw new Error("Projeto não encontrado");
-            
+
             const projData = await projRes.json();
             const cliData = await cliRes.json();
 
@@ -59,7 +63,7 @@ export default function DetalhesProjeto() {
 
     const progressoConsumido = useMemo(() => {
         if (!projeto || !projeto.horas_previstas || projeto.horas_previstas === 0) return 0;
-        const consumidas = projeto.horas_consumidas ?? 0; 
+        const consumidas = projeto.horas_consumidas ?? 0;
         const calculo = (consumidas / projeto.horas_previstas) * 100;
 
         return Math.min(Math.round(calculo), 120);
@@ -98,11 +102,18 @@ export default function DetalhesProjeto() {
                                     <Badge className={projeto.status ? "bg-green-600" : "bg-red-600"}>
                                         {projeto.status ? "Ativo" : "Inativo"}
                                     </Badge>
+                                    {projeto.status && user.colaborador_id && (
+                                        <AddExpenseDialog
+                                            projetoId={projeto.projeto_id}
+                                            colaboradorId={user.colaborador_id}
+                                            onSuccess={loadData}
+                                        />
+                                    )}
                                     {isGerente && (
-                                        <AddProjectDialog 
-                                            clientes={clientes} 
-                                            projectToEdit={projeto} 
-                                            onSuccess={loadData} 
+                                        <AddProjectDialog
+                                            clientes={clientes}
+                                            projectToEdit={projeto}
+                                            onSuccess={loadData}
                                             variant="button"
                                         />
                                     )}
@@ -132,7 +143,7 @@ export default function DetalhesProjeto() {
                                                     {new Date(projeto.data_inicio).toLocaleDateString("pt-BR")}
                                                 </div>
                                                 <div className="flex items-center gap-2 text-sm">
-                                                    <Clock className="h-4 w-4 text-orange-600" />
+                                                    <Clock className="h-4 w-4 text-red-600" />
                                                     <span className="font-semibold">Prazo Final:</span>
                                                     {new Date(projeto.data_fim).toLocaleDateString("pt-BR")}
                                                 </div>
@@ -166,6 +177,7 @@ export default function DetalhesProjeto() {
                                             )}
                                         </CardContent>
                                     </Card>
+                                    <ListaDespesasProjeto despesas={projeto.despesas || []} />
                                 </div>
 
                                 <div className="space-y-6">
@@ -203,9 +215,11 @@ export default function DetalhesProjeto() {
                                                 </div>
 
                                                 <Progress
-                                                    value={progressoConsumido}
-                                                    className={`h-2 ${progressoConsumido > 100 ? "bg-red-100" : ""}`}
-                                                // Se quiser que a cor interna mude, use o style no indicator do Shadcn ou classes condicionais
+                                                    value={progressoConsumido > 100 ? 100 : progressoConsumido}
+                                                    className={`h-2 ${progressoConsumido > 100
+                                                            ? "bg-red-200 [&>div]:bg-red-600" 
+                                                            : ""
+                                                        }`}
                                                 />
 
                                                 <div className="flex justify-between items-center">
@@ -214,10 +228,26 @@ export default function DetalhesProjeto() {
                                                     </p>
 
                                                     {progressoConsumido > 100 && (
-                                                        <Badge variant="destructive" className="text-[8px] h-4">Over Budget</Badge>
+                                                        <Badge className="text-[8px] h-4 bg-red-600 hover:bg-red-700 text-white">Horas ultrapassadas</Badge>
                                                     )}
                                                 </div>
                                             </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="border-blue-100 shadow-sm bg-gradient-to-br from-white to-blue-50/30">
+                                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                                Despesas Aprovadas
+                                            </CardTitle>
+                                            <Receipt className="h-4 w-4 text-blue-500" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold text-blue-700">
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(projeto.total_despesas ?? 0)}
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground mt-1 underline decoration-blue-200">
+                                                Custo direto vinculado ao projeto
+                                            </p>
                                         </CardContent>
                                     </Card>
                                 </div>

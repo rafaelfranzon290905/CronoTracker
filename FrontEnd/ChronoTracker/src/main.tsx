@@ -13,6 +13,7 @@ import Login from './pages/Login.tsx'
 import { Toaster } from 'sonner'
 import LancamentoPage from './components/Timesheets/lancamentoForm.tsx'
 import DetalhesProjeto from './pages/DetalhesProjeto.tsx'
+import GestaoDespesas from './pages/GestaoDespesas.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -29,6 +30,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path='/atividades' element={<Atividades/>}/>
         <Route path='/usuarios' element={<UsersPage/>}/>
         <Route path="/TimeSheet/Lancamentos" element={<LancamentoPage/>}/>
+        <Route path="/gestao-despesas" element={<GestaoDespesas />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

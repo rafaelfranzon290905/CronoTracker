@@ -1228,7 +1228,7 @@ app.post('/lancamentos', async (req, res) => {
     data, hora_inicio, hora_fim, descricao 
   } = req.body;
 
-  console.log("Dados recebidos no backend:", req.body); // Log para debug
+  // console.log("Dados recebidos no backend:", req.body); // Log para debug
 
   try {
     if (!usuario_id) {
@@ -1248,7 +1248,7 @@ app.post('/lancamentos', async (req, res) => {
     }
 
     // Regra: Gerentes têm aprovação automática
-    const statusInicial = usuario.cargo === 'gerente' ? 'aprovado' : 'aguardando aprovação';
+    const statusInicial = 'aprovado';
 
     // 1. Preparar a data base para as horas (evita confusão de fuso horário)
     const dataBase = data; // '2026-01-14'

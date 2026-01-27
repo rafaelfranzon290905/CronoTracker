@@ -115,17 +115,25 @@ function Atividades() {
         try {
             const response = await fetch(`${API_BASE_URL}/atividades/${atividadeId}`, {
                 method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
-            if (response.status === 204) {
+            if (response.ok) {
                 window.alert(`Atividade ${atividadeId} deletada com sucesso`);
                 console.log(`Atividade ${atividadeId} deletada com sucesso`);
                 fetchAtividades()
-            } else if (response.status === 404) {
-                const errorData = await response.json();
-                alert(`Erro ao deletar: ${errorData.error}`);
             } else {
-                throw new Error(`Erro HTTP: ${response.status}`);
+               let errorMessage = "Erro desconhecido";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.message || response.statusText;
+            } catch {
+                errorMessage = `Erro HTTP: ${response.status}`;
             }
+            
+            alert(`Erro ao deletar: ${errorMessage}`);
+            } 
         } catch (err) {
             console.log("Erro ao deletar atividade:", err);
             alert("Erro ao deletar atividade. Verifique o console.");

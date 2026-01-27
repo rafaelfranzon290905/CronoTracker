@@ -3,7 +3,7 @@ import Header from "@/components/componentes/Header"
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import { useState, useEffect, useMemo } from "react";
 import { type Projeto } from "@/lib/projects";
-import { getColumns } from "@/components/projects/collumnsProjects";
+// import { getColumns } from "@/components/projects/collumnsProjects";
 import { DataTable } from "@/components/projects/data-table-projects";
 import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";

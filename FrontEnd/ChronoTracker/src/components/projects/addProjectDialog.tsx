@@ -45,16 +45,18 @@ const formSchema = z.object({
 type ProjetoFormValues = z.infer<typeof formSchema>;
 
 interface AddProjectDialogProps {
-  clientes: { cliente_id: number; nome_cliente: string }[];
-  onSuccess: () => void;
-  projectToEdit?: Projeto;
+    clientes: { cliente_id: number; nome_cliente: string }[];
+    onSuccess: () => void;
+    projectToEdit?: Projeto;
+    variant?: "button" | "dropdown";
 }
 
-export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProjectDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [listaColaboradores, setListaColaboradores] = useState<any[]>([]);
-  const [selectedColaboradores, setSelectedColaboradores] = useState<number[]>([]);
+export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant = "dropdown" }: AddProjectDialogProps) {
+    const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false)
+
+    const [listaColaboradores, setListaColaboradores] = useState<any[]>([]);
+    const [selectedColaboradores, setSelectedColaboradores] = useState<number[]>([]);
 
   const isEditMode = !!projectToEdit;
 
@@ -153,48 +155,59 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProj
     }
   }
 
-  return (
-    <>
-      {isEditMode ? (
-        <div
-          onClick={(e) => {
-            e.preventDefault();
-            setOpen(true);
-          }}
-          className="flex items-center gap-2 px-2 py-1.5 text-sm outline-none hover:bg-gray-100 cursor-pointer rounded-sm transition-colors w-full"
-        >
-          <Edit className="h-4 w-4 text-blue-900" />
-          <span>Editar</span>
-        </div>
-      ) : (
-        <Button onClick={() => setOpen(true)} className="bg-blue-950 rounded-2xl text-white hover:bg-blue-800 mx-3">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Adicionar Projeto
-        </Button>
-      )}
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isEditMode ? "Editar Projeto" : "Adicionar Novo Projeto"}</DialogTitle>
-          </DialogHeader>
-
-          <ScrollArea className="max-h-[60vh] p-4">
-            <Form {...formProjects}>
-              <form onSubmit={formProjects.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={formProjects.control}
-                  name="nome_projeto"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Projeto</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Sistema ERP" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+    return (
+        <>
+            {isEditMode && variant === "button" ? (
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setOpen(true)}
+                    className="flex items-center gap-2 border-slate-200 hover:bg-slate-100"
+                >
+                    <Edit className="h-4 w-4 text-blue-900" />
+                    <span>Editar</span>
+                </Button>
+            ) :isEditMode ? (
+                <div onClick={(e) => {
+                    e.preventDefault();
+                    setOpen(true);
+                }}
+                    className="flex items-center gap-2 px-2 py-1.5 text-sm outline-none hover:bg-gray-100 cursor-pointer rounded-sm transition-colors w-full"
+                >
+                    <Edit className="h-4 w-4 text-blue-900" />
+                    <span>Editar</span>
+                </div>
+            ) : (
+                <Button onClick={() => setOpen(true)} className="bg-blue-950 rounded-2xl text-white hover:bg-blue-800 mx-3">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Projeto
+                </Button>
+            )}
+            < Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        {/* <DialogTitle>Adicionar Novo Projeto</DialogTitle> */}
+                        <DialogTitle>{isEditMode ? "Editar Projeto" : "Adicionar Novo Projeto"}</DialogTitle>
+                        <DialogDescription>
+                            Preencha os dados abaixo para cadastrar um novo projeto.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] p-4">
+                        <Form {...formProjects}>
+                            <form onSubmit={formProjects.handleSubmit(onSubmit)} className="space-y-4">
+                                <FormField
+                                    control={formProjects.control}
+                                    name="nome_projeto"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nome do Projeto</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Ex: Sistema ERP" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
                 <FormField
                   control={formProjects.control}

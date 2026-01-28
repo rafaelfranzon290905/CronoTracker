@@ -1,5 +1,5 @@
-import SideBar from "@/components/componentes/SideBar"
-import Header from "@/components/componentes/Header"
+import SideBar from "@/components/componentes/SideBar";
+import Header from "@/components/componentes/Header";
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import { useState, useEffect, useMemo } from "react";
 import { type Projeto } from "@/lib/projects";
@@ -51,9 +51,15 @@ function Projetos() {
         fetch(`${API_BASE_URL}/projetos`),
         fetch(`${API_BASE_URL}/clientes`)
       ]);
-      
-      const projetos = await projRes.json();
+
+      const projetos: Projeto[] = await projRes.json();
       const listaClientes = await cliRes.json();
+
+      projetos.sort((a, b) =>
+        a.nome_projeto.localeCompare(b.nome_projeto, "pt-BR", {
+          sensitivity: "base",
+        })
+      );
 
       setData(projetos);
       setClientes(listaClientes);
@@ -68,8 +74,10 @@ function Projetos() {
     fetchData();
   }, []);
 
-  //garante que as colunas só recriem se clientes mudarem
-  const columns = useMemo(() => getProjetosColumns(clientes, isGerente, fetchData), [clientes, isGerente]);
+  const columns = useMemo(
+    () => getProjetosColumns(clientes, isGerente, fetchData),
+    [clientes, isGerente]
+  );
 
   return (
     <div className="flex h-screen w-full">
@@ -81,9 +89,9 @@ function Projetos() {
             title="Projetos"
             subtitle="Adicione, edite e visualize os seus projetos."
           >
-            {isGerente && 
-              <AddProjectDialog clientes={clientes} onSuccess={fetchData}/>
-            }
+            {isGerente && (
+              <AddProjectDialog clientes={clientes} onSuccess={fetchData} />
+            )}
           </PageHeader>
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
@@ -98,8 +106,7 @@ function Projetos() {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default Projetos
-
+export default Projetos;

@@ -8,7 +8,9 @@ import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPOR
 import { EditActivitiesDialog, type AtividadesInitialData } from "@/components/activities/EditActivitiesDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getAtividadesColumns } from "@/components/activities/collumnsActivities";
-import { API_BASE_URL } from  "@/apiConfig"
+import { API_BASE_URL } from  "@/apiConfig";
+import { Loader2 } from "lucide-react";
+
 
 
 // Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
@@ -95,7 +97,6 @@ function Atividades() {
 
     const projetosAtivos = projetos.filter(p => p.status === true);
 
-    // ⬅️ ADIÇÃO CRUCIAL: Chama fetchAtividades apenas uma vez ao montar o componente
     useEffect(() => {
         fetchAtividades();
         fetchProjetos();
@@ -114,17 +115,25 @@ function Atividades() {
         try {
             const response = await fetch(`${API_BASE_URL}/atividades/${atividadeId}`, {
                 method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
             });
-            if (response.status === 204) {
+            if (response.ok) {
                 window.alert(`Atividade ${atividadeId} deletada com sucesso`);
                 console.log(`Atividade ${atividadeId} deletada com sucesso`);
                 fetchAtividades()
-            } else if (response.status === 404) {
-                const errorData = await response.json();
-                alert(`Erro ao deletar: ${errorData.error}`);
             } else {
-                throw new Error(`Erro HTTP: ${response.status}`);
+               let errorMessage = "Erro desconhecido";
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorData.message || response.statusText;
+            } catch {
+                errorMessage = `Erro HTTP: ${response.status}`;
             }
+            
+            alert(`Erro ao deletar: ${errorMessage}`);
+            } 
         } catch (err) {
             console.log("Erro ao deletar atividade:", err);
             alert("Erro ao deletar atividade. Verifique o console.");
@@ -173,12 +182,15 @@ function Atividades() {
                             <AddActivitiesDialog projetos={projetosAtivos} onSuccess={handleAddSuccess} />
                         }
 
-                        {/* O AddActivitiesDialog foi mantido como um comentário, assumindo que você lidará com projetos separadamente. */}
-
                     </PageHeader>
 
                     {loading ? (
-                        <div className="text-center py-12">Carregando atividades...</div>
+                        <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
+                            <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
+                            <p className="text-sm text-muted-foreground animate-pulse">
+                                Carregando atividades...
+                            </p>
+                        </div>
                     ) : (
                         <DataTable<AtividadeType, unknown> columns={tableColumns} data={atividades} />
                     )}

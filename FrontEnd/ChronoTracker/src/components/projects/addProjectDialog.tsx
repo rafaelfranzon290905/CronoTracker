@@ -64,9 +64,10 @@ interface AddProjectDialogProps {
     clientes: { cliente_id: number; nome_cliente: string }[];
     onSuccess: () => void;
     projectToEdit?: Projeto;
+    variant?: "button" | "dropdown";
 }
 
-export function AddProjectDialog({ clientes, onSuccess, projectToEdit }: AddProjectDialogProps) {
+export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant = "dropdown" }: AddProjectDialogProps) {
     const [open, setOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false)
 
@@ -191,7 +192,17 @@ useEffect(() => {
 
     return (
         <>
-            {isEditMode ? (
+            {isEditMode && variant === "button" ? (
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setOpen(true)}
+                    className="flex items-center gap-2 border-slate-200 hover:bg-slate-100"
+                >
+                    <Edit className="h-4 w-4 text-blue-900" />
+                    <span>Editar</span>
+                </Button>
+            ) :isEditMode ? (
                 <div onClick={(e) => {
                     e.preventDefault();
                     setOpen(true);

@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../ui/table";
+} from "../ui/table"
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Search } from "lucide-react";
@@ -25,21 +25,17 @@ import { Search } from "lucide-react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  filterColumn?: string;
-  meta?: any;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  filterColumn,
-  meta,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([
-     {
-      id: "nome_colaborador",
-      desc: false,
-    },
+    {
+      id: "nome_cliente", 
+      desc: false,         
+    }
   ]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
@@ -59,7 +55,6 @@ export function DataTable<TData, TValue>({
       columnFilters,
       rowSelection,
     },
-    meta: meta,
   });
 
   return (
@@ -68,10 +63,10 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4 w-full">
         <div className="relative w-full">
           <Input
-            placeholder={`Filtrar por ${filterColumn}`}
-            value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
+            placeholder="Filtrar por empresa..."
+            value={(table.getColumn("nome_cliente")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn(filterColumn)?.setFilterValue(event.target.value)
+              table.getColumn("nome_cliente")?.setFilterValue(event.target.value)
             }
             className="w-full rounded-full pr-14 pl-4 h-12 border-gray-200"
           />
@@ -137,13 +132,13 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* rodapé tabela */}
-      <div className="flex items-center justify-between space-x-2 py-4">
+      <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} de{" "}
-          {table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
-        </div>
+                        {table.getFilteredSelectedRowModel().rows.length} de{" "}
+                        {table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
+                      </div>
         <div className="flex items-center space-x-2">
-          <Button 
+          <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}

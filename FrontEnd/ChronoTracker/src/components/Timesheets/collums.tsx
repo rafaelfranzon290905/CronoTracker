@@ -88,13 +88,15 @@ export const getTimesheetColumns = (isGerente: boolean, verEquipe: boolean): Col
       accessorKey: "status_aprovacao",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status_aprovacao") as string;
+        const status = (row.getValue("status_aprovacao") as string).toLowerCase();
         const variants: any = { 
           aprovado: "bg-green-600", 
-          aguardandoaprovação: "bg-yellow-500", 
-          rejeitado: "bg-red-600" 
+          pendente: "bg-yellow-500", 
+          'aguardando aprovação': "bg-yellow-500", 
+          rejeitado: "bg-red-600",
+          reprovado: "bg-red-600"
         };
-        return <Badge className={`${variants[status]} text-white capitalize`}>{status}</Badge>;
+       return <Badge className={`${variants[status] || "bg-gray-400"} text-white capitalize`}>{status}</Badge>;
       }
     }
   ];
@@ -103,23 +105,29 @@ export const getTimesheetColumns = (isGerente: boolean, verEquipe: boolean): Col
   if (isGerente && verEquipe) {
     cols.push({
       id: "acoes_gerente",
-      header: "Aprovação",
+      header: "Ações de Aprovação",
       cell: ({ table, row }) => {
-        if (row.original.status_aprovacao !== "aguardando aprovação") return null;
+        const status = row.original.status_aprovacao.toLowerCase();
+        
         return (
           <div className="flex gap-2 justify-center">
-            <Button 
-              size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50"
-              onClick={() => (table.options.meta as any)?.onApprove(row.original.lancamento_id)}
-            >
-              <Check size={16} />
-            </Button>
-            <Button 
-              size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50"
-              onClick={() => (table.options.meta as any)?.onReject(row.original.lancamento_id)}
-            >
-              <X size={16} />
-            </Button>
+            {status !== 'aprovado' && (
+              <Button 
+                size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-50"
+                onClick={() => (table.options.meta as any)?.onApprove(row.original.lancamento_id)}
+              >
+                <Check size={16} />
+              </Button>
+            )}
+            
+            {status !== 'rejeitado' && status !== 'reprovado' && (
+              <Button 
+                size="sm" variant="outline" className="text-red-600 border-red-600 hover:bg-red-50"
+                onClick={() => (table.options.meta as any)?.onReject(row.original.lancamento_id)}
+              >
+                <X size={16} />
+              </Button>
+            )}
           </div>
         );
       }

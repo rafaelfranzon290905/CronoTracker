@@ -22,7 +22,7 @@ import {
 import { toast } from "sonner"
 import { useNavigate, Link } from "react-router-dom"
 import { ChevronLeft, Clock, FileText, Play, Pause, Square } from "lucide-react"
-
+import { Loader2 } from "lucide-react"
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { usePermissions } from "@/hooks/usePermissions"
@@ -36,6 +36,7 @@ export default function LancamentoPage() {
   // Estados para os dados do banco
   const [projetos, setProjetos] = useState([])
   const [atividades, setAtividades] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
   // Estados para o Relógio
   const [segundos, setSegundos] = useState(0);
@@ -105,6 +106,7 @@ const formatarTempo = (totalSegundos: number) => {
   // 1. Só executa se o user existir
   if (!user || !user.colaborador_id) return;
 
+  setIsLoading(true);
   console.log("Buscando projetos para o colaborador ID:", user.colaborador_id);
 
   fetch(`${API}/colaboradores`)
@@ -131,7 +133,11 @@ const formatarTempo = (totalSegundos: number) => {
     .catch((err) => {
       console.error(err);
       toast.error("Erro ao carregar projetos específicos");
+    })
+    .finally(() => {
+      setIsLoading(false)
     });
+    
 }, [user]); // Re-executa quando o objeto user (das permissões) carregar
 
   // Quando o projeto muda, preenche cliente e filtra atividades
@@ -159,6 +165,15 @@ const formatarTempo = (totalSegundos: number) => {
     }
     if (formData.hora_inicio >= formData.hora_fim) {
         return toast.error("A hora de término deve ser após a hora de início");
+    }
+
+    // Nova validação de data futura
+    const dataSelecionada = new Date(formData.data + "T00:00:00");
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    if (dataSelecionada > hoje) {
+      return toast.error("A data de lançamento não pode ser uma data futura.");
     }
 
     try {
@@ -217,7 +232,16 @@ const formatarTempo = (totalSegundos: number) => {
                       <div className="space-y-2">
                         <Label>Projeto</Label>
                         <Select onValueChange={handleProjetoChange}>
-                          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                          <SelectTrigger>
+                            {isLoading ? (
+                              <div className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Carregando projetos...</span>
+                              </div>
+                            ) : (
+                              <SelectValue placeholder="Selecione" />
+                            )}
+                          </SelectTrigger>
                           <SelectContent>
                             {projetos.map(p => (
                               <SelectItem key={p.projeto_id} value={p.projeto_id.toString()}>
@@ -251,7 +275,7 @@ const formatarTempo = (totalSegundos: number) => {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Data</Label>
-                        <Input type="date" value={formData.data} onChange={e => setFormData({...formData, data: e.target.value})} />
+                        <Input type="date" value={formData.data} max={new Date().toISOString().split('T')[0]} onChange={e => setFormData({...formData, data: e.target.value})} />
                       </div>
                       <div className="space-y-2">
                         <Label>Início</Label>
@@ -328,7 +352,15 @@ const formatarTempo = (totalSegundos: number) => {
           <Label className="text-xs uppercase text-muted-foreground">Projeto</Label>
           <Select onValueChange={handleProjetoChange} disabled={ativo}>
             <SelectTrigger className="border-none bg-slate-50 focus:ring-0">
-              <SelectValue placeholder="Selecione um Projeto" />
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="text-muted-foreground">Buscando...</span>
+              </div>
+              ) : (
+                <SelectValue placeholder="Selecione um Projeto" />
+              )}
+              
             </SelectTrigger>
             <SelectContent>
               {projetos.map(p => (

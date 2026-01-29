@@ -261,9 +261,10 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                                     <FormItem className="">
                                     
                                             <FormLabel>
-                                                Status (Ativa/Inativa)
+                                                Status
                                             </FormLabel>
-                                        <FormControl>
+                                            <div className="flex">
+                                                <FormControl>
                                            
                                             <Switch 
                                                 className="w-10 h-5"
@@ -272,9 +273,11 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                                                 onCheckedChange={field.onChange}
                             />
                                         </FormControl>
-                                            <DialogDescription className="text-sm text-muted-foreground pt-1">
-                                                {field.value ? "Atividade marcada como Ativa." : "Atividade marcada como Inativa."}
+                                            <DialogDescription className="font-medium px-2">
+                                                {field.value ? "Ativa" : "Inativa."}
                                             </DialogDescription>
+                                            </div>
+                                        
                                         
                                     </FormItem>
                                 )}

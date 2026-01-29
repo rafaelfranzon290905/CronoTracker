@@ -1066,6 +1066,15 @@ app.post('/lancamentos', async (req, res) => {
 
   console.log("Dados recebidos no backend:", req.body); // Log para debug
 
+  // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
+  const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
+
+  if (dataLancamento > hoje) {
+    return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
+  }
+
   try {
     if (!usuario_id) {
       return res.status(400).json({ error: "ID do usuário não fornecido." });

@@ -336,8 +336,29 @@ useEffect(() => {
             </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[300px] p-0" align="start">
-            <ScrollArea className="h-60 p-2">
-                {listaColaboradores.map((colab) => (
+            <ScrollArea className="h-60" onWheel={(e) => e.stopPropagation()}>
+               <div className="p-2">
+                    {listaColaboradores.map((colab) => (
+                        <div key={colab.colaborador_id} className="flex items-center space-x-2 p-2 hover:bg-slate-100 rounded-md">
+           <Checkbox 
+                            id={`colab-${colab.colaborador_id}`}
+                            checked={selectedColaboradores.includes(colab.colaborador_id)}
+                            onCheckedChange={(checked) => {
+                                if (checked) {
+                                    setSelectedColaboradores([...selectedColaboradores, colab.colaborador_id]);
+                                } else {
+                                    setSelectedColaboradores(selectedColaboradores.filter(id => id !== colab.colaborador_id));
+                                }
+                            }}
+                        />
+                        <label htmlFor={`colab-${colab.colaborador_id}`} className="text-sm cursor-pointer flex-1">
+                            {colab.nome_colaborador}
+                            <span className="text-[10px] text-muted-foreground block">{colab.cargo}</span>
+                        </label>
+        </div>
+                    ))}
+                </div> 
+                {/* {listaColaboradores.map((colab) => (
                     <div key={colab.colaborador_id} className="flex items-center space-x-2 p-2 hover:bg-slate-100 rounded-md">
                         <Checkbox 
                             id={`colab-${colab.colaborador_id}`}
@@ -353,9 +374,9 @@ useEffect(() => {
                         <label htmlFor={`colab-${colab.colaborador_id}`} className="text-sm cursor-pointer flex-1">
                             {colab.nome_colaborador}
                             <span className="text-[10px] text-muted-foreground block">{colab.cargo}</span>
-                        </label>
-                    </div>
-                ))}
+                        </label> */}
+                    {/* </div> */}
+                {/* ))} */}
             </ScrollArea>
         </PopoverContent>
     </Popover>

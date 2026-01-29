@@ -250,15 +250,18 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                 render={({ field }) => (<FormItem><FormLabel>Data Prevista de Fim</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                             
                             <FormField control={formActivities.control} name="status"
-                                render={({field}) => (<FormItem><FormLabel>Status</FormLabel><FormControl>
+                                render={({field}) => (<FormItem><FormLabel>Status</FormLabel>
+                                <div className="flex items-center gap-3 mt-2">
+                                    <FormControl>
                                     <Switch 
-                                                className="w-10 h-5"
+                                                className="w-10 h-6 block"
                                                 id="status"
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
                                     />
                                     </FormControl>
-                                    <p>{field.value ? "Ativa" : "Inativa"}</p>
+                                    <p className="font-medium">{field.value ? "Ativa" : "Inativa"}</p>
+                                </div>
                                     
                                     </FormItem>)}
                             />

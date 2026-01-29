@@ -1139,6 +1139,113 @@ app.patch('/lancamentos/:id/status', async (req, res) => {
   }
 });
 
+// GET /dashboard/stats/:usuario_id
+app.get('/dashboard/stats/:usuario_id', async (req, res) => {
+  const { usuario_id } = req.params;
+
+  try {
+    const usuario = await prisma.usuarios.findUnique({
+      where: { usuario_id: Number(usuario_id) },
+    });
+
+    if (!usuario?.colaborador_id) return res.status(404).json({ error: "Colaborador não encontrado" });
+
+    // ---DATAS---
+    const agora = new Date();
+    // Ajuste para o fuso de Brasília (UTC-3)
+    const hojeLocal = new Date(agora.getTime() - (3 * 60 * 60 * 1000)); 
+
+    const inicioHoje = new Date(hojeLocal);
+    inicioHoje.setUTCHours(0, 0, 0, 0);
+
+    const fimHoje = new Date(hojeLocal);
+    fimHoje.setUTCHours(23, 59, 59, 999);
+
+    // Para a porcentagem (Ontem)
+    const inicioOntem = new Date(inicioHoje);
+    inicioOntem.setUTCDate(inicioHoje.getUTCDate() - 1);
+
+    const fimOntem = new Date(fimHoje);
+    fimOntem.setUTCDate(fimHoje.getUTCDate() - 1);
+
+    const seteDiasAtras = new Date(inicioHoje);
+    seteDiasAtras.setUTCDate(inicioHoje.getUTCDate() - 6);
+
+    // ---BUSCAS---
+    // 1. Horas de Hoje
+    const horasHoje = await prisma.lancamentos_de_horas.aggregate({
+      _sum: { duracao_total: true },
+      where: {
+        colaborador_id: usuario.colaborador_id,
+        data_lancamento: { gte: inicioHoje, lte: fimHoje }
+      }
+    });
+
+const horasOntem = await prisma.lancamentos_de_horas.aggregate({
+  _sum: { duracao_total: true },
+  where: {
+    colaborador_id: usuario.colaborador_id,
+    data_lancamento: { gte: inicioHoje, lte: fimOntem }
+  }
+});
+
+const totalHoje = Number(horasHoje._sum.duracao_total || 0);
+const totalOntem = Number(horasOntem._sum.duracao_total || 0);
+
+// Lógica da porcentagem
+let diferencaPercentual = 0;
+if (totalOntem > 0) {
+  diferencaPercentual = ((totalHoje - totalOntem) / totalOntem) * 100;
+} else if (totalHoje > 0) {
+  diferencaPercentual = 100; // Se ontem foi 0 e hoje tem algo, cresceu 100%
+}
+
+
+    const lancamentosSemana = await prisma.lancamentos_de_horas.groupBy({
+      by: ['data_lancamento'],
+      _sum: { duracao_total: true },
+      where: {
+        colaborador_id: usuario.colaborador_id,
+        data_lancamento: { gte: seteDiasAtras, lte: fimHoje }
+      },
+      orderBy: { data_lancamento: 'asc' }
+    });
+
+    // ---GRÁFICO---
+    // Formatar dados para o gráfico (Recharts)
+    const diasSemanaNomes = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    
+    // Criamos um mapa para facilitar a busca
+    const mapaDeHoras = {};
+    lancamentosSemana.forEach(item => {
+        const dataObj = new Date(item.data_lancamento);
+        const diaIndex = dataObj.getUTCDay(); // Pega o dia da semana 0-6
+        mapaDeHoras[diaIndex] = Number(item._sum.duracao_total || 0);
+    });
+    
+    const graficoData = diasSemanaNomes.map((nome, index) => ({
+        dia: nome,
+        horas: Number((mapaDeHoras[index] || 0).toFixed(1))
+    }));
+
+    // Meta Diária e produtividade
+    const META_DIARIA = 8;
+    const produtividadeReal = Math.min(Math.round((totalHoje / META_DIARIA) * 100), 100);
+
+
+    res.json({
+      totalHoje: Number(totalHoje.toFixed(1)),
+      percentual: Math.round(diferencaPercentual),
+      produtividade: produtividadeReal,
+      grafico: graficoData
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao calcular estatísticas" });
+  }
+});
+
 
 // roda o servidor
 app.listen(PORT, () => {

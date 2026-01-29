@@ -23,7 +23,18 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
  // 2. Coluna de Nome 
   {
     accessorKey: "nome_colaborador",
-    header: "Nome",
+    header: ({ column }) => {
+    return (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="hover:bg-transparent p-0"
+      >
+        Nome
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    )
+  },
     cell: ({ row }) => {
       const isAtivo = row.original.status;
       return (
@@ -164,6 +175,7 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
       );
     }
   },
+  
   
   // 6. Coluna de Ações com Dropdown Menu
   {

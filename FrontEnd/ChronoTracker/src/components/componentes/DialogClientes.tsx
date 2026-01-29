@@ -15,6 +15,7 @@ import { Switch } from "../ui/switch"
 // import { useEffect } from "react"
 import { toast } from "sonner"
 import { API_BASE_URL } from  "@/apiConfig"
+import { PlusCircle } from "lucide-react"
 
 
 // const API_BASE_URL = 'http://localhost:3001'
@@ -162,7 +163,9 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogTrigger asChild>
-                <Button className="bg-botao-dark">Adicionar Cliente</Button>
+                <Button className="bg-botao-dark">
+                    <PlusCircle/>
+                    Adicionar Cliente</Button>
             </DialogTrigger>
         <DialogContent>
             <DialogHeader>

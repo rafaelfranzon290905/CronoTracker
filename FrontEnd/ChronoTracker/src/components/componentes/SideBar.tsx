@@ -2,10 +2,25 @@ import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity, LogOut, Ghost } from "lucide-react"
 import ChronosAzulFundoRemovido from "../../imagens/ChronosAzulFundoRemovido.png"
+import { useNavigate } from "react-router-dom"
 
 export default function SideBar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = (path: string) => location.pathname === path;
+
+  // Função de Logout
+  const handleLogout = () => {
+    // 1. Limpa os dados de login
+    localStorage.removeItem('currentUser');
+    
+    // Se você usar sessionStorage ou tokens, limpe-os aqui também:
+    // localStorage.clear(); // Opcional: limpa TUDO no storage
+
+    // 2. Redireciona para o login (ou raiz)
+    navigate("/");
+  };
+
     return (
         <>
         {/* Sidebar */}
@@ -21,42 +36,49 @@ export default function SideBar() {
               className="w-full justify-start " aria-label="Botão para acessar Dashboard"><Home className="mr-2 scale-120" /> Dashboard</Button>
           </Link>
           <Link to="/TimeSheet">
-            <Button 
-            variant={isActive("/TimeSheet") ? "default" : "ghost"}
-            className="w-full justify-start" aria-label="Botão para acessar TimeSheets"><Clock className="mr-2 scale-120" /> TimeSheet</Button>
+            <Button
+              variant={isActive("/TimeSheet") ? "default" : "ghost"}
+              className="w-full justify-start" aria-label="Botão para acessar TimeSheets"><Clock className="mr-2 scale-120" /> TimeSheet</Button>
           </Link>
           <Link to="/clientes">
-            <Button 
+            <Button
               variant={isActive("/clientes") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Clientes"><Users className="mr-2 scale-120" /> Clientes</Button>
           </Link>
           <Link to="/collaborators">
-            <Button 
-              variant={isActive("/collaborators") ? "default" : "ghost"} 
+            <Button
+              variant={isActive("/collaborators") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Colaboradores"><Users className="mr-2 scale-120" /> Colaboradores</Button>
           </Link>
           <Link to="/projetos">
-            <Button 
-              variant={isActive("/projetos") ? "default" : "ghost"} 
+            <Button
+              variant={isActive("/projetos") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Projetos"><Rocket className="mr-2 scale-120" /> Projetos</Button>
           </Link>
           <Link to="/atividades">
-            <Button 
+            <Button
               variant={isActive("/atividades") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Atividades"><Activity className="mr-2 scale-120" /> Atividades</Button>
           </Link>
           <Link to="/usuarios">
-            <Button 
+            <Button
               variant={isActive("/usuarios") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Usuários"><Activity className="mr-2 scale-120" /> Usuários</Button>
           </Link>
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Relatórios"><FileText className="mr-2 scale-120" /> Relatórios</Button>
-          <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Despesas"><DollarSign className="mr-2 scale-120" /> Despesas</Button>
+          <Link to="/gestao-despesas">
+            <Button
+              variant={isActive("/gestao-despesas") ? "default" : "ghost"}
+              className="w-full justify-start"
+            >
+              <DollarSign className="mr-2 scale-120" /> Despesas
+            </Button>
+          </Link>
         </nav>
         <div className="p-4">
-          <Button className="w-full" aria-label="Botão para sair do site"><LogOut className="mr-2 h-4 w-4 scale-120"/>Log Out</Button>
+          <Button className="w-full" aria-label="Botão para sair do site" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4 scale-120"/>Log Out</Button>
         </div>
       </aside>
-        </>
-    );
+    </>
+  );
 }

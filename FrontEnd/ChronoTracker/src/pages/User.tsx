@@ -21,7 +21,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { API_BASE_URL } from  "@/apiConfig"
+import { API_BASE_URL } from  "@/apiConfig";
+import { Loader2 } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 
 export default function UsersPage() {
@@ -36,8 +38,10 @@ export default function UsersPage() {
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
     const [userToInactivate, setUserToInactivate] = useState<Usuario | null>(null);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
+        setLoading(true);
         try {
             const response = await fetch(`${API_BASE_URL}/usuarios`);
 
@@ -53,6 +57,8 @@ export default function UsersPage() {
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
             setData([]);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -119,13 +125,22 @@ export default function UsersPage() {
     return (
         <div className="flex h-screen bg-background">
             <SideBar />
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 p-6 overflow-auto">
                 <Header />
                 <main className="flex-1 overflow-y-auto p-8">
                     <PageHeader title="Gestão de Usuários" subtitle="Controle de acessos e permissões do sistema.">
-                        {isGerente && <Button onClick={() => { setEditingUser(null); setIsModalOpen(true) }}>Novo Usuário</Button>}
+                        {isGerente && <Button onClick={() => { setEditingUser(null); setIsModalOpen(true) }}>
+                            <PlusCircle/>
+                            Novo Usuário</Button>}
                     </PageHeader>
-
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
+                        <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
+                        <p className="text-sm text-muted-foreground animate-pulse">
+                            Carregando projetos...
+                        </p>
+                        </div>
+                    ) : (
                     <DataTable
                         columns={columns(
                             isGerente,
@@ -136,6 +151,7 @@ export default function UsersPage() {
                         data={data}
                         filterColumn="nome_completo"
                     />
+                    )}
                 </main>
             </div>
             <UserModal

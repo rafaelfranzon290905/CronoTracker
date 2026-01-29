@@ -10,7 +10,18 @@ import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaborato
 import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getColaboradorColumns } from "@/components/collaborators/columns";
-import { API_BASE_URL } from  "@/apiConfig"
+import { API_BASE_URL } from  "@/apiConfig";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2 } from "lucide-react";
 
 
 // const API_BASE_URL = 'http://localhost:3001';
@@ -23,6 +34,8 @@ function Collaborators() {
   {/* controla as edições */ }
   const [editingCollaborator, setEditingCollaborator] = useState<Collaborador | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [colabToInactivate, setColabToInactivate] = useState<Collaborador | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // Permissões
   const {isGerente} = usePermissions()
@@ -54,10 +67,17 @@ function Collaborators() {
   };
 
 const handleDelete = async (id: number) => {
-  if (!confirm("Tem certeza que deseja excluir este colaborador?")) return;
+  const colab = data.find(c => c.colaborador_id === id);
+  if (colab) {
+      setColabToInactivate(colab);
+      setIsConfirmOpen(true);
+    }
+};
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/colaboradores/${id}`, {
+const confirmInactivation = async () => {
+  if (!colabToInactivate) return;
+   try {
+    const response = await fetch(`${API_BASE_URL}/colaboradores/${colabToInactivate.colaborador_id}`, {
       method: 'DELETE',
     });
 
@@ -71,6 +91,9 @@ const handleDelete = async (id: number) => {
   } catch (error) {
     console.error("Erro na requisição de exclusão:", error);
     alert("Erro interno ao tentar excluir.");
+  } finally {
+    setIsConfirmOpen(false);
+    setColabToInactivate(null);
   }
 };
 
@@ -82,20 +105,24 @@ const handleDelete = async (id: number) => {
         <main className="mt-4">
           <PageHeader
             title="Gerenciar Colaboradores"
-            subtitle="Adicione, edite e visualize os membros da sua equipe."
+            subtitle="Visualize os membros da sua equipe."
           >
-            {isGerente &&
+            {/* {isGerente &&
               <AddCollaboratorDialog onSuccess={fetchData} />
-            }
-            
-  
+            } */}
           </PageHeader>
-          {loading ? (
-            <div className="p-10 text-center text-muted-foreground">Carregando colaboradores...</div>
-          ) : (
+          {loading ?(
+            <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Carregando colaboradores...
+              </p>
+            </div>
+          ): (
             <DataTable 
                 columns={getColaboradorColumns(isGerente)} 
                 data={data} 
+                filterColumn="nome_colaborador"
                 meta={{ onEdit: handleEdit, onDelete: handleDelete }} 
             />
           )}
@@ -107,6 +134,26 @@ const handleDelete = async (id: number) => {
         colaboradorInicial={editingCollaborator}
         aoSalvar={fetchData} // Quando salvar, recarrega a tabela
       />
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Inativação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem certeza que deseja inativar <b>{colabToInactivate?.nome_colaborador}</b>? 
+              Isso também afetará o acesso do usuário vinculado a este colaborador.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmInactivation}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

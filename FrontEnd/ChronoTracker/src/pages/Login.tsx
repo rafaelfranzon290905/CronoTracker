@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from  "@/apiConfig"
+import { Loader, Loader2 } from "lucide-react";
 
 
 // const API_BASE_URL = 'http://localhost:3001';
@@ -16,6 +17,7 @@ export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -28,6 +30,7 @@ export default function Login() {
         }
 
         setError(null);
+        setIsLoading(true);
 
         try {
             const response = await fetch(LOGIN_API_URL, {
@@ -47,24 +50,27 @@ export default function Login() {
                 // Armazena o token para uso futuro (Ex: LocalStorage)
                 localStorage.setItem('authToken', token); 
                 localStorage.setItem('currentUser', JSON.stringify({
-                    id: user.usuario_id,
+                    id: user.usuario_id || user.usuario_id,
+                    colaborador_id: user.colaborador_id,
                     username: user.nome_usuario,
                     cargo: user.cargo,
                     nomeCompleto: user.nome_completo
                 }));
                 
-                alert(`Login bem-sucedido! Bem-vindo(a), ${user.nome_usuario} (${user.cargo})`);
+                // alert(`Login bem-sucedido! Bem-vindo(a), ${user.nome_usuario} (${user.cargo})`);
                 
                 navigate('/Dashboard');
 
             } else {
                 // FALHA: Exibir a mensagem de erro da API
                 setError(result.error || "Erro desconhecido ao fazer login.");
+                setIsLoading(false);
             }
 
         } catch (err) {
             console.error("Erro de rede/servidor:", err);
             setError("Não foi possível conectar ao servidor de autenticação. Verifique se o backend está rodando.");
+            setIsLoading(false);
         } finally {
             console.log("Foi");
         }
@@ -123,8 +129,15 @@ export default function Login() {
                     </div>
                     <Button
                     type="submit"
+                    disabled={isLoading}
                     className="my-0.5 w-full bg-botao-dark text-white hover:bg-botao-light">
-                        Entrar
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="animate-spin"/>
+                            </>
+                        ) : (
+                            "Entrar"
+                        )}
                     </Button>
                 </form>
             </Card>

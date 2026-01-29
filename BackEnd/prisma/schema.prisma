@@ -124,6 +124,11 @@ model despesas {
   status_aprovacao  String        @default("Pendente") @db.VarChar(30)
   motivo_reprovacao String?
   criado_em         DateTime      @default(now()) @db.Timestamp(6)
+<<<<<<< HEAD
   colaboradores     colaboradores @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction)
   projetos          projetos      @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade)
+=======
+  colaborador       colaboradores @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction)
+  projeto           projetos      @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade)
+>>>>>>> develop
 }

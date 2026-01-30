@@ -1225,7 +1225,7 @@ app.post('/lancamentos', async (req, res) => {
   // Ajustado para receber 'data' e 'cliente_id' vindos do front
   const { 
     usuario_id, projeto_id, atividade_id, cliente_id,
-    data, hora_inicio, hora_fim, descricao 
+    data, hora_inicio, hora_fim, descricao, tipo_lancamento 
   } = req.body;
 
   // console.log("Dados recebidos no backend:", req.body); // Log para debug
@@ -1281,7 +1281,8 @@ app.post('/lancamentos', async (req, res) => {
         hora_fim: fimDate,
         duracao_total: duracaoHoras,
         descricao: descricao || "",
-        status_aprovacao: statusInicial
+        status_aprovacao: statusInicial,
+        tipo_lancamento: tipo_lancamento || "manual"
       }
     });
 

@@ -57,6 +57,8 @@ export default function TimesheetPage() {
     fetchData();
   };
 
+  const colunaParaFiltrar = verEquipe ? "nome_colaborador" : "projetos_nome_projeto";
+
   return (
     <div className="flex h-screen w-full">
       <SideBar />
@@ -95,7 +97,8 @@ export default function TimesheetPage() {
           <DataTable 
             columns={getTimesheetColumns(isGerente, verEquipe)} 
             data={data}
-            filterColumn="nome de projeto ou atividade" // Adaptar filtro conforme necessidade
+            filterColumn={colunaParaFiltrar}
+            filterPlaceholder={verEquipe ? "Filtrar por colaborador..." : "Filtrar por projeto..."}
             meta={{ 
               onApprove: (id: number) => handleStatusUpdate(id, 'aprovado'),
               onReject: (id: number) => handleStatusUpdate(id, 'rejeitado')

@@ -545,8 +545,26 @@ app.get('/projetos', async (req, res) => {
       },
       orderBy: { projeto_id: 'desc' }
     });
+    const agregacaoHoras = await prisma.lancamentos_de_horas.groupBy({
+      by: ['projeto_id'],
+      _sum: {
+        duracao_total: true
+      }
+    });
+
+    const projetosComHoras = projetos.map(projeto => {
+      // Encontra a soma de horas correspondente a este projeto
+      const calculo = agregacaoHoras.find(h => h.projeto_id === projeto.projeto_id);
+      
+      return {
+        ...projeto,
+        // Se não houver lançamentos, retorna 0
+        horas_consumidas: calculo?._sum?.duracao_total || 0 
+      };
+    });
+
     // console.log("Exemplo de projeto: ", JSON.stringify(projetos[0], null, 2));
-    res.status(200).json(projetos);
+    res.status(200).json(projetosComHoras);
   } catch (error) {
     console.error('Erro ao buscar projetos:', error);
     res.status(500).json({ error: 'Erro ao listar projetos.' });

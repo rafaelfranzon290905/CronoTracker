@@ -1,15 +1,8 @@
 import { useMemo } from "react";
 // import { type Usuario } from "@/lib/types";
 import { useState,useEffect } from "react";
+import { type Usuario } from "@/lib/types";
 
-
-export interface Usuario {
-  usuario_id: number;
-  colaborador_id: number; // 👈 Adicionado aqui
-  nome_usuario: string;
-  cargo: string;
-  nome_completo: string;
-}
 
 export function usePermissions() {
     // 1. Obtém os dados do usuário do localStorage

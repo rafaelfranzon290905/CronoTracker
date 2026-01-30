@@ -10,18 +10,18 @@ export const getTimesheetColumns = (isGerente: boolean, verEquipe: boolean): Col
       header: "Data",
       cell: ({ row }) => {
         const data = new Date(row.getValue("data_lancamento"));
-        // Formata para DD/MM/AAAA e ignora o fuso horário para não mudar o dia
         return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
       },
 
     },
-    // Coluna condicional: só aparece se o gerente estiver vendo a equipe
     ...(verEquipe ? [{
       accessorKey: "colaboradores.nome_colaborador",
+      id: "nome_colaborador",
       header: "Colaborador",
     }] : []),
     {
       accessorKey: "projetos.nome_projeto",
+      id: "projetos_nome_projeto",
       header: "Projeto",
       cell: ({ row }) => (
         <span className="font-medium">{(row.original as any).projetos?.nome_projeto}</span>
@@ -39,17 +39,14 @@ export const getTimesheetColumns = (isGerente: boolean, verEquipe: boolean): Col
       header: "Atividade",
     },
     {
-      accessorKey: "periodo", // ou como você chamou a combinação das horas
+      accessorKey: "periodo",
       header: "Período",
       cell: ({ row }) => {
         const inicio = row.original.hora_inicio;
         const fim = row.original.hora_fim;
-
-        // Função interna para limpar a string "1970-01-01T12:00:00Z" -> "12:00"
         const formatTime = (isoString: string) => {
           if (!isoString) return "--:--";
           const date = new Date(isoString);
-          // Usamos UTC para garantir que a hora salva não mude devido ao fuso local
           const h = date.getUTCHours().toString().padStart(2, '0');
           const m = date.getUTCMinutes().toString().padStart(2, '0');
           return `${h}:${m}`;

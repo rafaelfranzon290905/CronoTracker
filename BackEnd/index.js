@@ -79,16 +79,15 @@ app.get('/clientes/cnpj/:cnpj', async (req, res) => {
 
 // POST /clientes - Cadastra um novo cliente
 app.post('/clientes', async (req, res) => {
-  // Nota: Os nomes dos campos devem bater exatamente com o seu 'schema.prisma'
   const { cnpj, nome_cliente, nome_contato, cep, endereco, cidade, estado, status } = req.body;
 
   if (!cnpj || !nome_cliente) {
     return res.status(400).json({ error: 'CNPJ e Nome da Empresa são obrigatórios.' });
   }
+
   const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
 
   try {
-    // ✍️ Prisma: Usa create para inserir um novo registro
     const novoCliente = await prisma.clientes.create({
       data: {
         cnpj: cnpjLimpo,
@@ -98,19 +97,21 @@ app.post('/clientes', async (req, res) => {
         endereco,
         cidade,
         estado,
-        status, // Deve ser um boolean se o seu modelo espera um boolean
-
+        status: status !== undefined ? status : true,
       }
     });
 
-    res.status(201).json(novoCliente);
+    return res.status(201).json(novoCliente);
   } catch (error) {
-    // 🛑 Tratamento de Erro de Chave Única do Prisma
+    // 🚨 Aqui está a correção para o "Adicionar"
     if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'Este CNPJ já está cadastrado (Violação de Chave Única).' });
+      return res.status(409).json({ 
+        error: 'CNPJ já existente',
+        message: 'Este CNPJ já está cadastrado no sistema.' 
+      });
     }
     console.error('Erro ao cadastrar cliente:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    return res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
 
@@ -146,15 +147,8 @@ app.delete('/clientes/:id', async (req, res) => {
   }
 })
 
-// PUT /clientes/:id - atualiza os dados de um cliente
 app.put('/clientes/:id', async (req, res) => {
-  // Extair e validar o ID
-  const clienteId = parseInt(req.params.id);
-
-  if (isNaN(clienteId)) {
-    return res.status(400).json({ error: 'ID do cliente inválido.' });
-  }
-  // Extrair dados do corpo da requisição
+  const clienteId = Number(req.params.id)
   const {
     cnpj,
     nome_cliente,
@@ -164,35 +158,55 @@ app.put('/clientes/:id', async (req, res) => {
     cidade,
     estado,
     status
-  } = req.body;
+  } = req.body
 
-  // Prepara os dados para a atualização, limpando o CNPJ se ele existir
-  const dadosParaAtualizar = {
-    cnpj: cnpj ? cnpj.replace(/[^\d]/g, '') : undefined,
-    nome_cliente,
-    nome_contato,
-    cep,
-    endereco,
-    cidade,
-    estado,
-    status,
-  };
   try {
+    const cnpjLimpo = cnpj ? cnpj.replace(/\D/g, '') : null
+    
+    if (cnpjLimpo) {
+      const duplicado = await prisma.clientes.findFirst({
+        where: {
+          cnpj: cnpjLimpo,
+          cliente_id: { not: clienteId }
+        }
+      })
+
+      if (duplicado) {
+        return res.status(409).json({
+          code: 'CNPJ_DUPLICADO',
+          message: 'CNPJ já existente'
+        })
+      }
+    }
+
     const clienteAtualizado = await prisma.clientes.update({
       where: { cliente_id: clienteId },
-      data: dadosParaAtualizar,
-    });
+      data: {
+        cnpj: cnpjLimpo, 
+        nome_cliente,
+        nome_contato,
+        cep,
+        endereco,
+        cidade,
+        estado,
+        status
+      }
+    })
 
-    res.status(200).json(clienteAtualizado);
+    return res.status(200).json(clienteAtualizado)
 
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: `Cliente com ID ${clienteId} não encontrado` });
+    // Segurança extra
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        code: 'CNPJ_DUPLICADO',
+        message: 'CNPJ já existente'
+      })
     }
-    console.error('Erro ao atualizar cliente:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar o cliente' });
-  }
 
+    console.error(error)
+    return res.status(500).json({ message: 'Erro interno' })
+  }
 })
 
 // GET /clientes/:id/projetos - Lista todos os projetos de um cliente específico

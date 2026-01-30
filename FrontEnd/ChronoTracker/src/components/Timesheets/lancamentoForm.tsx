@@ -26,8 +26,9 @@ import { Loader2 } from "lucide-react"
 import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { usePermissions } from "@/hooks/usePermissions"
+import { API_BASE_URL } from "@/apiConfig"
 
-const API = "http://localhost:3001"
+// const API = "http://localhost:3001"
 
 export default function LancamentoPage() {
   const navigate = useNavigate()
@@ -52,7 +53,7 @@ export default function LancamentoPage() {
     const agora = new Date();
     const h = agora.getHours().toString().padStart(2, '0');
     const m = agora.getMinutes().toString().padStart(2, '0');
-    setFormData(prev => ({ ...prev, hora_inicio: `${h}:${m}` }));
+    setFormData(prev => ({ ...prev, hora_inicio: `${h}:${m}`, tipo_lancamento: "relogio" }));
   }
 
   setAtivo(true);
@@ -96,10 +97,15 @@ const formatarTempo = (totalSegundos: number) => {
     atividade_id: "",
     cliente_nome: "", // Visual apenas
     cliente_id: "",   // Para o banco
-    data: new Date().toISOString().split('T')[0],
+    data: new Intl.DateTimeFormat('fr-CA', { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit' 
+  }).format(new Date()),
     hora_inicio: "",
     hora_fim: "",
-    descricao: ""
+    descricao: "",
+    tipo_lancamento: "manual"
   })
 
   useEffect(() => {
@@ -109,7 +115,7 @@ const formatarTempo = (totalSegundos: number) => {
   setIsLoading(true);
   console.log("Buscando projetos para o colaborador ID:", user.colaborador_id);
 
-  fetch(`${API}/colaboradores`)
+  fetch(`${API_BASE_URL}/colaboradores`)
     .then(res => res.json())
     .then(data => {
       // 2. Usar Number() para garantir que a comparação não falhe por tipo
@@ -177,12 +183,13 @@ const formatarTempo = (totalSegundos: number) => {
     }
 
     try {
-      const response = await fetch(`${API}/lancamentos`, {
+      const response = await fetch(`${API_BASE_URL}/lancamentos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          usuario_id: user?.id
+          usuario_id: user?.id,
+          cliente_id: formData.cliente_id
         })
       })
 
@@ -213,7 +220,15 @@ const formatarTempo = (totalSegundos: number) => {
             Voltar para planilha
           </Link>
 
-          <Tabs defaultValue="manual">
+          <Tabs defaultValue="manual" onValueChange={(value) => {
+            if (value === "manual") {
+              setFormData(prev => ({ ...prev, tipo_lancamento: "manual" }));
+            } else {
+              if (segundos > 0) {
+                setFormData(prev => ({ ...prev, tipo_lancamento: "relogio" }));
+              }
+            }
+          }}>
             <TabsList className="grid grid-cols-2 rounded-full mb-8">
               <TabsTrigger value="manual">
                 <FileText size={16} /> Formulário
@@ -275,7 +290,7 @@ const formatarTempo = (totalSegundos: number) => {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Data</Label>
-                        <Input type="date" value={formData.data} max={new Date().toISOString().split('T')[0]} onChange={e => setFormData({...formData, data: e.target.value})} />
+                        <Input type="date" value={formData.data} max={new Intl.DateTimeFormat('fr-CA').format(new Date())} onChange={e => setFormData({...formData, data: e.target.value})} />
                       </div>
                       <div className="space-y-2">
                         <Label>Início</Label>

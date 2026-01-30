@@ -299,21 +299,32 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                             />
 
                             <FormField control={formActivities.control} name="status"
-                                render={({field}) => (
-                                    <FormItem>
-                                        <FormLabel>Status</FormLabel>
-                                        <FormControl>
-                                            <Switch 
-                                                className="w-10 h-5"
+                                render={({field}) => (<FormItem><FormLabel>Status</FormLabel>
+                                <div className="flex items-center gap-3 mt-2">
+                                    <FormControl>
+                                    <Switch 
+                                                className="w-10 h-6 block"
                                                 id="status"
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <p>{field.value ? "Ativa" : "Inativa"}</p>
-                                    </FormItem>
-                                )}
+                                    />
+                                    </FormControl>
+                                    <p className="font-medium">{field.value ? "Ativa" : "Inativa"}</p>
+                                </div>
+                                    
+                                    </FormItem>)}
                             />
+                            {/* Status */}
+                            {/* <FormField control={formActivities.control} name="status"
+                                render={({ field }) => (<FormItem><FormLabel>Status</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="a_fazer">A fazer</SelectItem>
+                                                    <SelectItem value="em_andamento">Em andamento</SelectItem>
+                                                    <SelectItem value="concluido">Concluído</SelectItem>
+                                                </SelectContent>
+                                            </Select><FormMessage /></FormItem>)}/> */}
 
                             {apiError && (<p className="text-sm font-medium text-red-500 mt-2">{apiError}</p>)}
 

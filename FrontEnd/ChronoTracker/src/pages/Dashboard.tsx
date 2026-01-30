@@ -195,7 +195,12 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{produtividade}%</p>
-              <p className="text-green-600 text-sm">Excelente!</p>
+              <p className={produtividade >= 80 ? "text-green-500 text-sm" : "text-yellow-300 text-sm"}>
+                {produtividade >= 80 ? (
+                  "Excelente!"
+                ) : (
+                  "Em andamento"
+                )}</p>
             </CardContent>
           </Card>
           <Card aria-label="Card de receita mensal ">

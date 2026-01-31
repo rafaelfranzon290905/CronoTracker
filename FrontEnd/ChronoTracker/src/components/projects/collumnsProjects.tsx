@@ -142,6 +142,16 @@ export const getColumns = (
         const horas = row.getValue("horas_previstas") as number;
         return <span>{horas ? `${horas}h` : "0h"}</span>;
       },
+      
+    
+    },
+    {
+      accessorKey: "horas_consumidas",
+      header: "Horas gastas",
+       cell: ({ row }) => {
+        const horas = row.original.horas_consumidas || 0;
+        return <span>{horas.toFixed(1)}h</span>;
+      },
     },
     {
       accessorKey: "status",

@@ -13,16 +13,7 @@ import { Badge } from "lucide-react";
 import { API_BASE_URL } from  "@/apiConfig";
 import { type Atividades } from "@/lib/activities";
 import { Loader2 } from "lucide-react"
-
-const data = [
-  { dia: "Seg", horas: 8 },
-  { dia: "Ter", horas: 7 },
-  { dia: "Qua", horas: 9 },
-  { dia: "Qui", horas: 6 },
-  { dia: "Sex", horas: 5 },
-  { dia: "Sáb", horas: 7 },
-  { dia: "Dom", horas: 0 },
-]
+import { Value } from "@radix-ui/react-select"
 
 interface CurrentUser {
     id: number;
@@ -39,6 +30,11 @@ function Dashboard() {
   const [projetosCount, setProjetosCount] = useState(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+
+  const [horasHoje, setHorasHoje] = useState(0);
+  const [porcentagem, setPorcentagem] = useState(0);
+  const [dadosGrafico, setDadosGrafico] = useState<{dia: string, horas: number}[]>([]);
+  const [produtividade, setProdutividade] = useState(0);
 
   useEffect(() => {
         // 1. Tenta buscar a informação salva no localStorage
@@ -81,6 +77,33 @@ function Dashboard() {
                           // Filtra apenas atividades atribuídas a este colaborador (ID que vem do Login)
                           const minhasAtividades = dataAtiv.filter((a: any) => a.colaborador_id === targetId);
                           setAtividades(minhasAtividades.sort((a: any, b: any) => b.atividade_id - a.atividade_id).slice(0, 5));
+                            
+                          // Busca Estatísticas (Horas Hoje e Gráfico)
+                          const url = `${API_BASE_URL}/dashboard/stats/${user.id}`;
+                          console.log("Chamando URL:", url); // <--- DEBUG
+
+                          const resStats = await fetch(`${API_BASE_URL}/dashboard/stats/${user.id}`);
+                          
+                          if (!resStats.ok) {
+                              console.warn(`Servidor respondeu com erro ${resStats.status}. A rota pode não estar publicada.`);
+                              setHorasHoje(0);
+                              setDadosGrafico([]);
+                              return;
+                          }
+
+                          const stats = await resStats.json();
+                          
+                          setHorasHoje(stats.totalHoje);
+                          setPorcentagem(stats.percentual);
+                          setProdutividade(stats.produtividade);
+                          setDadosGrafico(stats.grafico || []);
+                          
+                          if (stats.grafico && stats.grafico.length > 0) {
+                              setDadosGrafico(stats.grafico);
+                          } else {
+                              // Caso não tenha nada, podemos setar um array vazio ou mockado
+                              setDadosGrafico([]); 
+                          }
 
                       } catch (err) {
                           console.error("Erro ao carregar dados do dashboard", err);
@@ -99,6 +122,17 @@ function Dashboard() {
             }
       }, [navigate]);
      
+    const formatarHoras = (decimal: number) => {
+      const horas = Math.floor(decimal);
+      const minutos = Math.round((decimal - horas) * 60);
+      
+      if (horas === 0 && minutos === 0) return "0h";
+      if (horas === 0) return `${minutos}min`;
+      if (minutos === 0) return `${horas}h`;
+      
+      return `${horas}h ${minutos}min`;
+    };
+
     const saudacao = (userDisplayName.charAt(0).toUpperCase() + userDisplayName.slice(1)) || 'usuário';
     if (isLoading) {
         // Exibe um loading enquanto busca os dados
@@ -141,8 +175,10 @@ function Dashboard() {
               <CardTitle>Horas Hoje</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">6.5h</p>
-              <p className="text-green-600 text-sm">+12% vs ontem</p>
+              <p className="text-2xl font-bold">{formatarHoras(horasHoje)}</p>
+              <p className={porcentagem >= 0 ? "text-green-600 text-sm" : "text-gray-500 text-sm"}>
+                {porcentagem >= 0 ? `+${porcentagem}%` : `${porcentagem}%`} vs ontem
+              </p>
             </CardContent>
           </Card>
           <Card aria-label="Card de número de projetos Ativos">
@@ -158,7 +194,7 @@ function Dashboard() {
               <CardTitle>Produtividade</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">89%</p>
+              <p className="text-2xl font-bold">{produtividade}%</p>
               <p className="text-green-600 text-sm">Excelente!</p>
             </CardContent>
           </Card>
@@ -181,11 +217,11 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={data}>
+                <BarChart data={dadosGrafico}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="dia" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip formatter={(value: number) => [formatarHoras(value), "Duraçãoo"]}/>
                   <Bar dataKey="horas" fill="#3b82f6" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

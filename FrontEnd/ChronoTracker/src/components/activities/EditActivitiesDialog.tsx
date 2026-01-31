@@ -291,18 +291,18 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                             <FormField control={formActivities.control} name="status"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Status (Ativa/Inativa)</FormLabel>
+                                        <FormLabel>Status</FormLabel>
+                                        <div className="flex items-center gap-3 mt-2">
                                         <FormControl>
                                             <Switch 
-                                                className="w-10 h-5"
+                                                className="w-10 h-6 block"
                                                 id="status"
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
                                             />
                                         </FormControl>
-                                        <DialogDescription className="text-sm text-muted-foreground pt-1">
-                                            {field.value ? "Atividade marcada como Ativa." : "Atividade marcada como Inativa."}
-                                        </DialogDescription>
+                                        <p className="font-medium">{field.value ? "Ativa" : "Inativa"}</p>
+                                        </div>
                                     </FormItem>
                                 )}
                             />

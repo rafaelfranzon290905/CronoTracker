@@ -559,8 +559,26 @@ app.get('/projetos', async (req, res) => {
       },
       orderBy: { projeto_id: 'desc' }
     });
+    const agregacaoHoras = await prisma.lancamentos_de_horas.groupBy({
+      by: ['projeto_id'],
+      _sum: {
+        duracao_total: true
+      }
+    });
+
+    const projetosComHoras = projetos.map(projeto => {
+      // Encontra a soma de horas correspondente a este projeto
+      const calculo = agregacaoHoras.find(h => h.projeto_id === projeto.projeto_id);
+      
+      return {
+        ...projeto,
+        // Se não houver lançamentos, retorna 0
+        horas_consumidas: calculo?._sum?.duracao_total || 0 
+      };
+    });
+
     // console.log("Exemplo de projeto: ", JSON.stringify(projetos[0], null, 2));
-    res.status(200).json(projetos);
+    res.status(200).json(projetosComHoras);
   } catch (error) {
     console.error('Erro ao buscar projetos:', error);
     res.status(500).json({ error: 'Erro ao listar projetos.' });
@@ -1239,10 +1257,19 @@ app.post('/lancamentos', async (req, res) => {
   // Ajustado para receber 'data' e 'cliente_id' vindos do front
   const { 
     usuario_id, projeto_id, atividade_id, cliente_id,
-    data, hora_inicio, hora_fim, descricao 
+    data, hora_inicio, hora_fim, descricao, tipo_lancamento 
   } = req.body;
 
   // console.log("Dados recebidos no backend:", req.body); // Log para debug
+
+  // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
+  const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
+
+  if (dataLancamento > hoje) {
+    return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
+  }
 
   try {
     if (!usuario_id) {
@@ -1286,7 +1313,8 @@ app.post('/lancamentos', async (req, res) => {
         hora_fim: fimDate,
         duracao_total: duracaoHoras,
         descricao: descricao || "",
-        status_aprovacao: statusInicial
+        status_aprovacao: statusInicial,
+        tipo_lancamento: tipo_lancamento || "manual"
       }
     });
 
@@ -1314,6 +1342,113 @@ app.patch('/lancamentos/:id/status', async (req, res) => {
     res.status(200).json(atualizado);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar status do lançamento.' });
+  }
+});
+
+// GET /dashboard/stats/:usuario_id
+app.get('/dashboard/stats/:usuario_id', async (req, res) => {
+  const { usuario_id } = req.params;
+
+  try {
+    const usuario = await prisma.usuarios.findUnique({
+      where: { usuario_id: Number(usuario_id) },
+    });
+
+    if (!usuario?.colaborador_id) return res.status(404).json({ error: "Colaborador não encontrado" });
+
+    // ---DATAS---
+    const agora = new Date();
+    // Ajuste para o fuso de Brasília (UTC-3)
+    const hojeLocal = new Date(agora.getTime() - (3 * 60 * 60 * 1000)); 
+
+    const inicioHoje = new Date(hojeLocal);
+    inicioHoje.setUTCHours(0, 0, 0, 0);
+
+    const fimHoje = new Date(hojeLocal);
+    fimHoje.setUTCHours(23, 59, 59, 999);
+
+    // Para a porcentagem (Ontem)
+    const inicioOntem = new Date(inicioHoje);
+    inicioOntem.setUTCDate(inicioHoje.getUTCDate() - 1);
+
+    const fimOntem = new Date(fimHoje);
+    fimOntem.setUTCDate(fimHoje.getUTCDate() - 1);
+
+    const seteDiasAtras = new Date(inicioHoje);
+    seteDiasAtras.setUTCDate(inicioHoje.getUTCDate() - 6);
+
+    // ---BUSCAS---
+    // 1. Horas de Hoje
+    const horasHoje = await prisma.lancamentos_de_horas.aggregate({
+      _sum: { duracao_total: true },
+      where: {
+        colaborador_id: usuario.colaborador_id,
+        data_lancamento: { gte: inicioHoje, lte: fimHoje }
+      }
+    });
+
+const horasOntem = await prisma.lancamentos_de_horas.aggregate({
+  _sum: { duracao_total: true },
+  where: {
+    colaborador_id: usuario.colaborador_id,
+    data_lancamento: { gte: inicioHoje, lte: fimOntem }
+  }
+});
+
+const totalHoje = Number(horasHoje._sum.duracao_total || 0);
+const totalOntem = Number(horasOntem._sum.duracao_total || 0);
+
+// Lógica da porcentagem
+let diferencaPercentual = 0;
+if (totalOntem > 0) {
+  diferencaPercentual = ((totalHoje - totalOntem) / totalOntem) * 100;
+} else if (totalHoje > 0) {
+  diferencaPercentual = 100; // Se ontem foi 0 e hoje tem algo, cresceu 100%
+}
+
+
+    const lancamentosSemana = await prisma.lancamentos_de_horas.groupBy({
+      by: ['data_lancamento'],
+      _sum: { duracao_total: true },
+      where: {
+        colaborador_id: usuario.colaborador_id,
+        data_lancamento: { gte: seteDiasAtras, lte: fimHoje }
+      },
+      orderBy: { data_lancamento: 'asc' }
+    });
+
+    // ---GRÁFICO---
+    // Formatar dados para o gráfico (Recharts)
+    const diasSemanaNomes = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    
+    // Criamos um mapa para facilitar a busca
+    const mapaDeHoras = {};
+    lancamentosSemana.forEach(item => {
+        const dataObj = new Date(item.data_lancamento);
+        const diaIndex = dataObj.getUTCDay(); // Pega o dia da semana 0-6
+        mapaDeHoras[diaIndex] = Number(item._sum.duracao_total || 0);
+    });
+    
+    const graficoData = diasSemanaNomes.map((nome, index) => ({
+        dia: nome,
+        horas: Number((mapaDeHoras[index] || 0).toFixed(1))
+    }));
+
+    // Meta Diária e produtividade
+    const META_DIARIA = 8;
+    const produtividadeReal = Math.min(Math.round((totalHoje / META_DIARIA) * 100), 100);
+
+
+    res.json({
+      totalHoje: Number(totalHoje.toFixed(1)),
+      percentual: Math.round(diferencaPercentual),
+      produtividade: produtividadeReal,
+      grafico: graficoData
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao calcular estatísticas" });
   }
 });
 

@@ -13,9 +13,10 @@ export type Collaborador = {
 
 export interface Usuario {
   usuario_id: number;
+  colaborador_id: number;
   nome_completo: string;
   nome_usuario: string;
   email: string;
-  cargo: 'Gerente' | 'Colaborador';
+  cargo: 'Gerente' | 'Colaborador' | string;
   status: boolean;
 }

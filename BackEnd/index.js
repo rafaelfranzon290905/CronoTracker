@@ -551,6 +551,8 @@ await prisma.projetos.update({
 // GET /projetos - Listar Projetos (com dados do Cliente)
 app.get('/projetos', async (req, res) => {
   try {
+    const totalLancamentos = await prisma.lancamentos_de_horas.count();
+    console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
         clientes: {

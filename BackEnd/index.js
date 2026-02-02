@@ -579,12 +579,10 @@ app.get('/projetos', async (req, res) => {
     });
 
     const projetosComHoras = projetos.map(projeto => {
-      // Encontra a soma de horas correspondente a este projeto
-      const calculo = agregacaoHoras.find(h => h.projeto_id === projeto.projeto_id);
+      const calculo = agregacaoHoras.find(h => Number(h.projeto_id) === Number(projeto.projeto_id));
       
       return {
         ...projeto,
-        // Se não houver lançamentos, retorna 0
         horas_consumidas: calculo?._sum?.duracao_total || 0 
       };
     });

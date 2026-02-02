@@ -133,6 +133,25 @@ export default function LancamentoPage() {
 
           setProjetos(meusProjetos);
           console.log("Meus projetos carregados:", meusProjetos);
+
+          // MEMÓRIA: Recuperar projeto e atividade do localStorage após carregar a lista de projetos
+          const lastProj = localStorage.getItem('last_projeto_id');
+          const lastAtiv = localStorage.getItem('last_atividade_id');
+
+          if (lastProj) {
+            const projetoEncontrado = meusProjetos.find((p: any) => p.projeto_id.toString() === lastProj);
+            if (projetoEncontrado) {
+              setFormData(prev => ({
+                ...prev,
+                projeto_id: lastProj,
+                cliente_id: String(projetoEncontrado.cliente_id),
+                cliente_nome: projetoEncontrado.clientes?.nome_cliente || "Cliente não encontrado",
+                atividade_id: lastAtiv || ""
+              }));
+              setAtividades(projetoEncontrado.atividades as any || []);
+            }
+          }
+
         } else {
           console.warn("Colaborador encontrado, mas sem vínculos de projeto.");
           setProjetos([]);
@@ -156,11 +175,11 @@ export default function LancamentoPage() {
         ...prev,
         projeto_id: id,
         cliente_id: String(projeto.cliente_id),
-        cliente_nome: projeto.clientes?.nome_cliente || "Cliente não encontrado"
+        cliente_nome: projeto.clientes?.nome_cliente || "Cliente não encontrado",
+        atividade_id: "" // Limpa a atividade ao trocar o projeto
       }))
 
       // Filtra as atividades que pertencem a este projeto
-      // Se sua API não tiver rota de filtro, usamos os dados que vieram no 'include' do projeto
       setAtividades(projeto.atividades as any || [])
     }
   }
@@ -189,11 +208,14 @@ export default function LancamentoPage() {
     }
 
     try {
+      // Criamos um objeto para envio excluindo o campo que causa erro no Prisma
+      const { tipo_lancamento, ...dadosParaEnvio } = formData;
+
       const response = await fetch(`${API_BASE_URL}/lancamentos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          ...dadosParaEnvio,
           usuario_id: idDoUsuario,
           projeto_id: Number(formData.projeto_id),
           atividade_id: Number(formData.atividade_id),
@@ -202,6 +224,10 @@ export default function LancamentoPage() {
       })
 
       if (response.ok) {
+        // MEMÓRIA: Salvar no localStorage antes de navegar
+        localStorage.setItem('last_projeto_id', formData.projeto_id);
+        localStorage.setItem('last_atividade_id', formData.atividade_id);
+
         toast.success("Horas registradas!")
         navigate("/TimeSheet")
       } else {
@@ -254,7 +280,7 @@ export default function LancamentoPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Projeto</Label>
-                        <Select onValueChange={handleProjetoChange}>
+                        <Select value={formData.projeto_id} onValueChange={handleProjetoChange}>
                           <SelectTrigger>
                             {isLoading ? (
                               <div className="flex items-center gap-2">
@@ -283,7 +309,7 @@ export default function LancamentoPage() {
 
                     <div className="space-y-2">
                       <Label>Atividade</Label>
-                      <Select onValueChange={(v) => setFormData({ ...formData, atividade_id: v })}>
+                      <Select value={formData.atividade_id} onValueChange={(v) => setFormData({ ...formData, atividade_id: v })}>
                         <SelectTrigger><SelectValue placeholder="Selecione a atividade" /></SelectTrigger>
                         <SelectContent className="max-h-60 overflow-y-auto">
                           {atividades.map(a => (
@@ -302,11 +328,11 @@ export default function LancamentoPage() {
                       </div>
                       <div className="space-y-2">
                         <Label>Início</Label>
-                        <Input type="time" onChange={e => setFormData({ ...formData, hora_inicio: e.target.value })} />
+                        <Input type="time" value={formData.hora_inicio} onChange={e => setFormData({ ...formData, hora_inicio: e.target.value })} />
                       </div>
                       <div className="space-y-2">
                         <Label>Fim</Label>
-                        <Input type="time" onChange={e => setFormData({ ...formData, hora_fim: e.target.value })} />
+                        <Input type="time" value={formData.hora_fim} onChange={e => setFormData({ ...formData, hora_fim: e.target.value })} />
                       </div>
                     </div>
 
@@ -314,6 +340,7 @@ export default function LancamentoPage() {
                       <Label>Descrição (Opcional)</Label>
                       <Textarea
                         placeholder="Descreva brevemente o que foi feito..."
+                        value={formData.descricao}
                         onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                       />
                     </div>
@@ -373,7 +400,7 @@ export default function LancamentoPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-xl shadow-sm border">
                     <div className="space-y-1">
                       <Label className="text-xs uppercase text-muted-foreground">Projeto</Label>
-                      <Select onValueChange={handleProjetoChange} disabled={ativo}>
+                      <Select value={formData.projeto_id} onValueChange={handleProjetoChange} disabled={ativo}>
                         <SelectTrigger className="border-none bg-slate-50 focus:ring-0">
                           {isLoading ? (
                             <div className="flex items-center gap-2">
@@ -402,7 +429,7 @@ export default function LancamentoPage() {
 
                     <div className="space-y-1">
                       <Label className="text-xs uppercase text-muted-foreground">Atividade</Label>
-                      <Select onValueChange={(v) => setFormData({ ...formData, atividade_id: v })} disabled={ativo}>
+                      <Select value={formData.atividade_id} onValueChange={(v) => setFormData({ ...formData, atividade_id: v })} disabled={ativo}>
                         <SelectTrigger className="border-none bg-slate-50 focus:ring-0">
                           <SelectValue placeholder="Selecione uma Atividade" />
                         </SelectTrigger>
@@ -417,6 +444,7 @@ export default function LancamentoPage() {
                       <Label className="text-xs uppercase text-muted-foreground">O que você está fazendo? (Opcional)</Label>
                       <Textarea
                         placeholder="Descreva sua tarefa..."
+                        value={formData.descricao}
                         className="resize-none border-none bg-white shadow-sm focus-visible:ring-blue-500"
                         onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                       />

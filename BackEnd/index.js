@@ -79,16 +79,15 @@ app.get('/clientes/cnpj/:cnpj', async (req, res) => {
 
 // POST /clientes - Cadastra um novo cliente
 app.post('/clientes', async (req, res) => {
-  // Nota: Os nomes dos campos devem bater exatamente com o seu 'schema.prisma'
   const { cnpj, nome_cliente, nome_contato, cep, endereco, cidade, estado, status } = req.body;
 
   if (!cnpj || !nome_cliente) {
     return res.status(400).json({ error: 'CNPJ e Nome da Empresa são obrigatórios.' });
   }
+
   const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
 
   try {
-    // ✍️ Prisma: Usa create para inserir um novo registro
     const novoCliente = await prisma.clientes.create({
       data: {
         cnpj: cnpjLimpo,
@@ -98,19 +97,21 @@ app.post('/clientes', async (req, res) => {
         endereco,
         cidade,
         estado,
-        status, // Deve ser um boolean se o seu modelo espera um boolean
-
+        status: status !== undefined ? status : true,
       }
     });
 
-    res.status(201).json(novoCliente);
+    return res.status(201).json(novoCliente);
   } catch (error) {
-    // 🛑 Tratamento de Erro de Chave Única do Prisma
+    // 🚨 Aqui está a correção para o "Adicionar"
     if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'Este CNPJ já está cadastrado (Violação de Chave Única).' });
+      return res.status(409).json({ 
+        error: 'CNPJ já existente',
+        message: 'Este CNPJ já está cadastrado no sistema.' 
+      });
     }
     console.error('Erro ao cadastrar cliente:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
+    return res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
 
@@ -146,15 +147,8 @@ app.delete('/clientes/:id', async (req, res) => {
   }
 })
 
-// PUT /clientes/:id - atualiza os dados de um cliente
 app.put('/clientes/:id', async (req, res) => {
-  // Extair e validar o ID
-  const clienteId = parseInt(req.params.id);
-
-  if (isNaN(clienteId)) {
-    return res.status(400).json({ error: 'ID do cliente inválido.' });
-  }
-  // Extrair dados do corpo da requisição
+  const clienteId = Number(req.params.id)
   const {
     cnpj,
     nome_cliente,
@@ -164,35 +158,55 @@ app.put('/clientes/:id', async (req, res) => {
     cidade,
     estado,
     status
-  } = req.body;
+  } = req.body
 
-  // Prepara os dados para a atualização, limpando o CNPJ se ele existir
-  const dadosParaAtualizar = {
-    cnpj: cnpj ? cnpj.replace(/[^\d]/g, '') : undefined,
-    nome_cliente,
-    nome_contato,
-    cep,
-    endereco,
-    cidade,
-    estado,
-    status,
-  };
   try {
+    const cnpjLimpo = cnpj ? cnpj.replace(/\D/g, '') : null
+    
+    if (cnpjLimpo) {
+      const duplicado = await prisma.clientes.findFirst({
+        where: {
+          cnpj: cnpjLimpo,
+          cliente_id: { not: clienteId }
+        }
+      })
+
+      if (duplicado) {
+        return res.status(409).json({
+          code: 'CNPJ_DUPLICADO',
+          message: 'CNPJ já existente'
+        })
+      }
+    }
+
     const clienteAtualizado = await prisma.clientes.update({
       where: { cliente_id: clienteId },
-      data: dadosParaAtualizar,
-    });
+      data: {
+        cnpj: cnpjLimpo, 
+        nome_cliente,
+        nome_contato,
+        cep,
+        endereco,
+        cidade,
+        estado,
+        status
+      }
+    })
 
-    res.status(200).json(clienteAtualizado);
+    return res.status(200).json(clienteAtualizado)
 
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: `Cliente com ID ${clienteId} não encontrado` });
+    // Segurança extra
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        code: 'CNPJ_DUPLICADO',
+        message: 'CNPJ já existente'
+      })
     }
-    console.error('Erro ao atualizar cliente:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar o cliente' });
-  }
 
+    console.error(error)
+    return res.status(500).json({ message: 'Erro interno' })
+  }
 })
 
 // GET /clientes/:id/projetos - Lista todos os projetos de um cliente específico
@@ -401,28 +415,41 @@ app.post('/atividades', async (req, res) => {
 
 
     // ✍️ Criação da Atividade no Prisma
-    const novaAtividade = await prisma.atividades.create({
-      data: {
-        nome_atividade,
-        descr_atividade: descr_atividade || "",
-        data_prevista_inicio: dataInicio,
-        data_prevista_fim: dataFim,
-        status: statusBoolean, // ✅ Agora envia o valor booleano esperado pelo Postgres
-        //         projeto_id: projetoIdNumerico, // Usa o ID numérico convertido
-        //         colaborador_id: colaborador_id ? Number(colaborador_id) : null,
-        projetos: {
-          connect: { projeto_id: projetoIdNumerico }
-        },
-
-        ...(colaborador_id && {
-          responsavel: {
-            connect: { colaborador_id: Number(colaborador_id) }
-          }
-        })
+ const novaAtividade = await prisma.atividades.create({
+  data: {
+    nome_atividade,
+    descr_atividade: descr_atividade || "",
+    data_prevista_inicio: dataInicio,
+    data_prevista_fim: dataFim,
+    horas_gastas: Number(horas_gastas) || 0,
+    status: statusBoolean,
+    projetos: {
+      connect: { projeto_id: projetoIdNumerico }
+    },
+    ...(colaborador_id && {
+      responsavel: {
+        connect: { colaborador_id: Number(colaborador_id) }
       }
-    });
+    })
+  }
+});
 
-    res.status(201).json(novaAtividade);
+// 🔽 RECALCULA AS HORAS DO PROJETO
+const soma = await prisma.atividades.aggregate({
+  where: { projeto_id: projetoIdNumerico },
+  _sum: { horas_gastas: true }
+});
+
+// 🔽 ATUALIZA O PROJETO
+await prisma.projetos.update({
+  where: { projeto_id: projetoIdNumerico },
+  data: {
+    horas_consumidas: soma._sum.horas_gastas || 0
+  }
+});
+
+res.status(201).json(novaAtividade);
+
   } catch (error) {
     // Tratamento de erro específico para chave estrangeira (P2003)
     if (error.code === 'P2003') {
@@ -472,7 +499,8 @@ app.put('/atividades/:atividade_id', async (req, res) => {
     descr_atividade,
     data_prevista_inicio, // String 'YYYY-MM-DD' ou null
     data_prevista_fim, // String 'YYYY-MM-DD' ou null
-    status,
+    horas_gastas,
+    status,    
     projeto_id,
     colaborador_id
   } = req.body;
@@ -481,7 +509,6 @@ app.put('/atividades/:atividade_id', async (req, res) => {
     const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T00:00:00Z') : null;
     const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
 
-
     const atividadeAtualizada = await prisma.atividades.update({
       where: { atividade_id: Number(atividade_id) },
       data: {
@@ -489,6 +516,7 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         descr_atividade: descr_atividade || "",
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
+        horas_gastas: Number(horas_gastas) || 0,
         status: Boolean(status),
         projetos: {
           connect: { projeto_id: Number(projeto_id) }
@@ -502,6 +530,18 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         projetos: true
       }
     });
+
+    const soma = await prisma.atividades.aggregate({
+  where: { projeto_id: Number(projeto_id) },
+  _sum: { horas_gastas: true }
+});
+
+await prisma.projetos.update({
+  where: { projeto_id: Number(projeto_id) },
+  data: {
+    horas_consumidas: soma._sum.horas_gastas || 0
+  }
+});
 
     res.status(200).json(atividadeAtualizada);
 
@@ -525,6 +565,8 @@ app.put('/atividades/:atividade_id', async (req, res) => {
 // GET /projetos - Listar Projetos (com dados do Cliente)
 app.get('/projetos', async (req, res) => {
   try {
+    const totalLancamentos = await prisma.lancamentos_de_horas.count();
+    console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
         clientes: {
@@ -553,13 +595,13 @@ app.get('/projetos', async (req, res) => {
     });
 
     const projetosComHoras = projetos.map(projeto => {
-      // Encontra a soma de horas correspondente a este projeto
-      const calculo = agregacaoHoras.find(h => h.projeto_id === projeto.projeto_id);
+      const calculo = agregacaoHoras.find(h => Number(h.projeto_id) === Number(projeto.projeto_id));
+      const total = calculo?._sum?.duracao_total || 0;
       
       return {
         ...projeto,
-        // Se não houver lançamentos, retorna 0
-        horas_consumidas: calculo?._sum?.duracao_total || 0 
+        horas_consumidas: total, 
+        horas_gastas: total
       };
     });
 
@@ -615,6 +657,7 @@ app.get('/projetos/:id', async (req, res) => {
     res.status(200).json({
       ...projeto,
       horas_consumidas: somaHoras._sum.duracao_total || 0,
+      horas_gastas: somaHoras._sum.duracao_total || 0,
       total_despesas: Number(somaDespesas._sum.valor) || 0
     });
 

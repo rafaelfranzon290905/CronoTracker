@@ -377,7 +377,17 @@ app.get('/atividades/:atividade_id', async (req, res) => {
       where: { atividade_id: atividadeId },
       include: {
         responsavel: true,
-        projetos: true
+        projetos: true,
+        lancamentos_de_horas: {
+          include: { 
+            colaboradores: { 
+              select: { nome_colaborador: true } 
+            } 
+          },
+          orderBy: { 
+            data_lancamento: 'desc' 
+          }
+        }
       }
     });
 
@@ -506,8 +516,8 @@ app.put('/atividades/:atividade_id', async (req, res) => {
   } = req.body;
 
   try {
-    const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T00:00:00Z') : null;
-    const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
+    const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : null;
+    const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
 
     const atividadeAtualizada = await prisma.atividades.update({
       where: { atividade_id: Number(atividade_id) },
@@ -527,19 +537,19 @@ app.put('/atividades/:atividade_id', async (req, res) => {
       },
       include: {
         responsavel: true,
-        projetos: true
+        projetos: true,
       }
     });
 
     const soma = await prisma.atividades.aggregate({
-  where: { projeto_id: Number(projeto_id) },
-  _sum: { horas_gastas: true }
-});
+      where: { projeto_id: Number(projeto_id) },
+      _sum: { horas_gastas: true }
+    });
 
 await prisma.projetos.update({
   where: { projeto_id: Number(projeto_id) },
   data: {
-    horas_consumidas: soma._sum.horas_gastas || 0
+    horas_gastas: soma._sum.horas_gastas || 0
   }
 });
 
@@ -566,7 +576,7 @@ await prisma.projetos.update({
 app.get('/projetos', async (req, res) => {
   try {
     const totalLancamentos = await prisma.lancamentos_de_horas.count();
-    console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
+    // console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
         clientes: {

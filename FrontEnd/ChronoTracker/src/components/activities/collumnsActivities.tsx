@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type Atividades } from "@/lib/activities";
+import { Link } from "react-router-dom";
 // import { usePermissions } from "@/hooks/usePermissions";
 
 const formatarData = (dateString: string | null | undefined): string => {
@@ -45,10 +46,18 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <span className="font-medium text-left">{row.getValue("nome_atividade")}</span>
-    ),
-    enableHiding: false, // Geralmente útil manter o nome visível
+    cell: ({ row }) => {
+      const atividade = row.original;
+      return (
+        <Link
+          to={`/atividades/${atividade.atividade_id}`}
+          className="font-medium text-blue-950 hover:text-blue-800 hover:underline transition-all decoration-2 underline-offset-4 flex items-center justify-center gap-1"
+        >
+          {atividade.nome_atividade}
+        </Link>
+      );
+    },
+    enableHiding: false,
     enableGlobalFilter: true,
   },
 
@@ -99,11 +108,11 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
   },
 
   // 3. COLUNA: Descrição
-  {
-    accessorKey: "descr_atividade",
-    header: "Descrição",
-    cell: ({ row }) => <span className="text-sm">{row.getValue("descr_atividade")}</span>,
-  },
+  // {
+  //   accessorKey: "descr_atividade",
+  //   header: "Descrição",
+  //   cell: ({ row }) => <span className="text-sm">{row.getValue("descr_atividade")}</span>,
+  // },
 
   // 4. COLUNA: Início Previsto
   {

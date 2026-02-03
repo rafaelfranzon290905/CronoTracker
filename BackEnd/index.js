@@ -1020,6 +1020,7 @@ app.get('/usuarios', async (req, res) => {
         email: true,
         cargo: true,
         status: true,
+        colaborador_id: true,
         // hash_senha: false <-- Segurança: Nunca enviar o hash
       },
       orderBy: { nome_completo: 'asc' }
@@ -1228,7 +1229,7 @@ app.post('/lancamentos', async (req, res) => {
     data, hora_inicio, hora_fim, descricao 
   } = req.body;
 
-  // console.log("Dados recebidos no backend:", req.body); // Log para debug
+  console.log("Dados recebidos no backend:", req.body); // Log para debug
 
   // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
   const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
@@ -1269,6 +1270,11 @@ app.post('/lancamentos', async (req, res) => {
     // 3. Calcular a duracao_total (opcional, mas recomendado já que a coluna existe)
     const diffMs = fimDate.getTime() - inicioDate.getTime();
     const duracaoHoras = diffMs / (1000 * 60 * 60);
+
+    // Adicione esta pequena trava de segurança antes do Prisma Create:
+    if (isNaN(duracaoHoras) || duracaoHoras <= 0) {
+        return res.status(400).json({ error: "Horário de início ou fim inválido." });
+    }
 
     const novoLancamento = await prisma.lancamentos_de_horas.create({
       data: {
@@ -1416,6 +1422,81 @@ if (totalOntem > 0) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro ao calcular estatísticas" });
+  }
+});
+
+// --- ROTAS DE RELATÓRIO
+// GET /relatorios - Gera dados para visualização ou download
+// --- ROTAS DE RELATÓRIO
+app.get('/relatorios', async (req, res) => {
+  try {
+    console.log("Query Params recebidos no servidor:", req.query);
+    const { data_inicio, data_fim, colaborador_id, exportar } = req.query;
+
+    // 1. Montagem do Filtro (Where)
+    let whereClause = {};
+
+    // Filtro de Datas (com ajuste de horas para cobrir o dia todo)
+    if (data_inicio || data_fim) {
+      whereClause.data_lancamento = {};
+      if (data_inicio) whereClause.data_lancamento.gte = new Date(`${data_inicio}T00:00:00.000Z`);
+      if (data_fim) whereClause.data_lancamento.lte = new Date(`${data_fim}T23:59:59.999Z`);
+    }
+
+    if (colaborador_id) {
+    const idNum = parseInt(colaborador_id);
+    if (!isNaN(idNum) && idNum > 0) {
+        whereClause.colaborador_id = idNum;
+    } else {
+        // Se cair aqui, o Front ainda está enviando texto em vez de número
+        console.error("ERRO CRÍTICO: O servidor recebeu um nome em vez de ID:", colaborador_id);
+    }
+}
+    console.log("Where Clause final para o Prisma:", whereClause);
+    console.log("Filtros finais aplicados no Prisma:", JSON.stringify(whereClause, null, 2));
+
+    // 2. Execução da Busca Única
+    const dados = await prisma.lancamentos_de_horas.findMany({
+      where: whereClause,
+      include: {
+        colaboradores: { select: { nome_colaborador: true } },
+        projetos: { select: { nome_projeto: true } },
+        clientes: { select: { nome_cliente: true } },
+        atividades: { select: { nome_atividade: true } }
+      },
+      orderBy: { data_lancamento: "asc" }
+    });
+
+    // 3. Lógica de Resposta (Exportação vs JSON)
+    if (exportar === 'true') {
+      const cabecalho = "Data;Colaborador;Cliente;Projeto;Atividade;Horas;Descricao\n";
+      const csv = dados.map(item => {
+        const dataFormatada = item.data_lancamento ? item.data_lancamento.toISOString().split('T')[0] : "";
+        const horas = item.duracao_total ? item.duracao_total.toFixed(2).replace('.', ',') : "0,00";
+
+        // Escapa ponto e vírgula e aspas dentro dos textos
+        const limparTexto = (texto) => texto ? `"${texto.toString().replace(/"/g, '""').replace(/;/g, ',')}"` : '""';
+
+        return `${dataFormatada};` +
+               `"${item.colaboradores?.nome_colaborador || ''}";` +
+               `"${item.clientes?.nome_cliente || ''}";` +
+               `"${item.projetos?.nome_projeto || ''}";` +
+               `"${item.atividades?.nome_atividade || ''}";` +
+               `${horas};` +
+               `"${limparTexto(item.descricao)}"`;
+      }).join("\n");
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename=relatorio_horas.csv');
+      return res.status(200).send("\ufeff" + cabecalho + csv); // \ufeff ajuda o Excel a entender UTF-8
+    }
+
+    // Retorno padrão para a tabela do Front
+    return res.json(dados);
+
+  } catch (error) {
+    console.error("Erro na rota /relatorios:", error);
+    return res.status(500).json({ error: "Erro ao gerar relatório" });
   }
 });
 

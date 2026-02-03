@@ -17,6 +17,7 @@ model atividades {
   data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   status               Boolean?               @default(true)
   colaborador_id       Int?
+  horas_gastas         Float?                 @default(0)
   responsavel          colaboradores?         @relation(fields: [colaborador_id], references: [colaborador_id], onUpdate: NoAction, map: "fk_atividade_colaborador")
   projetos             projetos               @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_atividade_projeto")
   lancamentos_de_horas lancamentos_de_horas[]
@@ -66,6 +67,7 @@ model lancamentos_de_horas {
   status_aprovacao String        @default("pendente") @db.VarChar(20)
   criado_em        DateTime?     @default(now()) @db.Timestamp(6)
   duracao_total    Float?
+  tipo_lancamento  String        @default("manual") @db.VarChar(20)
   atividades       atividades    @relation(fields: [atividade_id], references: [atividade_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_atividade")
   clientes         clientes      @relation(fields: [cliente_id], references: [cliente_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_cliente")
   colaboradores    colaboradores @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lancamento_colaborador")

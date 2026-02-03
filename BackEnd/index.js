@@ -1291,6 +1291,49 @@ app.post('/lancamentos', async (req, res) => {
 
   // console.log("Dados recebidos no backend:", req.body); // Log para debug
 
+  // Rota PUT /lancamentos/:id
+app.put('/lancamentos/:id', async (req, res) => {
+  const { id } = req.params;
+  const { projeto_id, atividade_id, hora_inicio, hora_fim, descricao, motivo_edicao } = req.body;
+
+  try {
+    const lancamentoAtualizado = await prisma.lancamentos_de_horas.update({
+      where: { lancamento_id: Number(id) },
+      data: {
+        projeto_id,
+        atividade_id,
+        // Certifique-se de converter as strings de hora para Date se necessário
+        hora_inicio: new Date(hora_inicio), 
+        hora_fim: new Date(hora_fim),
+        descricao,
+        motivo_edicao, // Salvando a justificativa vinda do modal
+        // O campo editado_em será atualizado automaticamente pelo @updatedAt
+      },
+    });
+
+    res.json(lancamentoAtualizado);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar lançamento" });
+  }
+});
+
+//DELETE /lancamentos/:id - Excluir um lançamento de horas
+app.delete('/lancamentos/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.lancamentos_de_horas.delete({
+      where: {
+        lancamento_id: Number(id),
+      },
+    });
+    res.status(204).send(); // Sucesso sem conteúdo
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao excluir o registro no banco de dados." });
+  }
+});
+
   // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
   const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
   const hoje = new Date();

@@ -169,25 +169,26 @@ export default function TimesheetPage() {
 
           {/* Modal de Edição */}
           <EditTimeEntryModal 
-            open={editModalOpen} 
-            onOpenChange={setEditModalOpen}
-            entry={selectedEntry}
-            onSave={async (id: number, updatedData: any) => {
-              try {
-                const response = await fetch(`${API_BASE_URL}/lancamentos/${id}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    projeto_id: Number(updatedData.projeto_id),
-                    atividade_id: Number(updatedData.atividade_id),
-                    cliente_id: Number(updatedData.cliente_id),
-                    data_lancamento: updatedData.data_lancamento,
-                    hora_inicio: updatedData.hora_inicio,
-                    hora_fim: updatedData.hora_fim,
-                    descricao: updatedData.descricao,
-                    motivo_edicao: updatedData.motivo_edicao,
-                  })
-                });
+  open={editModalOpen} 
+  onOpenChange={setEditModalOpen}
+  entry={selectedEntry}
+  onSave={async (id: number, updatedData: any) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/lancamentos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // O updatedData agora vem completo do modal
+          projeto_id: updatedData.projeto_id,
+          atividade_id: updatedData.atividade_id,
+          cliente_id: updatedData.cliente_id,
+          data_lancamento: updatedData.data_lancamento,
+          hora_inicio: updatedData.hora_inicio,
+          hora_fim: updatedData.hora_fim,
+          descricao: updatedData.descricao,
+          motivo_edicao: updatedData.motivo_edicao,
+        })
+      });
 
                 if (response.ok) {
                   toast.success("Lançamento atualizado!");

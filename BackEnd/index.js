@@ -1290,30 +1290,76 @@ app.post('/lancamentos', async (req, res) => {
   } = req.body;
 
   // console.log("Dados recebidos no backend:", req.body); // Log para debug
+    });
 
-  // Rota PUT /lancamentos/:id
+
+// -------------------------------------------------------
+// A ROTA PUT TEM QUE COMEÇAR AQUI (FORA DO POST)
+// -------------------------------------------------------
 app.put('/lancamentos/:id', async (req, res) => {
   const { id } = req.params;
-  const { projeto_id, atividade_id, hora_inicio, hora_fim, descricao, motivo_edicao } = req.body;
+  const { 
+    projeto_id, 
+    atividade_id, 
+    cliente_id, 
+    data_lancamento, 
+    hora_inicio, 
+    hora_fim, 
+    descricao, 
+    motivo_edicao 
+  } = req.body;
 
   try {
+    // Validações básicas para evitar erro de conversão
+    if (!projeto_id || !atividade_id) {
+       return res.status(400).json({ error: "Projeto e Atividade são obrigatórios." });
+    }
+
+    const dataBase = data_lancamento.includes('T') ? data_lancamento.split('T')[0] : data_lancamento;
+    
+    // Tratamento para hora (se vier HH:mm ou HH:mm:ss)
+    const timeToDate = (dateStr, timeStr) => {
+        if(!timeStr) return null;
+        const timeParts = timeStr.split(':');
+        const d = new Date(dateStr);
+        d.setUTCHours(Number(timeParts[0]), Number(timeParts[1]), 0, 0);
+        return d;
+    };
+
+    const inicioDate = timeToDate(dataBase, hora_inicio);
+    const fimDate = timeToDate(dataBase, hora_fim);
+    const dataLancamentoDate = new Date(`${dataBase}T12:00:00Z`);
+
+    // Calcular duração se as datas forem válidas
+    let duracaoHoras = 0;
+    if (inicioDate && fimDate) {
+        const diffMs = fimDate.getTime() - inicioDate.getTime();
+        duracaoHoras = diffMs / (1000 * 60 * 60);
+    }
+
     const lancamentoAtualizado = await prisma.lancamentos_de_horas.update({
       where: { lancamento_id: Number(id) },
       data: {
-        projeto_id,
-        atividade_id,
-        // Certifique-se de converter as strings de hora para Date se necessário
-        hora_inicio: new Date(hora_inicio), 
-        hora_fim: new Date(hora_fim),
+        projeto_id: Number(projeto_id),
+        atividade_id: Number(atividade_id),
+        cliente_id: Number(cliente_id),
+        data_lancamento: dataLancamentoDate,
+        hora_inicio: inicioDate,
+        hora_fim: fimDate,
+        duracao_total: duracaoHoras,
         descricao,
-        motivo_edicao, // Salvando a justificativa vinda do modal
-        // O campo editado_em será atualizado automaticamente pelo @updatedAt
+        motivo_edicao,
       },
     });
 
     res.json(lancamentoAtualizado);
   } catch (error) {
-    res.status(500).json({ error: "Erro ao atualizar lançamento" });
+    console.error("Erro ao editar lançamento:", error);
+    // Se o ID não existir, o Prisma lança erro P2025
+    if (error.code === 'P2025') {
+        return res.status(404).json({ error: "Lançamento não encontrado." });
+    }
+    res.status(500).json({ error: "Erro ao atualizar lançamento", details: error.message });
   }
 });
 

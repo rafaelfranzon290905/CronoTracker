@@ -18,4 +18,5 @@ export interface Usuario {
   email: string;
   cargo: 'Gerente' | 'Colaborador';
   status: boolean;
+  colaborador_id: number;
 }

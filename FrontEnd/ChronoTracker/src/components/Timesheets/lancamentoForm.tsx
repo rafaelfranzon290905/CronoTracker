@@ -181,8 +181,14 @@ const formatarTempo = (totalSegundos: number) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
-          usuario_id: user?.id
+          projeto_id: Number(formData.projeto_id), // Garante que é número
+          atividade_id: Number(formData.atividade_id),
+          cliente_id: Number(formData.cliente_id), // ESSENCIAL para o relatório
+          data: formData.data,
+          hora_inicio: formData.hora_inicio,
+          hora_fim: formData.hora_fim,
+          descricao: formData.descricao,
+          usuario_id: user?.usuario_id || user?.id
         })
       })
 

@@ -149,7 +149,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
 
             const result = await response.json().catch(() => ({}));
 
-            if (!response.ok) {
+            if (!response.ok) {            
                 setApiError(result.error || `Erro ao editar: ${response.statusText}`);
                 return;
             }

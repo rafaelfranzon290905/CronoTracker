@@ -25,6 +25,7 @@ import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { AddExpenseDialog } from "@/components/projects/AddExpenseDialog";
 import { ListaDespesasProjeto } from "@/components/projects/ListaDespesasProjeto";
+import { Link } from "react-router-dom";
 
 export default function DetalhesProjeto() {
     const { id } = useParams();
@@ -159,18 +160,20 @@ export default function DetalhesProjeto() {
                                         <CardContent className="space-y-3">
                                             {projeto.atividades && projeto.atividades.length > 0 ? (
                                                 projeto.atividades.map((atv) => (
-                                                    <div key={atv.atividade_id} className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm hover:border-blue-200 transition-all">
-                                                        <span className="text-sm font-medium">{atv.nome_atividade}</span>
-                                                        <Badge
-                                                            variant={atv.status ? "default" : "secondary"}
-                                                            className={!atv.status
-                                                                ? "bg-red-600 hover:bg-red-700 text-white"
-                                                                : "bg-green-600 hover:bg-green-700 text-white"
-                                                            }
-                                                        >
-                                                            {atv.status ? "Ativa" : "Inativa"}
-                                                        </Badge>
-                                                    </div>
+                                                    <Link key={atv.atividade_id} to={`/atividades/${atv.atividade_id}`} className="block group">
+                                                        <div className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm hover:border-blue-200 transition-all">
+                                                            <span className="text-sm font-medium">{atv.nome_atividade}</span>
+                                                            <Badge
+                                                                variant={atv.status ? "default" : "secondary"}
+                                                                className={!atv.status
+                                                                    ? "bg-red-600 hover:bg-red-700 text-white"
+                                                                    : "bg-green-600 hover:bg-green-700 text-white"
+                                                                }
+                                                            >
+                                                                {atv.status ? "Ativa" : "Inativa"}
+                                                            </Badge>
+                                                        </div>
+                                                    </Link>
                                                 ))
                                             ) : (
                                                 <p className="text-sm text-muted-foreground italic text-center py-4">Nenhuma atividade vinculada.</p>

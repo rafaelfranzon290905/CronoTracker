@@ -1331,21 +1331,21 @@ app.post('/lancamentos', async (req, res) => {
     const diffMs = fimDate.getTime() - inicioDate.getTime();
     const duracaoHoras = diffMs / (1000 * 60 * 60);
 
-    const novoLancamento = await prisma.lancamentos_de_horas.create({
-      data: {
-        colaborador_id: usuario.colaborador_id,
-        projeto_id: Number(projeto_id),
-        atividade_id: Number(atividade_id),
-        cliente_id: Number(cliente_id),
-        data_lancamento: new Date(`${dataBase}T12:00:00Z`), // 'data' vindo do front
-        hora_inicio: inicioDate,
-        hora_fim: fimDate,
-        duracao_total: duracaoHoras,
-        descricao: descricao || "",
-        status_aprovacao: statusInicial,
-        tipo_lancamento: tipo_lancamento || "manual"
-      }
-    });
+   const novoLancamento = await prisma.lancamentos_de_horas.create({
+  data: {
+    colaborador_id: 38,
+    projeto_id: 27,
+    atividade_id: 90,
+    cliente_id: 13,
+    data_lancamento: new Date(),
+    hora_inicio: inicioDate,
+    hora_fim: fimDate,
+    duracao_total: duracaoHoras,
+    descricao: "a",
+    status_aprovacao: "aprovado",
+    // tipo_lancamento: "manual",  <-- 
+  }
+})
 
     res.status(201).json(novoLancamento);
   } catch (error) {

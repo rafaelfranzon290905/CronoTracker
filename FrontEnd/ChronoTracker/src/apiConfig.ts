@@ -1,1 +1,4 @@
-export const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3001';
+export const API_BASE_URL = "https://cronotracker.onrender.com";
+
+// Use a linha do Localhost:
+//export const API_BASE_URL = "http://localhost:3001";

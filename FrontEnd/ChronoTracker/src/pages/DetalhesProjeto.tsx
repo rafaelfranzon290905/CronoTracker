@@ -63,7 +63,7 @@ export default function DetalhesProjeto() {
 
     const progressoConsumido = useMemo(() => {
         if (!projeto || !projeto.horas_previstas || projeto.horas_previstas === 0) return 0;
-        const consumidas = projeto.horas_consumidas ?? 0;
+        const consumidas = projeto.horas_gastas ?? 0;
         const calculo = (consumidas / projeto.horas_previstas) * 100;
 
         return Math.min(Math.round(calculo), 120);
@@ -210,7 +210,7 @@ export default function DetalhesProjeto() {
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-muted-foreground italic">Consumo de Horas</span>
                                                     <span className="font-bold text-blue-900">
-                                                        {projeto.horas_consumidas?.toFixed(1) || 0}h / {projeto.horas_previstas || 0}h
+                                                        {projeto.horas_gastas?.toFixed(1) || 0}h / {projeto.horas_previstas || 0}h
                                                     </span>
                                                 </div>
 

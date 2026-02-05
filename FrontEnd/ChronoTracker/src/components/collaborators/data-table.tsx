@@ -26,6 +26,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   filterColumn?: string;
+  filterPlaceholder?: string
   meta?: any;
 }
 
@@ -33,14 +34,10 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   filterColumn,
+  filterPlaceholder,
   meta,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([
-     {
-      id: "nome_colaborador",
-      desc: false,
-    },
-  ]);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = React.useState({});
 
@@ -68,10 +65,10 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4 w-full">
         <div className="relative w-full">
           <Input
-            placeholder={`Filtrar por ${filterColumn}`}
-            value={(table.getColumn(filterColumn)?.getFilterValue() as string) ?? ""}
+            placeholder={filterPlaceholder || "Filtrar..."}
+            value={(table.getColumn(filterColumn || "")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn(filterColumn)?.setFilterValue(event.target.value)
+              table.getColumn(filterColumn || "")?.setFilterValue(event.target.value)
             }
             className="w-full rounded-full pr-14 pl-4 h-12 border-gray-200"
           />
@@ -143,7 +140,7 @@ export function DataTable<TData, TValue>({
           {table.getFilteredRowModel().rows.length} linha(s) selecionada(s).
         </div>
         <div className="flex items-center space-x-2">
-          <Button 
+          <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}

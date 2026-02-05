@@ -14,4 +14,5 @@ export type Atividades = {
   projetos?: {
     nome_projeto: string;
   };
+  horas_gastas?: number;
 };

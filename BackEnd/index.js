@@ -344,7 +344,7 @@ app.post('/colaboradores', async (req, res) => {
 
 app.get('/atividades', async (req, res) => {
   try {
-    const todasAtividades = await prisma.atividades.findMany({
+    const atividades = await prisma.atividades.findMany({
       include: {
         responsavel: true,
         projetos: {
@@ -357,7 +357,21 @@ app.get('/atividades', async (req, res) => {
         atividade_id: 'asc',
       },
     });
-    res.status(200).json(todasAtividades);
+    const somaHorasAtividades = await prisma.lancamentos_de_horas.groupBy({
+      by: ['atividade_id'],
+      _sum: { duracao_total: true }
+    });
+
+    const atividadesComHorasReais = atividades.map(atv => {
+      const lancamento = somaHorasAtividades.find(l => l.atividade_id === atv.atividade_id);
+      return {
+        ...atv,
+        horas_gastas: lancamento?._sum?.duracao_total || 0
+      };
+    });
+
+
+    res.status(200).json(atividadesComHorasReais);
   } catch (error) {
     console.error('Erro ao buscar todos as atividades:', error);
     res.status(500).json({ error: 'Erro interno ao listar atividades.' });
@@ -405,7 +419,7 @@ app.get('/atividades/:atividade_id', async (req, res) => {
 
 // POST /atividades - Cadastra um novo cliente
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id } = req.body;
+  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id, horas_gastas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
@@ -444,17 +458,17 @@ app.post('/atividades', async (req, res) => {
   }
 });
 
-// 🔽 RECALCULA AS HORAS DO PROJETO
+// RECALCULA AS HORAS DO PROJETO
 const soma = await prisma.atividades.aggregate({
   where: { projeto_id: projetoIdNumerico },
   _sum: { horas_gastas: true }
 });
 
-// 🔽 ATUALIZA O PROJETO
+// ATUALIZA O PROJETO
 await prisma.projetos.update({
   where: { projeto_id: projetoIdNumerico },
   data: {
-    horas_consumidas: soma._sum.horas_gastas || 0
+    horas_gastas: soma._sum.horas_gastas || 0
   }
 });
 

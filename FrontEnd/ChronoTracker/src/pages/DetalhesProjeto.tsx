@@ -71,6 +71,14 @@ export default function DetalhesProjeto() {
         loadData();
     }, [id]);
 
+    const totalDespesasAprovadas = useMemo(() => {
+        if (!projeto?.despesas) return 0;
+        
+        return projeto.despesas
+            .filter(d => d.status_aprovacao === "Aprovada")
+            .reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+    }, [projeto?.despesas]);
+
     const progressoConsumido = useMemo(() => {
         if (!projeto || !projeto.horas_previstas || projeto.horas_previstas === 0) return 0;
         const consumidas = projeto.horas_gastas ?? 0;
@@ -255,7 +263,8 @@ export default function DetalhesProjeto() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="text-2xl font-bold text-blue-700">
-                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(projeto.total_despesas ?? 0)}
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+                                                    .format(totalDespesasAprovadas)}
                                             </div>
                                             <p className="text-[10px] text-muted-foreground mt-1 underline decoration-blue-200">
                                                 Custo direto vinculado ao projeto

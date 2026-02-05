@@ -458,7 +458,7 @@ const soma = await prisma.atividades.aggregate({
 await prisma.projetos.update({
   where: { projeto_id: projetoIdNumerico },
   data: {
-    horas_consumidas: soma._sum.horas_gastas || 0
+    horas_gastas: soma._sum.horas_gastas || 0
   }
 });
 

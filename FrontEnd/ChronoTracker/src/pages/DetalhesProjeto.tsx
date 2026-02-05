@@ -36,6 +36,15 @@ export default function DetalhesProjeto() {
     const [projeto, setProjeto] = useState<Projeto | null>(null);
     const [clientes, setClientes] = useState<any[]>([])
     const [loading, setLoading] = useState(true);
+    const formatarHorasDecimais = (totalDecimal: number | null | undefined): string => {
+        const valor = totalDecimal || 0;
+        const horas = Math.floor(valor);
+        const minutos = Math.round((valor - horas) * 60);
+        const horasPad = String(horas).padStart(2, '0');
+        const minutosPad = String(minutos).padStart(2, '0');
+        return `${horasPad}:${minutosPad}`;
+    };
+
     const loadData = async () => {
         try {
             setLoading(true);
@@ -213,7 +222,7 @@ export default function DetalhesProjeto() {
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-muted-foreground italic">Consumo de Horas</span>
                                                     <span className="font-bold text-blue-900">
-                                                        {projeto.horas_gastas?.toFixed(1) || 0}h / {projeto.horas_previstas || 0}h
+                                                        {formatarHorasDecimais(projeto.horas_gastas)}h / {formatarHorasDecimais(projeto.horas_previstas)}h
                                                     </span>
                                                 </div>
 

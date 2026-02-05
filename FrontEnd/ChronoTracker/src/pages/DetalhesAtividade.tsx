@@ -77,6 +77,22 @@ export default function DetalhesAtividade() {
         </div>
     );
 
+    const formatarHorasDecimais = (totalDecimal: number) => {
+        const horas = Math.floor(totalDecimal);
+        const minutos = Math.round((totalDecimal - horas) * 60);
+        
+        // Formata para garantir dois dígitos (01:05 ao invés de 1:5)
+        const horasPad = String(horas).padStart(2, '0');
+        const minutosPad = String(minutos).padStart(2, '0');
+        
+        return `${horasPad}:${minutosPad}`;
+    };
+
+    const totalDecimal = atividade?.lancamentos_de_horas?.reduce(
+        (acc: number, lanc: any) => acc + (Number(lanc.duracao_total) || 0), 
+        0
+    ) || 0;
+
     return (
         <div className="flex h-screen w-full">
             <SideBar />
@@ -145,6 +161,7 @@ export default function DetalhesAtividade() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
+                                        {console.log("Dados da atividade recebidos:", atividade)}
                                         {atividade.lancamentos_de_horas && atividade.lancamentos_de_horas.length > 0 ? (
                                             atividade.lancamentos_de_horas.map((lanc: any) => (
                                                 <div key={lanc.lancamento_id} className="flex flex-col p-3 border rounded-lg bg-white shadow-sm hover:bg-slate-50 transition-colors">
@@ -152,7 +169,7 @@ export default function DetalhesAtividade() {
                                                         <div className="flex items-center gap-2">
                                                             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                                                                 <Timer className="h-3 w-3 mr-1" />
-                                                                {lanc.duracao_total.toFixed(1)}h
+                                                                {formatarHorasDecimais(Number(lanc.duracao_total))}h
                                                             </Badge>
                                                             <span className="text-xs font-semibold text-slate-500">
                                                                 {new Date(lanc.data_lancamento).toLocaleDateString("pt-BR")}
@@ -207,7 +224,7 @@ export default function DetalhesAtividade() {
                                         <div>
                                             <p className="text-blue-200 text-xs uppercase font-bold tracking-wider">Total Acumulado</p>
                                             <p className="text-3xl font-bold mt-1">
-                                                {atividade.horas_gastas?.toFixed(1) || 0}h
+                                               {formatarHorasDecimais(totalDecimal)}h
                                             </p>
                                         </div>
                                         <Timer className="h-8 w-8 text-blue-400 opacity-50" />

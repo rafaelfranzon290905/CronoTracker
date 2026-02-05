@@ -24,6 +24,18 @@ const formatarData = (dateString: string | null | undefined): string => {
 };
 
 
+const formatarHorasDecimais = (totalDecimal: number | null | undefined): string => {
+  const valor = totalDecimal || 0;
+  const horas = Math.floor(valor);
+  const minutos = Math.round((valor - horas) * 60);
+  
+  const horasPad = String(horas).padStart(2, '0');
+  const minutosPad = String(minutos).padStart(2, '0');
+  
+  return `${horasPad}:${minutosPad}`;
+};
+
+
 
 // --- Definição das Colunas ---
 
@@ -140,7 +152,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     const horas = row.getValue("horas_gastas") as number;
     return (
       <div className="font-medium text-blue-800">
-        {horas ? `${horas.toFixed(1)}h` : "0h"}
+        {formatarHorasDecimais(horas)}h
       </div>
     );
   },

@@ -133,6 +133,18 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
       return <span>{formatarData(data)}</span>;
     },
   },
+  {
+  accessorKey: "horas_gastas",
+  header: "Horas Gastas",
+  cell: ({ row }) => {
+    const horas = row.getValue("horas_gastas") as number;
+    return (
+      <div className="font-medium text-blue-800">
+        {horas ? `${horas.toFixed(1)}h` : "0h"}
+      </div>
+    );
+  },
+},
 
   // 6. COLUNA: Status 
   {

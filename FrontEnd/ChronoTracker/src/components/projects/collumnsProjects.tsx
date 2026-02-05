@@ -150,7 +150,7 @@ export const getColumns = (
       header: "Horas gastas",
        cell: ({ row }) => {
         const horas = row.original.horas_consumidas || 0;
-        return <span>{horas.toFixed(1)}h</span>;
+        return <span className="font-medium text-blue-800">{horas.toFixed(1)}h</span>;
       },
     },
     {

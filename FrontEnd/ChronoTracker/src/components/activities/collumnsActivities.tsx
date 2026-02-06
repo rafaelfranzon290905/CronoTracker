@@ -158,20 +158,43 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
   },
 },
 
-  // 6. COLUNA: Status 
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      const statusBool = row.getValue("status") as boolean;
-      return (
-        <Badge variant={statusBool ? "default" : "secondary"}
-          className={!statusBool ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}>
-          {statusBool ? "Ativo" : "Inativo"}
-        </Badge>
-      );
-    },
+ // 6. COLUNA: Status 
+{
+  accessorKey: "status",
+  header: "Status",
+  cell: ({ row }) => {
+    const atividade = row.original;
+    const statusBool = atividade.status; // No seu código, true parece significar "Ativo/Concluído"
+    const horas = atividade.horas_gastas || 0;
+
+    let label = "Pendente";
+    let variantClasses = "bg-gray-200 text-gray-600 hover:bg-gray-300"; // Cinza fraco
+
+    if (!statusBool) {
+      // Se o checkbox de Ativo/Inativo do seu banco for usado para "Concluída"
+      // ou se você criar um campo específico. Aqui trataremos false como "Inativo/Pendente"
+      // e true como "Concluída", mas com a condição das horas:
+      
+      if (horas > 0) {
+        label = "Em andamento";
+        variantClasses = "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"; // Amarelo fraco
+      } else {
+        label = "Pendente";
+        variantClasses = "bg-gray-100 text-gray-500 hover:bg-gray-200"; // Cinza
+      }
+    } else {
+      // Se status for TRUE, consideramos finalizado conforme sua regra
+      label = "Concluída";
+      variantClasses = "bg-green-100 text-green-700 hover:bg-green-200"; // Verde
+    }
+
+    return (
+      <Badge className={`${variantClasses} border-none shadow-none font-semibold`}>
+        {label}
+      </Badge>
+    );
   },
+},
 
   // 7. COLUNA: Ações (Dropdown Menu)
   {

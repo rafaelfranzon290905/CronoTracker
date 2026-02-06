@@ -339,201 +339,86 @@ app.post('/colaboradores', async (req, res) => {
   }
 });
 
-// Rota de Atividades
-// GET /atividades - Lista todas as atividades
-
 app.get('/atividades', async (req, res) => {
   try {
     const atividades = await prisma.atividades.findMany({
-      include: {
-        responsavel: true,
-        projetos: {
-          select: {
-            nome_projeto: true
-          }
-        }
-      },
-      orderBy: {
-        atividade_id: 'asc',
-      },
+      include: { responsavel: true, projetos: { select: { nome_projeto: true } } },
+      orderBy: { atividade_id: 'asc' },
     });
-    const somaHorasAtividades = await prisma.lancamentos_de_horas.groupBy({
+    const somaHoras = await prisma.lancamentos_de_horas.groupBy({
       by: ['atividade_id'],
       _sum: { duracao_total: true }
     });
-
-    const atividadesComHorasReais = atividades.map(atv => {
-      const lancamento = somaHorasAtividades.find(l => l.atividade_id === atv.atividade_id);
-      return {
-        ...atv,
-        horas_gastas: lancamento?._sum?.duracao_total || 0
-      };
+    const result = atividades.map(atv => {
+      const lanc = somaHoras.find(l => l.atividade_id === atv.atividade_id);
+      return { ...atv, horas_gastas: lanc?._sum?.duracao_total || 0 };
     });
-
-
-    res.status(200).json(atividadesComHorasReais);
+    res.status(200).json(result);
   } catch (error) {
-    console.error('Erro ao buscar todos as atividades:', error);
-    res.status(500).json({ error: 'Erro interno ao listar atividades.' });
+    res.status(500).json({ error: 'Erro ao listar atividades.' });
   }
 });
 
-// 🎯 ROTA GET /atividades/:atividade_id - Busca uma única atividade
 app.get('/atividades/:atividade_id', async (req, res) => {
   const atividadeId = Number(req.params.atividade_id);
-
-  if (!Number.isInteger(atividadeId)) {
-    return res.status(400).json({ error: "ID inválido." });
-  }
-
   try {
     const atividade = await prisma.atividades.findUnique({
       where: { atividade_id: atividadeId },
-      include: {
-        responsavel: true,
-        projetos: true,
-        lancamentos_de_horas: {
-          include: { 
-            colaboradores: { 
-              select: { nome_colaborador: true } 
-            } 
-          },
-          orderBy: { 
-            data_lancamento: 'desc' 
-          }
-        }
-      }
+      include: { responsavel: true, projetos: true, lancamentos_de_horas: { include: { colaboradores: { select: { nome_colaborador: true } } } } }
     });
-
-    if (!atividade) {
-      return res.status(404).json({ error: "Atividade não encontrada." });
-    }
-
+    if (!atividade) return res.status(404).json({ error: "Não encontrada." });
     res.json(atividade);
   } catch (error) {
-    console.error("Erro ao buscar atividade:", error);
     res.status(500).json({ error: "Erro ao buscar atividade." });
   }
 });
 
-
-// POST /atividades - Cadastra um novo cliente
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id, horas_gastas } = req.body;
-
-  if (!projeto_id) {
-    return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
-  }
+  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id, horas_gastas, status } = req.body;
+  if (!projeto_id) return res.status(400).json({ error: 'projeto_id obrigatório.' });
 
   try {
-    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO 
-    //    const projetoIdNumerico = Number(projeto_id); 
-    //     if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
-    //       return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
-    //     }
-    const projetoIdNumerico = Number(projeto_id);
-    // 2. CONVERSÃO DAS DATAS PARA OBJETO Date 
-    const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
-    const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
-    const statusBoolean = true;
+    const projetoIdNum = Number(projeto_id);
+    const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : new Date();
+    const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
+    
+    // Converte status para Boolean (se vier string do formulário)
+    const statusBoolean = (status === 'true' || status === true || status === 'Ativa');
 
-
-    // ✍️ Criação da Atividade no Prisma
- const novaAtividade = await prisma.atividades.create({
-  data: {
-    nome_atividade,
-    descr_atividade: descr_atividade || "",
-    data_prevista_inicio: dataInicio,
-    data_prevista_fim: dataFim,
-    horas_gastas: Number(horas_gastas) || 0,
-    status: statusBoolean,
-    projetos: {
-      connect: { projeto_id: projetoIdNumerico }
-    },
-    ...(colaborador_id && {
-      responsavel: {
-        connect: { colaborador_id: Number(colaborador_id) }
+    const novaAtividade = await prisma.atividades.create({
+      data: {
+        nome_atividade,
+        descr_atividade: descr_atividade || "",
+        data_prevista_inicio: dataInicio,
+        data_prevista_fim: dataFim,
+        horas_gastas: Number(horas_gastas) || 0,
+        status: statusBoolean,
+        projetos: { connect: { projeto_id: projetoIdNum } },
+        ...(colaborador_id && { responsavel: { connect: { colaborador_id: Number(colaborador_id) } } })
       }
-    })
-  }
-});
-
-// RECALCULA AS HORAS DO PROJETO
-const soma = await prisma.atividades.aggregate({
-  where: { projeto_id: projetoIdNumerico },
-  _sum: { horas_gastas: true }
-});
-
-// ATUALIZA O PROJETO
-await prisma.projetos.update({
-  where: { projeto_id: projetoIdNumerico },
-  data: {
-    horas_gastas: soma._sum.horas_gastas || 0
-  }
-});
-
-res.status(201).json(novaAtividade);
-
-  } catch (error) {
-    // Tratamento de erro específico para chave estrangeira (P2003)
-    if (error.code === 'P2003') {
-      return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
-    }
-
-    console.error('Erro ao cadastrar atividade:', error);
-    res.status(500).json({ error: 'Erro interno do servidor. Verifique os logs para detalhes.' });
-  }
-});
-
-// Rota DELETE para Atividades
-
-app.delete('/atividades/:atividade_id', async (req, res) => {
-  const atividadeId = Number(req.params.atividade_id);
-
-  if (!Number.isInteger(atividadeId)) {
-    return res.status(400).json({ error: "ID inválido." });
-  }
-
-  try {
-    const existe = await prisma.atividades.findUnique({
-      where: { atividade_id: atividadeId }
     });
 
-    if (!existe) {
-      return res.status(404).json({ error: `Atividade ${atividadeId} não existe.` });
-    }
+    // Recalcula horas no projeto
+    const soma = await prisma.atividades.aggregate({ where: { projeto_id: projetoIdNum }, _sum: { horas_gastas: true } });
+    await prisma.projetos.update({ where: { projeto_id: projetoIdNum }, data: { horas_gastas: soma._sum.horas_gastas || 0 } });
 
-    await prisma.atividades.delete({
-      where: { atividade_id: atividadeId }
-    });
-
-    res.sendStatus(204);
+    res.status(201).json(novaAtividade);
   } catch (error) {
-    console.error("Erro ao deletar:", error);
-    res.status(500).json({ error: "Erro interno ao deletar." });
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao cadastrar atividade.' });
   }
 });
 
-
-// 🎯 ROTA PUT /atividades/:atividade_id - Atualiza uma atividade existente
 app.put('/atividades/:atividade_id', async (req, res) => {
   const { atividade_id } = req.params;
-  const {
-    nome_atividade,
-    descr_atividade,
-    data_prevista_inicio, // String 'YYYY-MM-DD' ou null
-    data_prevista_fim, // String 'YYYY-MM-DD' ou null
-    horas_gastas,
-    status,    
-    projeto_id,
-    colaborador_id
-  } = req.body;
+  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_gastas, status, projeto_id, colaborador_id } = req.body;
 
   try {
     const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : null;
     const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
+    const statusBoolean = (status === 'true' || status === true || status === 'Ativa');
 
-    const atividadeAtualizada = await prisma.atividades.update({
+    const atualizada = await prisma.atividades.update({
       where: { atividade_id: Number(atividade_id) },
       data: {
         nome_atividade,
@@ -541,46 +426,28 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
         horas_gastas: Number(horas_gastas) || 0,
-        status: Boolean(status),
-        projetos: {
-          connect: { projeto_id: Number(projeto_id) }
-        },
-        responsavel: colaborador_id
-          ? { connect: { colaborador_id: Number(colaborador_id) } }
-          : { disconnect: true }
-      },
-      include: {
-        responsavel: true,
-        projetos: true,
+        status: statusBoolean,
+        projetos: { connect: { projeto_id: Number(projeto_id) } },
+        responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
       }
     });
 
-    const soma = await prisma.atividades.aggregate({
-      where: { projeto_id: Number(projeto_id) },
-      _sum: { horas_gastas: true }
-    });
+    const soma = await prisma.atividades.aggregate({ where: { projeto_id: Number(projeto_id) }, _sum: { horas_gastas: true } });
+    await prisma.projetos.update({ where: { projeto_id: Number(projeto_id) }, data: { horas_gastas: soma._sum.horas_gastas || 0 } });
 
-await prisma.projetos.update({
-  where: { projeto_id: Number(projeto_id) },
-  data: {
-    horas_gastas: soma._sum.horas_gastas || 0
+    res.status(200).json(atualizada);
+  } catch (error) {
+    res.status(500).json({ error: "Erro ao atualizar atividade." });
   }
 });
 
-    res.status(200).json(atividadeAtualizada);
-
+app.delete('/atividades/:atividade_id', async (req, res) => {
+  const id = Number(req.params.atividade_id);
+  try {
+    await prisma.atividades.delete({ where: { atividade_id: id } });
+    res.sendStatus(204);
   } catch (error) {
-    // Erro: Atividade não encontrada no banco de dados (Prisma P2025)
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: "Atividade não encontrada para o ID fornecido." });
-    }
-    // Erro: Projeto ID não encontrado (Prisma P2003)
-    if (error.code === 'P2003') {
-      return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
-    }
-
-    console.error("Erro ao atualizar atividade:", error);
-    res.status(500).json({ error: "Erro interno do servidor ao tentar atualizar a atividade." });
+    res.status(500).json({ error: "Erro ao deletar." });
   }
 });
 // ----------------------------------------------------

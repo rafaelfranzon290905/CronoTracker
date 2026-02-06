@@ -1431,7 +1431,7 @@ if (totalOntem > 0) {
 app.get('/relatorios', async (req, res) => {
   try {
     console.log("Query Params recebidos no servidor:", req.query);
-    const { data_inicio, data_fim, colaborador_id, exportar } = req.query;
+    const { data_inicio, data_fim, colaborador_id, projeto_id, atividade_id, exportar } = req.query;
 
     // 1. Montagem do Filtro (Where)
     let whereClause = {};
@@ -1452,6 +1452,15 @@ app.get('/relatorios', async (req, res) => {
         console.error("ERRO CRÍTICO: O servidor recebeu um nome em vez de ID:", colaborador_id);
     }
 }
+
+    // Filtro de Projeto
+    if (projeto_id && projeto_id !== "") {
+      const idProj = parseInt(projeto_id);
+      if (!isNaN(idProj)) whereClause.projeto_id = idProj;
+    }
+
+    if (atividade_id) whereClause.atividade_id = parseInt(atividade_id);
+
     console.log("Where Clause final para o Prisma:", whereClause);
     console.log("Filtros finais aplicados no Prisma:", JSON.stringify(whereClause, null, 2));
 
@@ -1498,6 +1507,65 @@ app.get('/relatorios', async (req, res) => {
     console.error("Erro na rota /relatorios:", error);
     return res.status(500).json({ error: "Erro ao gerar relatório" });
   }
+});
+
+// GET /relatorios/despesas
+app.get('/relatorios/despesas', async (req, res) => {
+    try {
+        const { data_inicio, data_fim, projeto_id, exportar } = req.query;
+        let whereClause = {};
+
+        if (data_inicio || data_fim) {
+            whereClause.data_despesa = {};
+            if (data_inicio) whereClause.data_despesa.gte = new Date(`${data_inicio}T00:00:00Z`);
+            if (data_fim) whereClause.data_despesa.lte = new Date(`${data_fim}T23:59:59Z`);
+        }
+
+        if (projeto_id) {
+            whereClause.projeto_id = parseInt(projeto_id);
+        }
+
+        // Filtro de Projeto (Verifique se projeto_id é o nome correto na tabela)
+        if (projeto_id && projeto_id !== "") {
+            const id = parseInt(projeto_id);
+            if (!isNaN(id)) whereClause.projeto_id = id;
+        }
+
+        const despesas = await prisma.despesas.findMany({
+            where: whereClause,
+            include: {
+                projeto: { select: { nome_projeto: true } }
+            },
+            orderBy: { data_despesa: 'asc' }
+        });
+
+        if (exportar === 'true') {
+            const cabecalho = "Data;Projeto;Tipo;Descricao;Valor\n";
+            const csv = despesas.map(d => {
+                const data = d.data_despesa ? d.data_despesa.toISOString().split('T')[0] : "";
+                const valor = d.valor ? Number(d.valor).toFixed(2).replace('.', ',') : "0,00";
+                const desc = d.descricao ? `"${d.descricao.replace(/"/g, '""')}"` : "";
+                return `${data};"${d.projeto?.nome_projeto || ''}";"${d.tipo_despesa || ''}";${desc};${valor}`;
+            }).join("\n");
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename=relatorio_despesas.csv');
+            return res.status(200).send("\ufeff" + cabecalho + csv);
+        }
+
+        // Formatação para o front (ajuste os nomes das colunas conforme seu banco)
+        // Retorno para a tabela
+        res.json(despesas.map(d => ({
+            data: d.data_despesa,
+            tipo_gasto: d.tipo_despesa || "Geral",
+            descricao: d.descricao || "Sem descrição",
+            valor: Number(d.valor) || 0,
+            projeto: d.projeto?.nome_projeto || "Sem projeto"
+        })));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao buscar despesas" });
+    }
 });
 
 

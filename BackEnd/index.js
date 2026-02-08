@@ -497,7 +497,11 @@ app.get('/projetos', async (req, res) => {
     const projetosComHoras = projetos.map(projeto => {
       const calculo = agregacaoHoras.find(h => Number(h.projeto_id) === Number(projeto.projeto_id));
       const total = calculo?._sum?.duracao_total || 0;
-      return { ...projeto, horas_consumidas: total, horas_gastas: total };
+      
+      return {
+        ...projeto,
+        horas_gastas: total
+      };
     });
     res.status(200).json(projetosComHoras);
   } catch (error) {
@@ -534,7 +538,6 @@ app.get('/projetos/:id', async (req, res) => {
     if (!projeto) return res.status(404).json({ error: 'Projeto não encontrado.' });
     res.status(200).json({
       ...projeto,
-      horas_consumidas: somaHoras._sum.duracao_total || 0,
       horas_gastas: somaHoras._sum.duracao_total || 0,
       total_despesas: Number(somaDespesas._sum.valor) || 0
     });

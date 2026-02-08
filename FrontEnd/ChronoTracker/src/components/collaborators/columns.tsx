@@ -64,15 +64,15 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
   },
 
    // 5. Coluna de email
-  {
-    accessorKey: "email",
-    header: "E-mail",
-    cell: ({ row }) => {
-      const email = row.getValue("email") as string;
-      // Trocamos 'capitalize' por 'lowercase' para garantir o padrão de e-mail
-      return <div className="font-medium lowercase">{email}</div>
-    },
-  },
+  // {
+  //   accessorKey: "email",
+  //   header: "E-mail",
+  //   cell: ({ row }) => {
+  //     const email = row.getValue("email") as string;
+  //     // Trocamos 'capitalize' por 'lowercase' para garantir o padrão de e-mail
+  //     return <div className="font-medium lowercase">{email}</div>
+  //   },
+  // },
   // Coluna de projetos associados
   {
   id: "projetos",
@@ -153,21 +153,21 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
   },
 },
     // 6. Coluna de Data de admissao formatada
-  {
-    accessorKey: "data_admissao",
-    header: "Data de Admissão",
-    cell: ({ row }) => {
-      const dataString = row.getValue("data_admissao") as string | null;
-      if (!dataString) return <span className="text-muted-foreground text-sm">Pendente</span>;
-      const data = new Date(dataString);
-      const dataFormatada = data.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      return <span>{dataFormatada}</span>;
-    },
-  },
+  // {
+  //   accessorKey: "data_admissao",
+  //   header: "Data de Admissão",
+  //   cell: ({ row }) => {
+  //     const dataString = row.getValue("data_admissao") as string | null;
+  //     if (!dataString) return <span className="text-muted-foreground text-sm">Pendente</span>;
+  //     const data = new Date(dataString);
+  //     const dataFormatada = data.toLocaleDateString("pt-BR", {
+  //       day: "2-digit",
+  //       month: "2-digit",
+  //       year: "numeric",
+  //     });
+  //     return <span>{dataFormatada}</span>;
+  //   },
+  // },
   
 // 6. Coluna de Status 
   {

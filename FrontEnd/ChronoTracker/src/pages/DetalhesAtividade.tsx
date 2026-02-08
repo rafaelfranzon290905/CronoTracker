@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { EditActivitiesDialog } from "@/components/activities/EditActivitiesDialog";
+import { Link } from "react-router-dom";
 
 export default function DetalhesAtividade() {
     const { id } = useParams();
@@ -203,15 +204,22 @@ export default function DetalhesAtividade() {
                                 </CardHeader>
                                 <CardContent>
                                     {atividade.responsavel ? (
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-full bg-blue-950 flex items-center justify-center text-white font-bold">
+                                        <Link 
+                                            to={`/Collaborators/${atividade.responsavel.colaborador_id}`}
+                                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-all group border border-transparent hover:border-blue-100"
+                                        >
+                                            <div className="h-10 w-10 rounded-full bg-blue-950 flex items-center justify-center text-white font-bold ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all">
                                                 {atividade.responsavel.nome_colaborador.substring(0, 2).toUpperCase()}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-semibold">{atividade.responsavel.nome_colaborador}</p>
-                                                <p className="text-xs text-muted-foreground">{atividade.responsavel.cargo}</p>
+                                                <p className="text-sm font-semibold group-hover:text-blue-700 transition-colors">
+                                                    {atividade.responsavel.nome_colaborador}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {atividade.responsavel.cargo || "Colaborador"}
+                                                </p>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ) : (
                                         <p className="text-sm text-muted-foreground italic">Sem responsável alocado.</p>
                                     )}

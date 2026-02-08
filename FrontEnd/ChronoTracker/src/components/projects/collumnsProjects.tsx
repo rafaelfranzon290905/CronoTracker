@@ -159,7 +159,7 @@ export const getColumns = (
       accessorKey: "horas_gastas",
       header: "Horas gastas",
        cell: ({ row }) => {
-        const horas = row.original.horas_consumidas || 0;
+        const horas = row.original.horas_gastas || 0;
         return <span className="font-medium text-blue-800">{formatarHorasDecimais(horas)}h</span>;
       },
     },

@@ -11,7 +11,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -223,11 +222,13 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {clientes.map((c) => (
-                            <SelectItem key={c.cliente_id} value={c.cliente_id.toString()}>
-                              {c.nome_cliente}
-                            </SelectItem>
-                          ))}
+                          <ScrollArea className="h-60">
+                            {clientes.map((c) => (
+                              <SelectItem key={c.cliente_id} value={c.cliente_id.toString()}>
+                                {c.nome_cliente}
+                              </SelectItem>
+                            ))}
+                          </ScrollArea>
                         </SelectContent>
                       </Select>
                       <FormMessage />

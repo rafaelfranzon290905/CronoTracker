@@ -16,6 +16,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
 import { type Collaborador } from "@/lib/types";
 import { Link } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign, BarChart3 } from "lucide-react";
 
 export default function DetalhesColaborador() {
     const { id } = useParams();
@@ -24,6 +26,8 @@ export default function DetalhesColaborador() {
     const [colaborador, setColaborador] = useState<Collaborador | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [periodo, setPeriodo] = useState("mes");
+    const [horasFiltradas, setHorasFiltradas] = useState(0);
 
     const loadData = async () => {
         try {
@@ -39,7 +43,16 @@ export default function DetalhesColaborador() {
         }
     };
 
-    useEffect(() => { loadData(); }, [id]);
+    useEffect(() => {
+        loadData();
+    }, [id]);
+
+    useEffect(() => {
+        if (colaborador?.historico_lancamentos) {
+            const total = calcularHorasPorPeriodo(colaborador.historico_lancamentos, periodo);
+            setHorasFiltradas(total);
+        }
+    }, [periodo, colaborador?.historico_lancamentos]);
 
     if (loading) return (
         <div className="flex h-screen w-full items-center justify-center">
@@ -47,6 +60,38 @@ export default function DetalhesColaborador() {
         </div>
     );
 
+
+    const calcularHorasPorPeriodo = (lancamentos: any[], range: string) => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0); 
+
+    let dataCorte = new Date(hoje);
+
+    if (range === "semana") {
+        dataCorte.setDate(hoje.getDate() - 7);
+    } else if (range === "mes") {
+        dataCorte.setMonth(hoje.getMonth() - 1);
+    }
+
+    return lancamentos
+        .filter(l => {
+            const dataLancamento = new Date(l.data_lancamento);
+            dataLancamento.setHours(dataLancamento.getHours() + 3);
+            dataLancamento.setHours(0, 0, 0, 0);
+            
+            return dataLancamento.getTime() >= dataCorte.getTime();
+        })
+        .reduce((acc, curr) => acc + Number(curr.duracao_total || 0), 0);
+};
+
+    const formatarHorasHHmm = (totalDecimal: number) => {
+        const horas = Math.floor(totalDecimal);
+        const minutos = Math.round((totalDecimal - horas) * 60);        
+        const horasPad = String(horas).padStart(2, '0');
+        const minutosPad = String(minutos).padStart(2, '0');
+        
+        return `${horasPad}:${minutosPad}`;
+    };
     if (!colaborador) return (
         <div className="flex flex-col items-center justify-center h-screen gap-4">
             <AlertCircle className="h-12 w-12 text-red-500" />
@@ -86,7 +131,7 @@ export default function DetalhesColaborador() {
                     </PageHeader>
 
                     <div className="grid gap-6 md:grid-cols-3 mt-6">
-                        {/* Coluna Esquerda: Informações e Projetos */}
+                        {/* Coluna Esquerda */}
                         <div className="md:col-span-2 space-y-6">
                             <Card>
                                 <CardHeader>
@@ -145,7 +190,7 @@ export default function DetalhesColaborador() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="space-y-3 overflow-y-auto pr-2">
                                         {colaborador.atividades && colaborador.atividades.length > 0 ? (
                                             colaborador.atividades.map((atv) => (
                                                 <Link
@@ -177,20 +222,8 @@ export default function DetalhesColaborador() {
                             </Card>
                         </div>
 
-                        {/* Coluna Direita: Resumo e Atividades */}
+                        {/* Coluna Direita */}
                         <div className="space-y-6">
-                            <Card className="bg-blue-900 text-white">
-                                <CardContent className="p-6">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <p className="text-blue-200 text-xs uppercase font-bold tracking-wider">Total Atividades</p>
-                                            <p className="text-3xl font-bold mt-1">{colaborador.total_atividades || 0}</p>
-                                        </div>
-                                        <CheckCircle2 className="h-8 w-8 text-blue-400 opacity-50" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg flex items-center gap-2">
@@ -218,6 +251,105 @@ export default function DetalhesColaborador() {
                                     </div>
                                 </CardContent>
                             </Card>
+                            <Card className="bg-white border-blue-100 shadow-sm">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                                    <CardTitle className="text-sm font-bold text-slate-600 uppercase">Horas Trabalhadas</CardTitle>
+                                    <Select value={periodo} onValueChange={(v) => setPeriodo(v)}>
+                                        <SelectTrigger className="w-[110px] h-8 text-xs">
+                                            <SelectValue placeholder="Período" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="dia">Hoje</SelectItem>
+                                            <SelectItem value="semana">Últ. Semana</SelectItem>
+                                            <SelectItem value="mes">Últ. Mês</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-3xl font-bold text-blue-950">
+                                            {formatarHorasHHmm(horasFiltradas)}h
+                                        </span>
+                                        <BarChart3 className="h-4 w-4 text-blue-500 opacity-50" />
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-1">Total acumulado: {formatarHorasHHmm(colaborador?.total_horas || 0)}h</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="bg-white border-red-100 shadow-sm">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                                    <CardTitle className="text-sm font-bold text-slate-600 uppercase">Reembolsos / Despesas</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-red-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] text-green-600 font-bold uppercase tracking-tight">Aprovadas</p>
+                                        <p className="text-xl font-bold text-green-700">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(colaborador?.valor_despesas_aprovadas || 0)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">Pendentes</p>
+                                        <p className="text-xl font-bold text-amber-700">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(colaborador?.valor_despesas_pendentes || 0)}
+                                        </p>
+                                    </div>
+                                    </div>
+                                    <Separator className="my-2 opacity-50" />
+                                    <p className="text-[10px] text-muted-foreground italic">
+                                    Total Geral: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((colaborador?.valor_despesas_aprovadas || 0) + (colaborador?.valor_despesas_pendentes || 0))}
+                                    </p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="mt-6">
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <DollarSign className="h-5 w-5 text-red-600" /> Histórico de Despesas
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-2">
+                                        {colaborador?.lista_despesas && colaborador.lista_despesas.length > 0 ? (
+                                        colaborador.lista_despesas.map((desp: any) => (
+                                        <div key={desp.despesa_id} className="flex justify-between items-center p-3 border-b last:border-0 text-sm hover:bg-slate-50 transition-colors">
+                                            <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-slate-700">{desp.tipo_despesa}</span>
+                                                {/* BADGE DE STATUS DA DESPESA */}
+                                                <Badge 
+                                                variant="outline" 
+                                                className={`text-[9px] uppercase px-1 py-0 h-4 ${
+                                                    desp.status_aprovacao === 'Aprovada' ? 'bg-green-50 text-green-700 border-green-200' : 
+                                                    desp.status_aprovacao === 'Reprovada' ? 'bg-red-50 text-red-700 border-red-200' : 
+                                                    'bg-amber-50 text-amber-700 border-amber-200'
+                                                }`}
+                                                >
+                                                {desp.status_aprovacao}
+                                                </Badge>
+                                            </div>
+                                            <span className="text-slate-500 text-xs italic">{desp.projeto?.nome_projeto || "Sem projeto"}</span>
+                                            </div>
+                                            
+                                            <div className="flex flex-col items-end">
+                                            <span className="font-bold text-slate-900">
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(desp.valor)}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {new Date(desp.data_despesa).toLocaleDateString("pt-BR")}
+                                            </span>
+                                            </div>
+                                        </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-xs text-muted-foreground italic text-center py-4">Nenhum histórico financeiro encontrado.</p>
+                                    )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+
                         </div>
                     </div>
                 </main>

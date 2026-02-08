@@ -5,12 +5,32 @@ export type Collaborador = {
   cargo: string;
   email: string;
   data_admissao: string | null;
+  total_horas?: number; 
+  total_despesas_valor?: number;
+  valor_despesas_aprovadas?: number;
+  valor_despesas_pendentes?: number;
   atividades?: { atividade_id: number; nome_atividade: string; status: boolean; projetos?: { nome_projeto: string }; }[];
   projeto_colaboradores?: { 
     projetos: { 
       projeto_id: number; 
       nome_projeto: string; 
     } 
+  }[];
+  lista_despesas?: {
+    despesa_id: number;
+    tipo_despesa: string;
+    valor: number;
+    data_despesa: string;
+    status_aprovacao: string;
+    projeto?: {
+      nome_projeto: string;
+    };
+  }[];
+
+  historico_lancamentos?: {
+    lancamento_id: number;
+    duracao_total: number;
+    data_lancamento: string;
   }[];
   status: boolean;            
   // foto?: string | null;        //ainda nao vamos implementar

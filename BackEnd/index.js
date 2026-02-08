@@ -235,6 +235,54 @@ app.post('/colaboradores', async (req, res) => {
   }
 });
 
+app.get('/colaboradores/:id', async (req, res) => {
+  const { id } = req.params;
+  const colaboradorId = parseInt(id);
+
+  if (isNaN(colaboradorId)) {
+    return res.status(400).json({ error: 'ID do colaborador inválido.' });
+  }
+
+  try {
+    const colaborador = await prisma.colaboradores.findUnique({
+      where: { colaborador_id: colaboradorId },
+      include: {
+        projeto_colaboradores: {
+          include: {
+            projetos: true
+          }
+        },
+        atividades: {
+          include: {
+            projetos: { 
+              select: { nome_projeto: true }
+            }
+          },
+          orderBy: { atividade_id: 'desc' }
+        }
+      }
+    });
+
+    if (!colaborador) {
+      return res.status(404).json({ error: 'Colaborador não encontrado.' });
+    }
+
+    const totalAtividades = colaborador.atividades.length;
+
+    const colaboradorFormatado = {
+      ...colaborador,
+      foto: colaborador.foto ? colaborador.foto.toString('base64') : null,
+      total_atividades: totalAtividades,
+      listaProjetos: colaborador.projeto_colaboradores.map(pc => pc.projetos?.nome_projeto).filter(Boolean)
+    };
+
+    res.status(200).json(colaboradorFormatado);
+  } catch (error) {
+    console.error(`Erro ao buscar detalhes do colaborador ${id}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar colaborador.' });
+  }
+});
+
 // PUT /colaboradores/:id
 app.put('/colaboradores/:id', async (req, res) => {
   const id = parseInt(req.params.id);

@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ListTodo, Info, Briefcase } from "lucide-react"
+import { Link } from "react-router-dom";
 
 
 export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
@@ -36,11 +37,17 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
     )
   },
     cell: ({ row }) => {
+      const colaborador = row.original;
       const isAtivo = row.original.status;
       return (
-        <div className={`font-medium capitalize ${!isAtivo ? "text-muted-foreground line-through opacity-70" : ""}`}>
-          {row.getValue("nome_colaborador")}
-        </div>
+       <Link
+          to={`/collaborators/${colaborador.colaborador_id}`}
+          className={`font-medium text-blue-950 hover:text-blue-800 hover:underline transition-all decoration-2 underline-offset-4 ${
+            !isAtivo ? "text-muted-foreground line-through opacity-70" : ""
+          }`}
+        >
+          {colaborador.nome_colaborador}
+        </Link>
       );
     },
   },

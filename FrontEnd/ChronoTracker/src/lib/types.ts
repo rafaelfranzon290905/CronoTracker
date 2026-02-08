@@ -5,8 +5,13 @@ export type Collaborador = {
   cargo: string;
   email: string;
   data_admissao: string | null;
-  atividades?: { atividade_id: number; nome_atividade: string; status: boolean }[];
-  projeto_colaboradores?: { projetos: { nome_projeto: string } }[];
+  atividades?: { atividade_id: number; nome_atividade: string; status: boolean; projetos?: { nome_projeto: string }; }[];
+  projeto_colaboradores?: { 
+    projetos: { 
+      projeto_id: number; 
+      nome_projeto: string; 
+    } 
+  }[];
   status: boolean;            
   // foto?: string | null;        //ainda nao vamos implementar
 };

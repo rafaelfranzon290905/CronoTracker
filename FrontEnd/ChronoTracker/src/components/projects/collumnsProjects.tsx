@@ -24,6 +24,16 @@ import {
 import { API_BASE_URL } from "@/apiConfig";
 import { Link } from "react-router-dom";
 
+const formatarHorasDecimais = (totalDecimal: number | null | undefined): string => {
+  const valor = totalDecimal || 0;
+  const horas = Math.floor(valor);
+  const minutos = Math.round((valor - horas) * 60);
+  
+  const horasPad = String(horas).padStart(2, '0');
+  const minutosPad = String(minutos).padStart(2, '0');
+  
+  return `${horasPad}:${minutosPad}`;
+};
 
 const deleteProject = async (id: number) => {
   if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
@@ -149,8 +159,8 @@ export const getColumns = (
       accessorKey: "horas_gastas",
       header: "Horas gastas",
        cell: ({ row }) => {
-        const horas = row.original.horas_gastas || 0;
-        return <span>{horas.toFixed(1)}h</span>;
+        const horas = row.original.horas_consumidas || 0;
+        return <span className="font-medium text-blue-800">{formatarHorasDecimais(horas)}h</span>;
       },
     },
     {

@@ -286,14 +286,34 @@ app.delete('/colaboradores/:id', async (req, res) => {
 // GET /atividades
 app.get('/atividades', async (req, res) => {
   try {
-    const todasAtividades = await prisma.atividades.findMany({
+    const atividades = await prisma.atividades.findMany({
       include: {
         responsavel: true,
-        projetos: { select: { nome_projeto: true, projeto_id: true, cliente_id: true } }
+        projetos: {
+          select: {
+            nome_projeto: true
+          }
+        }
       },
-      orderBy: { atividade_id: 'asc' },
+      orderBy: {
+        atividade_id: 'asc',
+      },
     });
-    res.status(200).json(todasAtividades);
+    const somaHorasAtividades = await prisma.lancamentos_de_horas.groupBy({
+      by: ['atividade_id'],
+      _sum: { duracao_total: true }
+    });
+
+    const atividadesComHorasReais = atividades.map(atv => {
+      const lancamento = somaHorasAtividades.find(l => l.atividade_id === atv.atividade_id);
+      return {
+        ...atv,
+        horas_gastas: lancamento?._sum?.duracao_total || 0
+      };
+    });
+
+
+    res.status(200).json(atividadesComHorasReais);
   } catch (error) {
     console.error('Erro ao buscar atividades:', error);
     res.status(500).json({ error: 'Erro interno ao listar atividades.' });
@@ -307,7 +327,20 @@ app.get('/atividades/:atividade_id', async (req, res) => {
   try {
     const atividade = await prisma.atividades.findUnique({
       where: { atividade_id: atividadeId },
-      include: { responsavel: true, projetos: true }
+      include: {
+        responsavel: true,
+        projetos: true,
+        lancamentos_de_horas: {
+          include: { 
+            colaboradores: { 
+              select: { nome_colaborador: true } 
+            } 
+          },
+          orderBy: { 
+            data_lancamento: 'desc' 
+          }
+        }
+      }
     });
     if (!atividade) return res.status(404).json({ error: "Atividade não encontrada." });
     res.json(atividade);
@@ -320,34 +353,56 @@ app.get('/atividades/:atividade_id', async (req, res) => {
 // POST /atividades
 app.post('/atividades', async (req, res) => {
   const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id, horas_gastas } = req.body;
-  if (!projeto_id) return res.status(400).json({ error: 'O ID do projeto é obrigatório.' });
+
+  if (!projeto_id) {
+    return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
+  }
+
   try {
+    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO 
+    //    const projetoIdNumerico = Number(projeto_id); 
+    //     if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
+    //       return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
+    //     }
     const projetoIdNumerico = Number(projeto_id);
     const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
-    
-    const novaAtividade = await prisma.atividades.create({
-      data: {
-        nome_atividade,
-        descr_atividade: descr_atividade || "",
-        data_prevista_inicio: dataInicio,
-        data_prevista_fim: dataFim,
-        horas_gastas: Number(horas_gastas) || 0,
-        status: true,
-        projetos: { connect: { projeto_id: projetoIdNumerico } },
-        ...(colaborador_id && { responsavel: { connect: { colaborador_id: Number(colaborador_id) } } })
+    const statusBoolean = true;
+
+
+    // ✍️ Criação da Atividade no Prisma
+ const novaAtividade = await prisma.atividades.create({
+  data: {
+    nome_atividade,
+    descr_atividade: descr_atividade || "",
+    data_prevista_inicio: dataInicio,
+    data_prevista_fim: dataFim,
+    horas_gastas: Number(horas_gastas) || 0,
+    status: statusBoolean,
+    projetos: {
+      connect: { projeto_id: projetoIdNumerico }
+    },
+    ...(colaborador_id && {
+      responsavel: {
+        connect: { colaborador_id: Number(colaborador_id) }
       }
-    });
+    })
+  }
+});
 
-    const soma = await prisma.atividades.aggregate({
-      where: { projeto_id: projetoIdNumerico },
-      _sum: { horas_gastas: true }
-    });
+// RECALCULA AS HORAS DO PROJETO
+const soma = await prisma.atividades.aggregate({
+  where: { projeto_id: projetoIdNumerico },
+  _sum: { horas_gastas: true }
+});
 
-    await prisma.projetos.update({
-      where: { projeto_id: projetoIdNumerico },
-      data: { horas_consumidas: soma._sum.horas_gastas || 0 }
-    });
+// ATUALIZA O PROJETO
+await prisma.projetos.update({
+  where: { projeto_id: projetoIdNumerico },
+  data: {
+    horas_gastas: soma._sum.horas_gastas || 0
+  }
+});
 
     res.status(201).json(novaAtividade);
   } catch (error) {
@@ -362,8 +417,8 @@ app.put('/atividades/:atividade_id', async (req, res) => {
   const { atividade_id } = req.params;
   const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_gastas, status, projeto_id, colaborador_id } = req.body;
   try {
-    const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T00:00:00Z') : null;
-    const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
+    const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : null;
+    const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
 
     const atividadeAtualizada = await prisma.atividades.update({
       where: { atividade_id: Number(atividade_id) },
@@ -377,7 +432,10 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         projetos: { connect: { projeto_id: Number(projeto_id) } },
         responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
       },
-      include: { responsavel: true, projetos: true }
+      include: {
+        responsavel: true,
+        projetos: true,
+      }
     });
 
     const soma = await prisma.atividades.aggregate({
@@ -385,10 +443,12 @@ app.put('/atividades/:atividade_id', async (req, res) => {
       _sum: { horas_gastas: true }
     });
 
-    await prisma.projetos.update({
-      where: { projeto_id: Number(projeto_id) },
-      data: { horas_consumidas: soma._sum.horas_gastas || 0 }
-    });
+await prisma.projetos.update({
+  where: { projeto_id: Number(projeto_id) },
+  data: {
+    horas_gastas: soma._sum.horas_gastas || 0
+  }
+});
 
     res.status(200).json(atividadeAtualizada);
   } catch (error) {
@@ -420,6 +480,8 @@ app.delete('/atividades/:atividade_id', async (req, res) => {
 // GET /projetos
 app.get('/projetos', async (req, res) => {
   try {
+    const totalLancamentos = await prisma.lancamentos_de_horas.count();
+    // console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
         clientes: { select: { nome_cliente: true } },

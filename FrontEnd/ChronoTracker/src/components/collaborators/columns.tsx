@@ -62,7 +62,8 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
     header: "E-mail",
     cell: ({ row }) => {
       const email = row.getValue("email") as string;
-      return <div className="font-medium capitalize">{email}</div>
+      // Trocamos 'capitalize' por 'lowercase' para garantir o padrão de e-mail
+      return <div className="font-medium lowercase">{email}</div>
     },
   },
   // Coluna de projetos associados

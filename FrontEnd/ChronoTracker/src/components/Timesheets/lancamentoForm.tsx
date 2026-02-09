@@ -215,11 +215,15 @@ export default function LancamentoPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...dadosParaEnvio,
-          usuario_id: idDoUsuario,
+          ...dadosParaEnvio, 
+          usuario_id: user?.usuario_id || user?.id || idDoUsuario, 
           projeto_id: Number(formData.projeto_id),
           atividade_id: Number(formData.atividade_id),
-          cliente_id: formData.cliente_id
+          cliente_id: Number(formData.cliente_id), 
+          data: formData.data,
+          hora_inicio: formData.hora_inicio,
+          hora_fim: formData.hora_fim,
+          descricao: formData.descricao,
         })
       })
 

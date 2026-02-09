@@ -46,6 +46,7 @@ export interface Projeto {
       colaboradores: {
         colaborador_id: number;
         nome_colaborador: string;
+        cargo: string;
       }
     }[];
     despesas?: {

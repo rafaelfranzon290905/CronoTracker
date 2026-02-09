@@ -65,7 +65,9 @@ export default function SideBar() {
               variant={isActive("/usuarios") ? "default" : "ghost"}
               className="w-full justify-start" aria-label="Botão para acessar Usuários"><UserCog2 className="mr-2 scale-120" /> Usuários</Button>
           </Link>
-          <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Relatórios"><FileText className="mr-2 scale-120" /> Relatórios</Button>
+          <Link to="/Relatorios">
+            <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Relatórios"><FileText className="mr-2 scale-120" /> Relatórios</Button>
+          </Link>
           <Link to="/gestao-despesas">
             <Button
               variant={isActive("/gestao-despesas") ? "default" : "ghost"}

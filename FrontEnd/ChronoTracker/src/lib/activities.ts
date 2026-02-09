@@ -14,4 +14,6 @@ export type Atividades = {
   projetos?: {
     nome_projeto: string;
   };
+  horas_gastas?: number;
+  lancamentos_de_horas?: any[];
 };

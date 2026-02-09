@@ -15,6 +15,7 @@ import LancamentoPage from './components/Timesheets/lancamentoForm.tsx'
 import DetalhesProjeto from './pages/DetalhesProjeto.tsx'
 import GestaoDespesas from './pages/GestaoDespesas.tsx'
 import Relatorios from './pages/Relatorios.tsx'
+import DetalhesAtividade from "./pages/DetalhesAtividade";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -29,6 +30,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path='/projetos' element={<Projetos/>}/>
         <Route path='/projetos/:id' element={<DetalhesProjeto/>}/>
         <Route path='/atividades' element={<Atividades/>}/>
+        <Route path="/atividades/:id" element={<DetalhesAtividade />} />
         <Route path='/usuarios' element={<UsersPage/>}/>
         <Route path="/TimeSheet/Lancamentos" element={<LancamentoPage/>}/>
         <Route path="/gestao-despesas" element={<GestaoDespesas />} />

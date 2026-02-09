@@ -971,8 +971,8 @@ app.post('/lancamentos', async (req, res) => {
 
     // 3. Preparação dos dados
     const statusInicial = 'aprovado';
-    const inicioDate = new Date(`${data}T${hora_inicio}:00`);
-    const fimDate = new Date(`${data}T${hora_fim}:00`);
+    const inicioDate = new Date(`${data}T${hora_inicio}:00z`);
+    const fimDate = new Date(`${data}T${hora_fim}:00z`);
 
     const diffMs = fimDate.getTime() - inicioDate.getTime();
     const duracaoHoras = diffMs / (1000 * 60 * 60);

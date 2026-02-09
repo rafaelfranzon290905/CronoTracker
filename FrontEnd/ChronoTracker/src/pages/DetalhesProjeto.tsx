@@ -210,15 +210,22 @@ export default function DetalhesProjeto() {
                                         <CardContent className="space-y-4">
                                             {projeto.projeto_colaboradores && projeto.projeto_colaboradores.length > 0 ? (
                                                 projeto.projeto_colaboradores.map((pc, idx) => (
-                                                    <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-                                                        <div className="h-9 w-9 rounded-full bg-blue-950 flex items-center justify-center text-xs text-white font-bold ring-2 ring-blue-100">
-                                                            {pc.colaboradores.nome_colaborador.substring(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-semibold">{pc.colaboradores.nome_colaborador}</span>
-                                                            <span className="text-[10px] text-muted-foreground">Colaborador</span>
-                                                        </div>
-                                                    </div>
+                                                    <Link 
+                                                        key={idx} 
+                                                        to={`/Collaborators/${pc.colaboradores.colaborador_id}`}
+                                                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-all group border border-transparent hover:border-blue-100"
+                                                    >
+                                                            <div className="h-9 w-9 rounded-full bg-blue-950 flex items-center justify-center text-xs text-white font-bold ring-2 ring-blue-100">
+                                                                {pc.colaboradores.nome_colaborador.substring(0, 2).toUpperCase()}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold">{pc.colaboradores.nome_colaborador}</span>
+                                                                <span className="text-[10px] text-muted-foreground">{pc.colaboradores.cargo || "Colaborador"}</span>
+                                                            </div>
+                                                            <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Clock className="h-3 w-3 text-blue-400" />
+                                                            </div>
+                                                    </Link>
                                                 ))
                                             ) : (
                                                 <p className="text-xs text-muted-foreground italic">Nenhum colaborador alocado.</p>

@@ -100,6 +100,7 @@ model usuarios {
   cargo          String?        @db.VarChar(20)
   status         Boolean        @default(true)
   colaborador_id Int?           @unique
+  logs_acesso    logs_acesso[]
   colaborador    colaboradores? @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: Cascade)
 
   @@map("usuarios")
@@ -128,4 +129,13 @@ model despesas {
   criado_em         DateTime      @default(now()) @db.Timestamp(6)
   colaborador       colaboradores @relation(fields: [colaborador_id], references: [colaborador_id], onDelete: NoAction)
   projeto           projetos      @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade)
+}
+
+model logs_acesso {
+  id            Int       @id @default(autoincrement())
+  usuario_id    Int
+  evento        String    @db.VarChar(50)
+  tela_acessada String?   @db.VarChar(255)
+  data_hora     DateTime? @default(now()) @db.Timestamp(6)
+  usuarios      usuarios  @relation(fields: [usuario_id], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario")
 }

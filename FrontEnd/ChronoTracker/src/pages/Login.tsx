@@ -56,6 +56,17 @@ export default function Login() {
                     cargo: user.cargo,
                     nomeCompleto: user.nome_completo
                 }));
+
+                // 🛑 NOVIDADE: Dispara o Log de Login para o Backend
+                // Não usamos 'await' aqui para não travar o redirecionamento do usuário
+                fetch(`${API_BASE_URL}/logs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario_id: user.usuario_id,
+                        evento: 'LOGIN'
+                    }),
+                }).catch(err => console.error("Erro ao registrar log de login:", err));
                 
                 // alert(`Login bem-sucedido! Bem-vindo(a), ${user.nome_usuario} (${user.cargo})`);
                 

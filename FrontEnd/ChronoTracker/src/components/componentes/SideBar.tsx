@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity, LogOut, Ghost } from "lucide-react"
+import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity, LogOut, Ghost, ListChecks, UserCog2, Building, Building2, Briefcase, Contact2 } from "lucide-react"
 import ChronosAzulFundoRemovido from "../../imagens/ChronosAzulFundoRemovido.png"
 import { useNavigate } from "react-router-dom"
 
@@ -43,7 +43,7 @@ export default function SideBar() {
           <Link to="/clientes">
             <Button
               variant={isActive("/clientes") ? "default" : "ghost"}
-              className="w-full justify-start" aria-label="Botão para acessar Clientes"><Users className="mr-2 scale-120" /> Clientes</Button>
+              className="w-full justify-start" aria-label="Botão para acessar Clientes"><Building2 className="mr-2 scale-120" /> Clientes</Button>
           </Link>
           <Link to="/collaborators">
             <Button
@@ -58,12 +58,12 @@ export default function SideBar() {
           <Link to="/atividades">
             <Button
               variant={isActive("/atividades") ? "default" : "ghost"}
-              className="w-full justify-start" aria-label="Botão para acessar Atividades"><Activity className="mr-2 scale-120" /> Atividades</Button>
+              className="w-full justify-start" aria-label="Botão para acessar Atividades"><ListChecks className="mr-2 scale-120" /> Atividades</Button>
           </Link>
           <Link to="/usuarios">
             <Button
               variant={isActive("/usuarios") ? "default" : "ghost"}
-              className="w-full justify-start" aria-label="Botão para acessar Usuários"><Activity className="mr-2 scale-120" /> Usuários</Button>
+              className="w-full justify-start" aria-label="Botão para acessar Usuários"><UserCog2 className="mr-2 scale-120" /> Usuários</Button>
           </Link>
           <Button variant="ghost" className="w-full justify-start" aria-label="Botão para acessar Relatórios"><FileText className="mr-2 scale-120" /> Relatórios</Button>
           <Link to="/gestao-despesas">

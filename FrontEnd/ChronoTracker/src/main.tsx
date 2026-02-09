@@ -15,11 +15,13 @@ import LancamentoPage from './components/Timesheets/lancamentoForm.tsx'
 import DetalhesProjeto from './pages/DetalhesProjeto.tsx'
 import GestaoDespesas from './pages/GestaoDespesas.tsx'
 import DetalhesAtividade from "./pages/DetalhesAtividade";
+import RouteTracker from './components/componentes/RouteTracker.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Toaster richColors position="top-right"/>
     <BrowserRouter>
+      <RouteTracker />
       <Routes>
         <Route path='/' element={<Login/>}/>
         <Route path='/Dashboard' element={<Dashboard/>}/>

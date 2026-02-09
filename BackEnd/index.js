@@ -235,6 +235,83 @@ app.post('/colaboradores', async (req, res) => {
   }
 });
 
+app.get('/colaboradores/:id', async (req, res) => {
+  const { id } = req.params;
+  const colaboradorId = parseInt(id);
+
+  if (isNaN(colaboradorId)) {
+    return res.status(400).json({ error: 'ID do colaborador inválido.' });
+  }
+
+  try {
+    const colaborador = await prisma.colaboradores.findUnique({
+      where: { colaborador_id: colaboradorId },
+      include: {
+        projeto_colaboradores: {
+          include: {
+            projetos: true
+          }
+        },
+        atividades: {
+          include: {
+            projetos: { 
+              select: { nome_projeto: true }
+            }
+          },
+          orderBy: { atividade_id: 'desc' }
+        },
+        lancamentos_de_horas: true, 
+        despesas: {               
+          include: {
+            projeto: { select: { nome_projeto: true } }
+          },
+          orderBy: { data_despesa: 'desc' }
+        }
+      }
+    });
+
+    if (!colaborador) {
+      return res.status(404).json({ error: 'Colaborador não encontrado.' });
+    }
+
+    const totalAtividades = colaborador.atividades.length;
+    const despesasAprovadas = colaborador.despesas
+      .filter(d => d.status_aprovacao === 'Aprovada')
+      .reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+
+    const despesasPendentes = colaborador.despesas
+      .filter(d => d.status_aprovacao === 'Pendente')
+      .reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+
+    const totalHorasAcumuladas = colaborador.lancamentos_de_horas.reduce(
+      (acc, curr) => acc + Number(curr.duracao_total || 0), 0
+    );
+
+    const totalDespesas = colaborador.despesas.reduce(
+      (acc, curr) => acc + Number(curr.valor || 0), 0
+    );
+
+    const colaboradorFormatado = {
+      ...colaborador,
+      foto: colaborador.foto ? colaborador.foto.toString('base64') : null,
+      total_atividades: totalAtividades,
+      total_horas: totalHorasAcumuladas, 
+      total_despesas_valor: totalDespesas,
+      valor_despesas_aprovadas: despesasAprovadas,
+      valor_despesas_pendentes: despesasPendentes,
+      listaProjetos: colaborador.projeto_colaboradores.map(pc => pc.projetos?.nome_projeto).filter(Boolean),
+      historico_lancamentos: colaborador.lancamentos_de_horas,
+      lista_despesas: colaborador.despesas,
+    };
+    delete colaboradorFormatado.lancamentos_de_horas;
+
+    res.status(200).json(colaboradorFormatado);
+  } catch (error) {
+    console.error(`Erro ao buscar detalhes do colaborador ${id}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar colaborador.' });
+  }
+});
+
 // PUT /colaboradores/:id
 app.put('/colaboradores/:id', async (req, res) => {
   const id = parseInt(req.params.id);

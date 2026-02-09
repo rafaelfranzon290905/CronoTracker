@@ -1027,7 +1027,7 @@ app.patch('/lancamentos/:id/status', async (req, res) => {
 app.get('/dashboard/stats/:usuario_id', async (req, res) => {
   const { usuario_id } = req.params;
   try {
-    const usuario = await prisma.usuarios.findUnique({ where: { usuario_id: Number(usuario_id) } });
+    const usuario = await prisma.usuarios.findUnique({ where: { usuario_id: parseInt(usuario_id) } });
     if (!usuario?.colaborador_id) return res.status(404).json({ error: "Colaborador não encontrado" });
 
     // Ajuste Datas (UTC-3 fixo simples ou UTC)
@@ -1088,6 +1088,35 @@ app.get('/dashboard/stats/:usuario_id', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro ao calcular estatísticas" });
+  }
+});
+
+// ROTA DO LOG DE SEGURANÇA
+// No seu arquivo do servidor (Backend)
+app.post('/logs', async (req, res) => {
+  const { usuario_id, evento, tela_acessada } = req.body;
+
+  // 🛡️ PROTEÇÃO: Se o ID for inválido, nem tenta mandar pro Prisma
+  const parsedId = parseInt(usuario_id);
+  
+  if (isNaN(parsedId)) {
+    console.error("Tentativa de log com usuario_id INVÁLIDO:", usuario_id);
+    return res.status(400).json({ error: "usuario_id é obrigatório e deve ser um número" });
+  }
+
+  try {
+    const novoLog = await prisma.logs_acesso.create({
+      data: {
+        usuario_id: parseInt(usuario_id),
+        evento: evento,
+        tela_acessada: tela_acessada || null,
+        // Removi o IP conforme combinamos
+      }
+    });
+    res.status(201).json(novoLog);
+  } catch (error) {
+    console.error("Erro ao salvar log:", error);
+    res.status(500).json({ error: "Erro ao salvar log" });
   }
 });
 

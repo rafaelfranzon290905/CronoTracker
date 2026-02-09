@@ -1478,6 +1478,7 @@ app.get('/relatorios', async (req, res) => {
 
     // 3. Lógica de Resposta (Exportação vs JSON)
     if (exportar === 'true') {
+      const instrucaoExcel = "sep=;\n";
       const cabecalho = "Data;Colaborador;Cliente;Projeto;Atividade;Horas;Descricao\n";
       const csv = dados.map(item => {
         const dataFormatada = item.data_lancamento ? item.data_lancamento.toISOString().split('T')[0] : "";
@@ -1497,7 +1498,7 @@ app.get('/relatorios', async (req, res) => {
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', 'attachment; filename=relatorio_horas.csv');
-      return res.status(200).send("\ufeff" + cabecalho + csv); // \ufeff ajuda o Excel a entender UTF-8
+      return res.status(200).send("\ufeff" + instrucaoExcel + cabecalho + csv); // \ufeff ajuda o Excel a entender UTF-8
     }
 
     // Retorno padrão para a tabela do Front

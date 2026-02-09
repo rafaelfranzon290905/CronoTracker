@@ -32,6 +32,7 @@ export interface Projeto {
     status: boolean;
     horas_previstas: number; // <-- Novo campo
     total_despesas?: number;
+    horas_gastas?: number;
     horas_consumidas?: number;
     clientes?: {
         nome_cliente: string;

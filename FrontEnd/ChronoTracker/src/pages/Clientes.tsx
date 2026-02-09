@@ -4,13 +4,14 @@ import SideBar from "@/components/componentes/SideBar";
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import { DataTable } from "@/components/clientes/data-table-clients";
 import { getColumns } from "@/components/clientes/collumnsClients";
-import { ModalCliente } from "@/components/clientes/ModalClientes";
+import { ModalCliente } from "@/components/clientes/ModalClientes"; // Usaremos apenas este modal
 import { ModalProjetos } from "@/components/clientes/ModalVerProjetos";
-import DialogClientes from "@/components/componentes/DialogClientes"; // Modal de Adição
+// REMOVIDO: import DialogClientes from "@/components/componentes/DialogClientes"; <--- Não usamos mais esse
 import { usePermissions } from "@/hooks/usePermissions";
 import { type Cliente } from "@/lib/clients";
 import { API_BASE_URL } from "@/apiConfig";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button"; // Importar Button
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,14 +22,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react"; // Importar PlusCircle para o botão
 
 function Clientes() {
   const [data, setData] = useState<Cliente[]>([]);
-  const [addModalAberto, setAddModalAberto] = useState(false);
-  const [editModalAberto, setEditModalAberto] = useState(false);
+  
+  const [modalAberto, setModalAberto] = useState(false);
+  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
+
+
   const [projetoModalAberto, setProjetoModalAberto] = useState(false);
-  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
   const [clienteParaProjetos, setClienteParaProjetos] = useState<{ id: number; nome: string } | null>(null);
   const [confirmExclusaoAberta, setConfirmExclusaoAberta] = useState(false);
   const [idParaExcluir, setIdParaExcluir] = useState<number | null>(null);
@@ -44,12 +47,17 @@ function Clientes() {
       setData(data);
     } catch (err) {
       toast.error("Erro ao carregar clientes.");
-    }finally {
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => { fetchClientes(); }, []);
+
+  const handleNovoCliente = () => {
+    setClienteSelecionado(null); 
+    setModalAberto(true);
+  };
 
   const handleDelete = async (id: number) => {
     if (!idParaExcluir) return;
@@ -79,12 +87,14 @@ function Clientes() {
 
   const columns = useMemo(() => getColumns(
     isGerente,
-    (cli) => { setClienteEditando(cli); setEditModalAberto(true); },
+    // --- ALTERAÇÃO: Ao editar, passamos o cliente para o state unificado ---
+    (cli) => { 
+        setClienteSelecionado(cli); 
+        setModalAberto(true); 
+    },
     (id) => { setIdParaExcluir(id); setConfirmExclusaoAberta(true);},
     (id, nome) => { setClienteParaProjetos({ id, nome }); setProjetoModalAberto(true); }
   ), [isGerente]);
-
-  
 
   return (
     <div className="flex h-screen w-full">
@@ -93,8 +103,15 @@ function Clientes() {
         <Header />
         <main className="mt-4">
           <PageHeader title="Clientes" subtitle="Gerencie sua base de clientes.">
-            {isGerente && <DialogClientes open={addModalAberto} onOpenChange={setAddModalAberto} aoSalvar={fetchClientes} />}
+            {/* --- ALTERAÇÃO: Botão direto em vez do DialogClientes antigo --- */}
+            {isGerente && (
+                <Button onClick={handleNovoCliente} className="gap-2">
+                    <PlusCircle className="h-4 w-4" />
+                    Novo Cliente
+                </Button>
+            )}
           </PageHeader>
+
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] w-full gap-2">
               <Loader2 className="h-10 w-10 animate-spin text-blue-950" />
@@ -131,11 +148,10 @@ function Clientes() {
       </AlertDialog>
 
       <ModalCliente 
-        open={editModalAberto} 
-        onOpenChange={setEditModalAberto} 
-        clienteInicial={clienteEditando} 
+        open={modalAberto} 
+        onOpenChange={setModalAberto} 
+        clienteInicial={clienteSelecionado} // Se for null, o modal sabe que é "Novo"
         aoSalvar={fetchClientes} 
-        type="edit" 
       />
       
       <ModalProjetos 
@@ -146,4 +162,4 @@ function Clientes() {
     </div>
   );
 }
-export default Clientes
+export default Clientes;

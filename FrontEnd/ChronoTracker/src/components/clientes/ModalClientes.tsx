@@ -9,237 +9,243 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
-import { Switch } from "../ui/switch"
-import {toast} from "sonner"
-import { API_BASE_URL } from  "@/apiConfig"
-import { PlusCircle } from "lucide-react"
-// import { Description } from "@radix-ui/react-dialog"
+import { Switch } from "@/components/ui/switch"
+import { toast } from "sonner"
+import { API_BASE_URL } from "@/apiConfig"
 
 interface ModalClienteProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    clienteInicial: Cliente | null;
-    aoSalvar: () => void;
-    type: "add" | "edit" | null;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  clienteInicial: Cliente | null
+  aoSalvar: () => void
+  type?: "add" | "edit" | null // Deixei opcional
 }
 
 interface Cliente {
-    cliente_id: number;
-    cnpj: string;
-    nome_cliente: string;
-    nome_contato: string;
-    cep: string;
-    endereco: string;
-    cidade: string;
-    estado: string;
-    status: boolean;
+  cliente_id: number
+  cnpj: string
+  nome_cliente: string
+  nome_contato: string
+  cep: string
+  endereco: string
+  cidade: string
+  estado: string
+  status: boolean
 }
 
 interface FormErrors {
-    cnpj: string;
-    cep: string;
-    estado: string;
+  cnpj: string
+  cep: string
+  estado: string
 }
 
-// const API_BASE_URL = 'http://localhost:3001'
+const clienteVazio: Cliente = {
+  cliente_id: 0,
+  cnpj: "",
+  nome_cliente: "",
+  nome_contato: "",
+  cep: "",
+  endereco: "",
+  cidade: "",
+  estado: "",
+  status: true,
+}
 
+/* =======================
+   FORMATADORES
+======================= */
 const formatarCNPJ = (valor: string) => {
-  const v = valor.replace(/\D/g, ""); // Remove tudo que não é dígito
+  const v = valor.replace(/\D/g, "")
   return v
     .replace(/^(\d{2})(\d)/, "$1.$2")
     .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
     .replace(/\.(\d{3})(\d)/, ".$1/$2")
     .replace(/(\d{4})(\d)/, "$1-$2")
-    .substring(0, 18); // Limita ao tamanho do CNPJ formatado
-};
+    .substring(0, 18)
+}
 
 const formatarCEP = (valor: string) => {
-  const v = valor.replace(/\D/g, "");
-  return v.replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9);
-};
+  const v = valor.replace(/\D/g, "")
+  return v.replace(/(\d{5})(\d)/, "$1-$2").substring(0, 9)
+}
 
-export function ModalCliente({open, onOpenChange, clienteInicial, aoSalvar}: ModalClienteProps) {
-
-  const [formData, setFormData] = useState<Cliente | null>(clienteInicial);
-
+export function ModalCliente({
+  open,
+  onOpenChange,
+  clienteInicial,
+  aoSalvar,
+}: ModalClienteProps) {
+  // Se clienteInicial for null, usamos o clienteVazio (Modo Criação)
+  const [formData, setFormData] = useState<Cliente>(clienteVazio)
+  
   const [errors, setErrors] = useState<FormErrors>({
-        cnpj: "",
-        cep: "",
-        estado: ""
-    });
+    cnpj: "",
+    cep: "",
+    estado: "",
+  })
 
   useEffect(() => {
-    setFormData(clienteInicial);
-    setErrors({ cnpj: "", cep: "", estado: "" });
-  }, [clienteInicial, open]);
+    if (open) {
+      // Se tiver clienteInicial, usa ele. Se não, reseta para vazio.
+      setFormData(clienteInicial || clienteVazio)
+      setErrors({ cnpj: "", cep: "", estado: "" })
+    }
+  }, [open, clienteInicial])
 
-  if (!clienteInicial) {
-    return null;
-  }
-
-  const isReady = formData !== null;
+  // Removido o "if (!formData) return null" pois agora sempre temos dados
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!formData) return;
-    const {id, value, type, checked} = e.target;
+    const { id, value } = e.target
 
-    let valorFormatado = value;
-    if (id === "cnpj") valorFormatado = formatarCNPJ(value);
-    if (id === "cep") valorFormatado = formatarCEP(value);
-    if (id === "estado") valorFormatado = value.toUpperCase().slice(0, 2);
+    let valorFormatado = value
+    if (id === "cnpj") valorFormatado = formatarCNPJ(value)
+    if (id === "cep") valorFormatado = formatarCEP(value)
+    if (id === "estado") valorFormatado = value.toUpperCase().slice(0, 2)
 
     setFormData(prev => ({
-      ...(prev as Cliente),
-      [id]: type === 'checkbox' ? checked : valorFormatado,
-    }));
+      ...prev,
+      [id]: valorFormatado,
+    }))
 
-    if (id === 'cnpj' || id === 'cep' || id === 'estado') {
-             setErrors(prev => ({ ...prev, [id]: "" }));
-        }
-  };
+    if (errors[id as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [id]: "" }))
+    }
+  }
 
-  // Função específica para o campo 'status' (Switch)
-    const handleStatusChange = (checked: boolean) => {
-        setFormData(prev => ({ ...(prev as Cliente), status: checked }));
-    };
+  const handleStatusChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, status: checked }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
+    
+    setErrors({ cnpj: "", cep: "", estado: "" })
 
-    if (!formData) return;
-
-    let temErro = false;
-    const novosErros: FormErrors = { cnpj: "", cep: "", estado: "" };
-
-    const cnpjLimpo = (formData.cnpj || "").replace(/\D/g, '');
-    const cepLimpo = (formData.cep || "").replace(/\D/g, '');
-    const estadoLimpo = (formData.estado || "").trim();
+    const cnpjLimpo = formData.cnpj.replace(/\D/g, "")
+    const cepLimpo = formData.cep.replace(/\D/g, "")
 
     if (cnpjLimpo.length !== 14) {
-            novosErros.cnpj = "O CNPJ deve ter 14 dígitos.";
-            temErro = true;
+      setErrors(prev => ({ ...prev, cnpj: "O CNPJ deve ter 14 dígitos." }))
+      return
+    }
+    if (cepLimpo.length !== 8) {
+      setErrors(prev => ({ ...prev, cep: "O CEP deve ter 8 dígitos." }))
+      return
+    }
+    if (formData.estado.trim().length !== 2) {
+      setErrors(prev => ({ ...prev, estado: "Use 2 letras (ex: SP)." }))
+      return
+    }
+
+    const payload = {
+      ...formData,
+      cnpj: cnpjLimpo,
+      cep: cepLimpo,
+      estado: formData.estado.toUpperCase(),
+    }
+
+    // Se ID for 0, é POST (criar). Se for > 0, é PUT (editar).
+    const isEdit = formData.cliente_id !== 0
+    const url = isEdit
+      ? `${API_BASE_URL}/clientes/${formData.cliente_id}`
+      : `${API_BASE_URL}/clientes`
+
+    const method = isEdit ? "PUT" : "POST"
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        // AQUI ESTÁ A LÓGICA DO ERRO QUE VOCÊ QUERIA
+        if (response.status === 409 || (data.message && data.message.toLowerCase().includes("cnpj"))) {
+          const msg = data.message || "CNPJ já existente."
+          setErrors(prev => ({ ...prev, cnpj: msg }))
+          toast.error("CNPJ duplicado", { description: msg })
+          return
         }
 
-        // Validação do CEP
-        if (cepLimpo.length !== 8) {
-            novosErros.cep = "O CEP deve ter 8 dígitos.";
-            temErro = true;
-        }
+        toast.error("Erro ao salvar", { description: data.message || "Erro inesperado." })
+        return
+      }
 
-        if (estadoLimpo.length !== 2) {
-            novosErros.estado = "Use 2 letras (ex: SP).";
-            temErro = true;
-        }
+      toast.success(isEdit ? "Cliente atualizado!" : "Cliente cadastrado!")
+      aoSalvar()
+      onOpenChange(false)
 
-        // Se houve erro, atualiza o estado de erros e PARE o envio.
-        if (temErro) {
-            setErrors(novosErros);
-            return;
-        }
-    // Use o ID de forma limpa
-    const idDoCliente = formData.cliente_id; 
-    
-    // Verifique o console para garantir que o ID está correto antes do fetch
-    console.log("ID do Cliente sendo enviado:", idDoCliente);
+    } catch (err) {
+      console.error("Erro inesperado:", err)
+      toast.error("Erro no servidor")
+    }
+  }
 
-    // Rota e métodos fixos para edição PUT
-    const url = `${API_BASE_URL}/clientes/${idDoCliente}`;
-        
-        try {
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {/* Título dinâmico */}
+            {formData.cliente_id ? `Editar cliente: ${formData.nome_cliente}` : "Novo Cliente"}
+          </DialogTitle>
+        </DialogHeader>
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Erro de atualização desconhecido' }));
-                throw new Error(errorData.error || `Erro HTTP: ${response.status}`);
-            }
-            toast.success("As alterações foram salvas!", {
-              description: `O cliente ${formData.cliente_id}-${formData.nome_cliente} atualizado com sucesso`
-            });
-            // alert(`Cliente ID ${formData.cliente_id} atualizado com sucesso!`);
-            
-            aoSalvar(); // Recarrega a lista
-            onOpenChange(false); // Fecha o modal
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <Label htmlFor="nome_cliente">Nome da empresa</Label>
+            <Input id="nome_cliente" value={formData.nome_cliente} onChange={handleChange} required />
+          </div>
 
-        } catch (error) {
-            console.error(`Erro ao editar cliente:`, error);
-            alert(`Falha na atualização: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
-        }
-    };
+          <div>
+            <Label htmlFor="nome_contato">Nome do contato</Label>
+            <Input id="nome_contato" value={formData.nome_contato} onChange={handleChange} />
+          </div>
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>
-                        Editar cliente: {clienteInicial.nome_cliente}
-                    </DialogTitle>
-                </DialogHeader>
-                {isReady && (
-                  <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div>
-                        <label htmlFor="nome_cliente">Nome da empresa</label>
-                        <Input id="nome_cliente" placeholder="Digite o nome da empresa" value={formData.nome_cliente} onChange={handleChange} required/>
-                    </div>
-                    <div>
-                        <Label htmlFor="nome_contato">Nome do contato</Label>
-                        <Input id="nome_contato" name="nome_contato" value={formData.nome_contato} onChange={handleChange}/>
-                    </div>
-                     <div>
-                        <Label htmlFor="cep">CEP</Label>
-                        <Input id="cep" name="cep" value={formData.cep} onChange={handleChange}/>
-                        {errors.cep && <span className="text-sm font-medium text-red-500 mt-2">{errors.cep}</span>}
-                    </div>
-                    <div>
-                        <label htmlFor="endereco">Endereço</label>
-                        <Input id="endereco" placeholder="Digite o endereço" value={formData.endereco} onChange={handleChange}/>
-                    </div>
-                   
+          <div>
+            <Label htmlFor="cep">CEP</Label>
+            <Input id="cep" value={formData.cep} onChange={handleChange} maxLength={9} />
+            {errors.cep && <span className="text-red-500 text-xs">{errors.cep}</span>}
+          </div>
+
+          <div>
+            <Label htmlFor="endereco">Endereço</Label>
+            <Input id="endereco" value={formData.endereco} onChange={handleChange} />
+          </div>
+
           <div className="flex gap-4">
             <div>
               <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" placeholder="Cidade" className="w-100" value={formData.cidade} onChange={handleChange}/>
-              {errors.estado && <span className="text-sm font-medium text-red-500 mt-2">{errors.estado}</span>}
+              <Input id="cidade" value={formData.cidade} onChange={handleChange} />
             </div>
+
             <div>
               <Label htmlFor="estado">Estado</Label>
-              <Input id="estado" placeholder="Estado (ex: RS)" maxLength={2} value={formData.estado} onChange={handleChange}/>
+              <Input id="estado" value={formData.estado} onChange={handleChange} maxLength={2} />
+              {errors.estado && <span className="text-red-500 text-xs">{errors.estado}</span>}
             </div>
-            
           </div>
-          <div>
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" placeholder="0000000" value={formData.cnpj} onChange={handleChange} required/>
-              {errors.cnpj && <span className="text-sm font-medium text-red-500 mt-2">{errors.cnpj}</span>}
-            </div>
-          {/* Linha 7: Status (Switch/Alternador) */}
-                        <div className="flex items-center space-x-2 pt-2">
-                            <Label htmlFor="status">Status</Label>
-                            {/* O Switch recebe o estado booleano e o handler de mudança */}
-                            <Switch 
-                                id="status"
-                                name="status"
-                                checked={formData.status}
-                                onCheckedChange={handleStatusChange}
-                            />
-                             <span className="text-sm font-medium">{formData.status ? 'Ativo' : 'Inativo'}</span>
-                        </div>
-                        <DialogFooter className="mt-4">
-          
-          <Button type="submit" className="bg-botao-dark">
-            Salvar alterações
-          </Button>
-        </DialogFooter>
-        </form>
-                )}
-                
 
-        
+          <div>
+            <Label htmlFor="cnpj">CNPJ</Label>
+            <Input id="cnpj" value={formData.cnpj} onChange={handleChange} maxLength={18} />
+            {/* MENSAGEM DE ERRO DO CNPJ APARECE AQUI */}
+            {errors.cnpj && <span className="text-red-500 text-xs font-bold">{errors.cnpj}</span>}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label>Status</Label>
+            <Switch checked={formData.status} onCheckedChange={handleStatusChange} />
+            <span>{formData.status ? "Ativo" : "Inativo"}</span>
+          </div>
+
+          <DialogFooter>
+            <Button type="submit">Salvar</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

@@ -51,6 +51,7 @@ const editActivitySchema = z.object({
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
     status: z.boolean({ required_error: "O status é obrigatório." }), 
+    prioridade: z.enum(["muito alta", "alta", "normal", "baixa"]),
 }).refine((data) => {
     if (!data.data_prevista_inicio || data.data_prevista_fim === "") return true;
     return new Date(data.data_prevista_inicio) <= new Date(data.data_prevista_fim)
@@ -70,6 +71,7 @@ export type AtividadesInitialData = {
     status: boolean; 
     projeto_id: number;
     colaborador_id?: number | null;
+    prioridade: "muito alta" | "alta" | "normal" | "baixa";
 };
 
 type ProjetoSelect = {
@@ -105,6 +107,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
             data_prevista_inicio: initialData.data_prevista_inicio ? new Date(initialData.data_prevista_inicio).toISOString().split('T')[0] : "",
             data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
             status: initialData.status,
+            prioridade: initialData.prioridade || "normal",
         },
     });
 
@@ -122,6 +125,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                 data_prevista_inicio: initialData.data_prevista_inicio ? new Date(initialData.data_prevista_inicio).toISOString().split('T')[0] : "",
                 data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
                 status: initialData.status,
+                prioridade: initialData.prioridade || "normal",
             });
             setApiError(null);
         }
@@ -243,6 +247,29 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                                     </FormItem>
                                 )}
                             />
+
+                            <FormField control={formActivities.control} name="prioridade"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Prioridade</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione a prioridade" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="bg-white">
+                                                <SelectItem value="muito alta">🔴 Muito Alta</SelectItem>
+                                                <SelectItem value="alta">🟠 Alta</SelectItem>
+                                                <SelectItem value="normal">🔵 Normal</SelectItem>
+                                                <SelectItem value="baixa">⚪ Baixa</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
 
                             {/* Descrição (auto-growing textarea) */}
                             <FormField control={formActivities.control} name="descr_atividade"

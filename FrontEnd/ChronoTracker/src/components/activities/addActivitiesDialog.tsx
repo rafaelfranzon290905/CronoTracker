@@ -46,6 +46,7 @@ import { API_BASE_URL } from  "@/apiConfig";
 const activitySchema = z.object({
     nome_atividade: z.string().min(1, { message: "O nome é obrigatório." }),
     projeto_id: z.string().min(1, { message: "Selecione um projeto" }),
+    prioridade: z.enum(["muito alta", "alta", "normal", "baixa"]).default("normal"),
     colaborador_id: z.string().optional().nullable(),
     descr_atividade: z.string().optional().nullable(),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
@@ -83,6 +84,7 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
         resolver: zodResolver(activitySchema),
         defaultValues: {
             nome_atividade: "",
+            prioridade: "normal",
             descr_atividade: "",
             data_prevista_inicio: new Date().toISOString().split('T')[0],
             data_prevista_fim: "",
@@ -237,6 +239,28 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                     <FormMessage />
                                 </FormItem>
                             )}/>
+
+                            <FormField control={formActivities.control} name="prioridade"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Prioridade</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione a prioridade" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="bg-white">
+                                                <SelectItem value="muito alta">🔴 Muito Alta</SelectItem>
+                                                <SelectItem value="alta">🟠 Alta</SelectItem>
+                                                <SelectItem value="normal">🔵 Normal</SelectItem>
+                                                <SelectItem value="baixa">⚪ Baixa</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                             {/* Colaborador */}
                             <FormField control={formActivities.control} name="colaborador_id" render={({ field }) => (

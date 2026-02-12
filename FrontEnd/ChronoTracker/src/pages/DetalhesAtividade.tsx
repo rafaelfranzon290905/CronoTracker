@@ -18,7 +18,8 @@ import {
     User,
     Edit,
     History,
-    Timer
+    Timer, 
+    Flag
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { EditActivitiesDialog } from "@/components/activities/EditActivitiesDialog";
@@ -94,6 +95,13 @@ export default function DetalhesAtividade() {
         0
     ) || 0;
 
+    const priorityConfig: any = {
+        "muito alta": { color: "bg-red-600", label: "Muito Alta" },
+        "alta": { color: "bg-orange-500", label: "Alta" },
+        "normal": { color: "bg-blue-500", label: "Normal" },
+        "baixa": { color: "bg-slate-500", label: "Baixa" },
+    };
+
     return (
         <div className="flex h-screen w-full">
             <SideBar />
@@ -139,7 +147,7 @@ export default function DetalhesAtividade() {
 
                                     <Separator className="my-6" />
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div className="flex items-center gap-2 text-sm">
                                             <CalendarDays className="h-4 w-4 text-blue-600" />
                                             <span className="font-semibold">Início Previsto:</span>
@@ -149,6 +157,14 @@ export default function DetalhesAtividade() {
                                             <Clock className="h-4 w-4 text-red-600" />
                                             <span className="font-semibold">Fim Previsto:</span>
                                             {atividade.data_prevista_fim ? new Date(atividade.data_prevista_fim).toLocaleDateString("pt-BR") : "N/A"}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Flag className="h-4 w-4 text-yellow-600" />
+                                            <span className="font-semibold">Prioridade:</span>
+                                            <span className={`${priorityConfig[atividade.prioridade]?.color || "bg-gray-500"} text-white px-2 py-0.5 rounded-full text-xs`}>
+                                                {priorityConfig[atividade.prioridade]?.label || "Normal"}
+                                            </span>
                                         </div>
                                     </div>
                                 </CardContent>

@@ -13,6 +13,7 @@ model atividades {
   projeto_id           Int
   nome_atividade       String                 @db.VarChar(100)
   descr_atividade      String?
+  prioridade           String?                @default("normal") @db.VarChar(20)
   data_prevista_inicio DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   status               Boolean?               @default(true)

@@ -429,7 +429,7 @@ app.get('/atividades/:atividade_id', async (req, res) => {
 
 // POST /atividades
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id, horas_gastas } = req.body;
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id, horas_gastas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
@@ -451,6 +451,7 @@ app.post('/atividades', async (req, res) => {
  const novaAtividade = await prisma.atividades.create({
   data: {
     nome_atividade,
+    prioridade: prioridade || "normal",
     descr_atividade: descr_atividade || "",
     data_prevista_inicio: dataInicio,
     data_prevista_fim: dataFim,
@@ -492,7 +493,7 @@ await prisma.projetos.update({
 // PUT /atividades/:atividade_id
 app.put('/atividades/:atividade_id', async (req, res) => {
   const { atividade_id } = req.params;
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_gastas, status, projeto_id, colaborador_id } = req.body;
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_gastas, status, projeto_id, colaborador_id } = req.body;
   try {
     const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : null;
     const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
@@ -501,6 +502,7 @@ app.put('/atividades/:atividade_id', async (req, res) => {
       where: { atividade_id: Number(atividade_id) },
       data: {
         nome_atividade,
+        prioridade,
         descr_atividade: descr_atividade || "",
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
@@ -546,7 +548,7 @@ app.delete('/atividades/:atividade_id', async (req, res) => {
     res.sendStatus(204);
   } catch (error) {
     console.error("Erro ao deletar:", error);
-    res.status(500).json({ error: "Erro interno ao deletar." });
+    res.status(500).json({ error: "Não é possível excluir uma atividade que possui horas lançadas." });
   }
 });
 

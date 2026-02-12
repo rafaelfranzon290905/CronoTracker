@@ -877,6 +877,49 @@ app.post('/lancamentos', async (req, res) => {
     const inicioDate = new Date(`${data}T${hora_inicio}:00Z`);
     const fimDate = new Date(`${data}T${hora_fim}:00Z`);
 
+    if (inicioDate >= fimDate) {
+      return res.status(400).json({ error: "A hora de início deve ser menor que a hora de fim." });
+    }
+
+    // 2. REGRA DE NEGÓCIO: Verificação de Sobreposição
+    // Procuramos qualquer lançamento do mesmo colaborador na mesma data 
+    // onde o intervalo de tempo se sobreponha ao novo
+    const sobreposicao = await prisma.lancamentos_de_horas.findFirst({
+      where: {
+        colaborador_id: usuario.colaborador_id,
+        data_lancamento: new Date(`${data}T12:00:00Z`),
+        OR: [
+          {
+            // Caso 1: O novo início está dentro de um lançamento existente
+            hora_inicio: { lte: inicioDate },
+            hora_fim: { gt: inicioDate }
+          },
+          {
+            // Caso 2: O novo fim está dentro de um lançamento existente
+            hora_inicio: { lt: fimDate },
+            hora_fim: { gte: fimDate }
+          },
+          {
+            // Caso 3: O novo lançamento engloba totalmente um existente
+            hora_inicio: { gte: inicioDate },
+            hora_fim: { lte: fimDate }
+          }
+        ]
+      }
+    });
+
+    if (sobreposicao) {
+      // Formata as horas para a mensagem de erro amigável
+      const hI = sobreposicao.hora_inicio.getUTCHours().toString().padStart(2, '0');
+      const mI = sobreposicao.hora_inicio.getUTCMinutes().toString().padStart(2, '0');
+      const hF = sobreposicao.hora_fim.getUTCHours().toString().padStart(2, '0');
+      const mF = sobreposicao.hora_fim.getUTCMinutes().toString().padStart(2, '0');
+
+      return res.status(400).json({ 
+        error: `Você já possui um lançamento de horas registrado entre [${hI}:${mI}] e [${hF}:${mF}] nesta data.` 
+      });
+    }
+
     const diffMs = fimDate.getTime() - inicioDate.getTime();
     const duracaoHoras = diffMs / (1000 * 60 * 60);
 
@@ -945,6 +988,23 @@ app.put('/lancamentos/:id', async (req, res) => {
     const inicioDate = timeToDate(dataBase, hora_inicio);
     const fimDate = timeToDate(dataBase, hora_fim);
     const dataLancamentoDate = new Date(`${dataBase}T12:00:00Z`);
+
+    const sobreposicao = await prisma.lancamentos_de_horas.findFirst({
+      where: {
+        colaborador_id: lancamentoExistente.colaborador_id, // Você precisará dar um findUnique antes para pegar o colaborador_id
+        lancamento_id: { not: idLancamento }, // IGNORA O PRÓPRIO REGISTRO
+        data_lancamento: dataLancamentoDate,
+        OR: [
+          { hora_inicio: { lte: inicioDate }, hora_fim: { gt: inicioDate } },
+          { hora_inicio: { lt: fimDate }, hora_fim: { gte: fimDate } },
+          { hora_inicio: { gte: inicioDate }, hora_fim: { lte: fimDate } }
+        ]
+      }
+    });
+
+    if (sobreposicao) {
+        return res.status(400).json({ error: "Sobreposição de horário detectada." });
+    }
 
     let duracaoHoras = 0;
     if (inicioDate && fimDate) {

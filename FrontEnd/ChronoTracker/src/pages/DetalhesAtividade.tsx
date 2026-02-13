@@ -110,7 +110,21 @@ export default function DetalhesAtividade() {
                 <main className="mt-4">
                     <PageHeader
                         title={atividade.nome_atividade}
-                        subtitle={`Projeto: ${atividade.projetos?.nome_projeto || "Não vinculado"}`}
+                        subtitle={
+                            <div className="flex items-center gap-1">
+                                <span>Projeto: </span>
+                                {atividade.projeto_id ? (
+                                    <Link 
+                                        to={`/projetos/${atividade.projeto_id}`} 
+                                        className="text-blue-850 hover:underline hover:text-blue-800 transition-colors font-medium"
+                                    >
+                                        {atividade.projetos?.nome_projeto || "Ver Detalhes"}
+                                    </Link>
+                                ) : (
+                                    <span className="text-slate-500">Não vinculado</span>
+                                )}
+                            </div>
+                        }
                     >
                         <div className="flex items-center gap-3">
                             <Badge className={atividade.status ? "bg-green-600" : "bg-red-600"}>
@@ -218,26 +232,29 @@ export default function DetalhesAtividade() {
                                         <User className="h-5 w-5 text-blue-600" /> Responsável
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {atividade.responsavel ? (
-                                        <Link 
-                                            to={`/Collaborators/${atividade.responsavel.colaborador_id}`}
-                                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-all group border border-transparent hover:border-blue-100"
-                                        >
-                                            <div className="h-10 w-10 rounded-full bg-blue-950 flex items-center justify-center text-white font-bold ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all">
-                                                {atividade.responsavel.nome_colaborador.substring(0, 2).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-semibold group-hover:text-blue-700 transition-colors">
-                                                    {atividade.responsavel.nome_colaborador}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {atividade.responsavel.cargo || "Colaborador"}
-                                                </p>
-                                            </div>
-                                        </Link>
+                                <CardContent className="space-y-3">
+                                    {atividade.colaboradores_atividades && atividade.colaboradores_atividades.length > 0 ? (
+                                        atividade.colaboradores_atividades.map((item: any) => (
+                                            <Link 
+                                                key={item.colaboradores.colaborador_id}
+                                                to={`/Collaborators/${item.colaboradores.colaborador_id}`}
+                                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-all group border border-transparent hover:border-blue-100"
+                                            >
+                                                <div className="h-10 w-10 rounded-full bg-blue-950 flex items-center justify-center text-white font-bold ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all">
+                                                    {item.colaboradores.nome_colaborador.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold group-hover:text-blue-700 transition-colors">
+                                                        {item.colaboradores.nome_colaborador}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.colaboradores.cargo || "Colaborador"}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        ))
                                     ) : (
-                                        <p className="text-sm text-muted-foreground italic">Sem responsável alocado.</p>
+                                        <p className="text-sm text-muted-foreground italic">Sem responsáveis alocados.</p>
                                     )}
                                 </CardContent>
                             </Card>

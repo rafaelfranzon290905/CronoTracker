@@ -202,7 +202,7 @@ function Atividades() {
                     onOpenChange={setIsEditModalOpen}
                     initialData={{
                                 ...activityToEdit,
-                                prioridade: activityToEdit.prioridade || "normal" 
+                                prioridade: activityToEdit.prioridade || "normal",
                             }}                    
                     projetos={projetosAtivos}
                     onSuccess={handleEditSuccess}

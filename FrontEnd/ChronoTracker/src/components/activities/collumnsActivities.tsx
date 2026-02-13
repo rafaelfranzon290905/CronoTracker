@@ -116,27 +116,36 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     enableGlobalFilter: true,
   },
   {
-    accessorKey: "responsavel.nome_colaborador",
-    header: "Responsável",
+    accessorKey: "colaboradores_atividades",
+    header: "Responsáveis",
     enableGlobalFilter: true,
     cell: ({ row }) => {
-      const atividade = row.original;
-
-      const responsavel = atividade.responsavel;
-
-      if (!responsavel) {
+      const equipe = row.original.colaboradores_atividades || [];
+      if (equipe.length === 0) {
         return <span className="text-muted-foreground text-xs italic">Sem responsável</span>;
       }
 
       return (
         <div className="flex justify-center">
-          <div
-            title={responsavel.nome_colaborador}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-900 text-[10px] font-bold text-white uppercase"
-          >
-            {responsavel.nome_colaborador?.substring(0, 2) || "??"}
-          </div>
+        <div className="flex -space-x-2 overflow-hidden">
+          {equipe.map((item, index) => {
+            const nomeColaborador = item?.colaboradores?.nome_colaborador;
+            const iniciais = nomeColaborador 
+              ? nomeColaborador.substring(0, 2).toUpperCase() 
+              : "??";
+              
+            return (
+              <div
+                key={item.colaborador_id || index}
+                title={nomeColaborador || "Colaborador"}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-blue-900 text-[10px] font-bold text-white uppercase shadow-sm"
+              >
+                {iniciais}
+              </div>
+            );
+          })}
         </div>
+      </div>
       );
     }
   },
@@ -257,8 +266,14 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
                   data_prevista_fim: atividade.data_prevista_fim,
                   status: atividade.status,
                   projeto_id: atividade.projeto_id,
-                  colaborador_id: atividade.colaborador_id,
                   prioridade: atividade.prioridade || "normal",
+
+                  colaboradores_atividades: atividade.colaboradores_atividades?.map(item => ({
+                    colaborador_id: item.colaboradores.colaborador_id,
+                    colaboradores: {
+                      nome_colaborador: item.colaboradores.nome_colaborador
+                    }
+                  })),
                 };
                 handleEditActivity(atividadeConvertida);
               }}

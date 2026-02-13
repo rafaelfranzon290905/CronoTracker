@@ -62,7 +62,7 @@ touch .env
 ```
 Dentro do arquivo .env adicione a URL de conexão com o Render:
 ```
-VITE_API_URL=https://cronotracker.onrender.com
+VITE_API_URL=(Privado por segurança, pedir encaminhamento com membros do projeto)
 ```
 Verifique se o arquivo src/apiConfig.ts aponta para os endereços corretos:
 ```

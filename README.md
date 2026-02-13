@@ -42,7 +42,7 @@ touch .env
 ```
 Dentro do arquivo .env adicione a URL de conexão com o Neon:
 ```
-DATABASE_URL="postgresql://biancafranzon2909:npg_IZUpP6voF8nN@ep-patient-bird-a8nszpee-pooler.eastus2.azure.neon.tech/ChronoTracker?sslmode=require&channel_binding=require"
+DATABASE_URL=(Privado por segurança, pedir encaminhamento com membros do projeto)
 ```
 
 3. Instale as dependências do projeto, faça as migrações do banco e rode o Backend:

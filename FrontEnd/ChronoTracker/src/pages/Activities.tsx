@@ -4,12 +4,12 @@ import { PageHeader } from "@/components/componentes/TituloPagina";
 import { type Atividades as AtividadeType } from "@/lib/activities";
 import { DataTable } from "@/components/activities/data-table-activities";
 import { AddActivitiesDialog } from "@/components/activities/addActivitiesDialog";
-import { useState, useEffect } from "react"; // ⬅️ useEffect JÁ ESTÁ IMPORTADO
+import { useState, useEffect } from "react";
 import { EditActivitiesDialog, type AtividadesInitialData } from "@/components/activities/EditActivitiesDialog";
-import { usePermissions } from "@/hooks/usePermissions";
 import { getAtividadesColumns } from "@/components/activities/collumnsActivities";
 import { API_BASE_URL } from  "@/apiConfig";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 
 
@@ -45,11 +45,7 @@ function Atividades() {
 
     const [activityToEdit, setActivityToEdit] = useState<AtividadesInitialData | null>(null);
 
-    const { isGerente } = usePermissions()
-    // const [error, setError] = useState(null);
-
-    // ----------------------------------------------------------------------
-    // 2. Função para buscar os dados da API (GET /atividades)
+    // Função para buscar os dados da API (GET /atividades)
     const fetchAtividades = async () => {
         setLoading(true);
         try {
@@ -60,11 +56,11 @@ function Atividades() {
             }
             const data = await response.json();
             setAtividades(data);
-            // Opcional: Para debugar, veja o que a API retornou
             console.log("Atividades carregadas:", data.length);
 
         } catch (err) {
             console.error("Erro ao buscar atividades:", err);
+            toast.error("Erro ao carregar a lista de atividades.");
         } finally {
             setLoading(false);
         }
@@ -102,67 +98,71 @@ function Atividades() {
         fetchProjetos();
     }, []);
 
-    // 💡 1. DEFINIR A FUNÇÃO DE SUCESSO: Recarrega os dados após o cadastro
+    // Recarrega os dados após o cadastro
     const handleAddSuccess = () => {
-        // Recarrega a lista de atividades para mostrar a nova atividade
+        toast.success("Atividade criada com sucesso!");
         fetchAtividades();
     };
 
-    const handleDeleteActivity = async (atividadeId: number) => {
-        if (!confirm(`Tem certeza que deseja deletar a atividade ${atividadeId}`)) {
-            return;
-        }
-        try {
-            const response = await fetch(`${API_BASE_URL}/atividades/${atividadeId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (response.ok) {
-                window.alert(`Atividade ${atividadeId} deletada com sucesso`);
-                console.log(`Atividade ${atividadeId} deletada com sucesso`);
-                fetchAtividades()
-            } else {
-               let errorMessage = "Erro desconhecido";
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || errorData.message || response.statusText;
-            } catch {
-                errorMessage = `Erro HTTP: ${response.status}`;
-            }
-            
-            alert(`Erro ao deletar: ${errorMessage}`);
-            } 
-        } catch (err) {
-            console.log("Erro ao deletar atividade:", err);
-            alert("Erro ao deletar atividade. Verifique o console.");
-        }
-    };
+    // const handleDeleteActivity = async (atividadeId: number) => {
+    //     if (!confirm(`Tem certeza que deseja deletar a atividade ${atividadeId}`)) {
+    //         return;
+    //     }
+    //     try {
+    //         const response = await fetch(`${API_BASE_URL}/atividades/${atividadeId}`, {
+    //             method: 'DELETE',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //         });
+    //         if (response.ok) {
+    //             toast.success("Atividade excluída com sucesso!");
+    //             // window.alert(`Atividade ${atividadeId} deletada com sucesso`);
+    //             // console.log(`Atividade ${atividadeId} deletada com sucesso`);
+    //             fetchAtividades()
+    //         } else {
+    //            let errorMessage = "Erro desconhecido";
+    //             try {
+    //                 const errorData = await response.json();
+    //                 errorMessage = errorData.error || errorData.message || response.statusText;
+    //             } catch {
+    //                 errorMessage = `Erro HTTP: ${response.status}`;
+    //             }
+                
+    //             toast.error(errorMessage);
+    //         } 
+    //     } catch (err) {
+    //         // console.log("Erro ao deletar atividade:", err);
+    //         // alert("Erro ao deletar atividade. Verifique o console.");
+    //         toast.error("Erro de conexão ao tentar excluir.");
+    //     }
+    // };
 
     const handleEditActivity = (activity: AtividadesInitialData) => {
         // Converte a data_prevista_inicio/fim para string 'YYYY-MM-DD'
         const dataInicio = activity.data_prevista_inicio ? new Date(activity.data_prevista_inicio).toISOString().split('T')[0] : '';
         const dataFim = activity.data_prevista_fim ? new Date(activity.data_prevista_fim).toISOString().split('T')[0] : '';
+        const prioridadeValida = activity.prioridade || "normal";
 
         // Define os dados iniciais, garantindo o formato de data correto
         setActivityToEdit({
             ...activity,
+            prioridade: prioridadeValida,
             data_prevista_inicio: dataInicio,
             data_prevista_fim: dataFim,
-        });
+        } as AtividadesInitialData );
         setIsEditModalOpen(true);
     };
 
     // Função de sucesso após a edição
     const handleEditSuccess = () => {
+        toast.success("Atividade atualizada com sucesso!");
         setIsEditModalOpen(false); // Fecha o modal
         fetchAtividades(); // Recarrega a lista
     };
 
     const tableColumns = getAtividadesColumns(
-        isGerente,
-        handleDeleteActivity,
+        fetchAtividades,
         handleEditActivity,
     );
 
@@ -178,9 +178,8 @@ function Atividades() {
                         title="Atividades"
                         subtitle="Adicione, edite e visualize suas atividades."
                     >
-                        {isGerente && 
-                            <AddActivitiesDialog projetos={projetosAtivos} onSuccess={handleAddSuccess} />
-                        }
+
+                    <AddActivitiesDialog projetos={projetosAtivos} onSuccess={handleAddSuccess} />
 
                     </PageHeader>
 
@@ -201,7 +200,10 @@ function Atividades() {
                 <EditActivitiesDialog
                     open={isEditModalOpen}
                     onOpenChange={setIsEditModalOpen}
-                    initialData={activityToEdit}
+                    initialData={{
+                                ...activityToEdit,
+                                prioridade: activityToEdit.prioridade || "normal",
+                            }}                    
                     projetos={projetosAtivos}
                     onSuccess={handleEditSuccess}
                 />

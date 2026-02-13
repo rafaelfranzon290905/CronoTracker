@@ -18,7 +18,8 @@ import {
     User,
     Edit,
     History,
-    Timer
+    Timer, 
+    Flag
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { EditActivitiesDialog } from "@/components/activities/EditActivitiesDialog";
@@ -94,6 +95,13 @@ export default function DetalhesAtividade() {
         0
     ) || 0;
 
+    const priorityConfig: any = {
+        "muito alta": { color: "bg-red-600", label: "Muito Alta" },
+        "alta": { color: "bg-orange-500", label: "Alta" },
+        "normal": { color: "bg-blue-500", label: "Normal" },
+        "baixa": { color: "bg-slate-500", label: "Baixa" },
+    };
+
     return (
         <div className="flex h-screen w-full">
             <SideBar />
@@ -102,7 +110,21 @@ export default function DetalhesAtividade() {
                 <main className="mt-4">
                     <PageHeader
                         title={atividade.nome_atividade}
-                        subtitle={`Projeto: ${atividade.projetos?.nome_projeto || "Não vinculado"}`}
+                        subtitle={
+                            <div className="flex items-center gap-1">
+                                <span>Projeto: </span>
+                                {atividade.projeto_id ? (
+                                    <Link 
+                                        to={`/projetos/${atividade.projeto_id}`} 
+                                        className="text-blue-850 hover:underline hover:text-blue-800 transition-colors font-medium"
+                                    >
+                                        {atividade.projetos?.nome_projeto || "Ver Detalhes"}
+                                    </Link>
+                                ) : (
+                                    <span className="text-slate-500">Não vinculado</span>
+                                )}
+                            </div>
+                        }
                     >
                         <div className="flex items-center gap-3">
                             <Badge className={atividade.status ? "bg-green-600" : "bg-red-600"}>
@@ -139,7 +161,7 @@ export default function DetalhesAtividade() {
 
                                     <Separator className="my-6" />
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div className="flex items-center gap-2 text-sm">
                                             <CalendarDays className="h-4 w-4 text-blue-600" />
                                             <span className="font-semibold">Início Previsto:</span>
@@ -149,6 +171,14 @@ export default function DetalhesAtividade() {
                                             <Clock className="h-4 w-4 text-red-600" />
                                             <span className="font-semibold">Fim Previsto:</span>
                                             {atividade.data_prevista_fim ? new Date(atividade.data_prevista_fim).toLocaleDateString("pt-BR") : "N/A"}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Flag className="h-4 w-4 text-yellow-600" />
+                                            <span className="font-semibold">Prioridade:</span>
+                                            <span className={`${priorityConfig[atividade.prioridade]?.color || "bg-gray-500"} text-white px-2 py-0.5 rounded-full text-xs`}>
+                                                {priorityConfig[atividade.prioridade]?.label || "Normal"}
+                                            </span>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -202,26 +232,29 @@ export default function DetalhesAtividade() {
                                         <User className="h-5 w-5 text-blue-600" /> Responsável
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    {atividade.responsavel ? (
-                                        <Link 
-                                            to={`/Collaborators/${atividade.responsavel.colaborador_id}`}
-                                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-all group border border-transparent hover:border-blue-100"
-                                        >
-                                            <div className="h-10 w-10 rounded-full bg-blue-950 flex items-center justify-center text-white font-bold ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all">
-                                                {atividade.responsavel.nome_colaborador.substring(0, 2).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-semibold group-hover:text-blue-700 transition-colors">
-                                                    {atividade.responsavel.nome_colaborador}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {atividade.responsavel.cargo || "Colaborador"}
-                                                </p>
-                                            </div>
-                                        </Link>
+                                <CardContent className="space-y-3">
+                                    {atividade.colaboradores_atividades && atividade.colaboradores_atividades.length > 0 ? (
+                                        atividade.colaboradores_atividades.map((item: any) => (
+                                            <Link 
+                                                key={item.colaboradores.colaborador_id}
+                                                to={`/Collaborators/${item.colaboradores.colaborador_id}`}
+                                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-all group border border-transparent hover:border-blue-100"
+                                            >
+                                                <div className="h-10 w-10 rounded-full bg-blue-950 flex items-center justify-center text-white font-bold ring-2 ring-blue-100 group-hover:ring-blue-300 transition-all">
+                                                    {item.colaboradores.nome_colaborador.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold group-hover:text-blue-700 transition-colors">
+                                                        {item.colaboradores.nome_colaborador}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.colaboradores.cargo || "Colaborador"}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        ))
                                     ) : (
-                                        <p className="text-sm text-muted-foreground italic">Sem responsável alocado.</p>
+                                        <p className="text-sm text-muted-foreground italic">Sem responsáveis alocados.</p>
                                     )}
                                 </CardContent>
                             </Card>

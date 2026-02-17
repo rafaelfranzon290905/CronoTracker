@@ -35,6 +35,7 @@ function Dashboard() {
   const [porcentagem, setPorcentagem] = useState(0);
   const [dadosGrafico, setDadosGrafico] = useState<{dia: string, horas: number}[]>([]);
   const [produtividade, setProdutividade] = useState(0);
+  const [totalDespesas, setTotalDespesas] = useState(0);
 
   useEffect(() => {
         // 1. Tenta buscar a informação salva no localStorage
@@ -97,6 +98,7 @@ function Dashboard() {
                           setPorcentagem(stats.percentual);
                           setProdutividade(stats.produtividade);
                           setDadosGrafico(stats.grafico || []);
+                          setTotalDespesas(stats.totalDespesas || 0);
                           
                           if (stats.grafico && stats.grafico.length > 0) {
                               setDadosGrafico(stats.grafico);
@@ -200,11 +202,13 @@ function Dashboard() {
           </Card>
           <Card aria-label="Card de receita mensal ">
             <CardHeader>
-              <CardTitle>Receita Mensal</CardTitle>
+              <CardTitle>Despesas Mensais</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">R$ 24.5k</p>
-              <p className="text-green-600 text-sm">+9% vs mês anterior</p>
+              <p className="text-2xl font-bold">
+                {totalDespesas.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}
+              </p>
+              <p className="text-gray-500 text-sm">Total acumulado no mês</p>
             </CardContent>
           </Card>
         </div>

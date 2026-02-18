@@ -53,6 +53,10 @@ const editActivitySchema = z.object({
     projeto_id: z.string().min(1, {message: "Selecione um projeto"}),
     colaborador_ids: z.array(z.number()).default([]),
     descr_atividade: z.string().optional().nullable(),
+    horas_previstas: z.preprocess(
+        (val) => (val === "" ? 0 : Number(val)), 
+        z.number().min(0, "As horas não podem ser negativas")
+    ),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
     status: z.boolean({ required_error: "O status é obrigatório." }), 
@@ -80,6 +84,7 @@ export type AtividadesInitialData = {
         colaboradores: { nome_colaborador: string };
     }>;
     prioridade: "muito alta" | "alta" | "normal" | "baixa";
+    horas_previstas: number;
 };
 
 type ProjetoSelect = {
@@ -117,6 +122,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
             data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
             status: initialData.status,
             prioridade: initialData.prioridade || "normal",
+            horas_previstas: initialData.horas_previstas ?? 0,
         },
     });
 
@@ -140,6 +146,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                 data_prevista_fim: initialData.data_prevista_fim ? new Date(initialData.data_prevista_fim).toISOString().split('T')[0] : "",
                 status: initialData.status,
                 prioridade: initialData.prioridade || "normal",
+                horas_previstas: initialData.horas_previstas ?? 0,
             });
 
             setSelectedColaboradores(idsIniciais);
@@ -357,6 +364,19 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                                         <FormLabel>Data Prevista de Fim</FormLabel>
                                         <FormControl>
                                             <Input type="date" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={formActivities.control}
+                                name="horas_previstas"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horas Previstas para a Atividade</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" placeholder="Ex: 10" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

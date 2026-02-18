@@ -7,6 +7,7 @@ export type Atividades = {
   data_prevista_inicio: string | null; 
   data_prevista_fim: string | null;
   status: boolean; 
+  horas_previstas: number;
   colaboradores_atividades: Array<{
     colaborador_id: number; 
     colaboradores: {
@@ -16,6 +17,7 @@ export type Atividades = {
   }>;
   projetos?: {
     nome_projeto: string;
+    horas_previstas?: number;
   };
   horas_gastas?: number;
   lancamentos_de_horas?: any[];

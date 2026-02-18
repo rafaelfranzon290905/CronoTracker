@@ -449,7 +449,7 @@ app.get('/debug/atividade-colaboradores', async (req, res) => {
 
 // POST /atividades
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_gastas } = req.body;
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
@@ -460,8 +460,26 @@ app.post('/atividades', async (req, res) => {
     const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
     const statusBoolean = true;
+    const hPrevistasSolicitadas = Number(horas_previstas) || 0;
 
 
+    const projeto = await prisma.projetos.findUnique({
+            where: { projeto_id: projetoIdNumerico },
+            select: { horas_previstas: true }
+        });
+
+    const somaAtividades = await prisma.atividades.aggregate({
+            where: { projeto_id: projetoIdNumerico },
+            _sum: { horas_previstas: true }
+        });
+
+    const totalPrevistoJaAlocado = somaAtividades._sum.horas_previstas || 0;
+
+    if ((totalPrevistoJaAlocado + hPrevistasSolicitadas) > (projeto.horas_previstas || 0)) {
+            return res.status(400).json({ 
+                error: `Limite de horas excedido. O projeto permite ${projeto.horas_previstas}h e o total ficaria em ${totalPrevistoJaAlocado + hPrevistasSolicitadas}h.` 
+            });
+        }
     // Criação da Atividade no Prisma
  const novaAtividade = await prisma.atividades.create({
   data: {
@@ -470,7 +488,8 @@ app.post('/atividades', async (req, res) => {
     descr_atividade: descr_atividade || "",
     data_prevista_inicio: dataInicio,
     data_prevista_fim: dataFim,
-    horas_gastas: Number(horas_gastas) || 0,
+    horas_previstas: hPrevistasSolicitadas,
+    horas_gastas: 0,
     status: statusBoolean,
     projetos: {
       connect: { projeto_id: projetoIdNumerico }
@@ -513,22 +532,47 @@ await prisma.projetos.update({
 // PUT /atividades/:atividade_id
 app.put('/atividades/:atividade_id', async (req, res) => {
   const { atividade_id } = req.params;
-  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_gastas, status, projeto_id, colaborador_ids } = req.body;
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_previstas, status, projeto_id, colaborador_ids } = req.body;
   try {
+    const idAtv = Number(atividade_id);
+    const idProj = Number(projeto_id);
+    const hPrevistasNovas = Number(horas_previstas) || 0;
+
+    const projeto = await prisma.projetos.findUnique({
+      where: { projeto_id: idProj },
+      select: { horas_previstas: true }
+    });
+
+    const somaOutrasAtividades = await prisma.atividades.aggregate({
+      where: { 
+        projeto_id: idProj,
+        NOT: { atividade_id: idAtv } 
+      },
+      _sum: { horas_previstas: true }
+    });
+
+    const totalComEdicao = (somaOutrasAtividades._sum.horas_previstas || 0) + hPrevistasNovas;
+
+    if (totalComEdicao > (projeto.horas_previstas || 0)) {
+      return res.status(400).json({ 
+        error: `Limite excedido. O projeto tem ${projeto.horas_previstas}h e o total planejado seria ${totalComEdicao}h.` 
+      });
+    }
+
     const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : null;
     const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
 
     const atividadeAtualizada = await prisma.atividades.update({
-      where: { atividade_id: Number(atividade_id) },
+      where: { atividade_id: idAtv },
       data: {
         nome_atividade,
         prioridade,
         descr_atividade: descr_atividade || "",
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
-        horas_gastas: Number(horas_gastas) || 0,
+        horas_previstas: hPrevistasNovas,
         status: Boolean(status),
-        projetos: { connect: { projeto_id: Number(projeto_id) } },
+        projetos: { connect: { projeto_id: idProj } },
         // responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
         colaboradores_atividades: {
           deleteMany: {}, // Remove responsáveis antigos
@@ -546,12 +590,12 @@ app.put('/atividades/:atividade_id', async (req, res) => {
     });
 
     const soma = await prisma.atividades.aggregate({
-      where: { projeto_id: Number(projeto_id) },
+      where: { projeto_id: idProj },
       _sum: { horas_gastas: true }
     });
 
 await prisma.projetos.update({
-  where: { projeto_id: Number(projeto_id) },
+  where: { projeto_id: idProj },
   data: {
     horas_gastas: soma._sum.horas_gastas || 0
   }

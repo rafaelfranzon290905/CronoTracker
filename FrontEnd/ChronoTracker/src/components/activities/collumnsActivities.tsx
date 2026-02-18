@@ -177,13 +177,27 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
   {
+  accessorKey: "horas_previstas",
+  header: "Horas Previstas",
+  cell: ({ row }) => {
+    const previsto = row.original.horas_previstas || 0;
+    return (
+      <div className="text-center">
+        {previsto}h
+      </div>
+    );
+  }
+},
+  {
   accessorKey: "horas_gastas",
   header: "Horas Gastas",
   cell: ({ row }) => {
-    const horas = row.getValue("horas_gastas") as number;
+    const horasGastas = row.getValue("horas_gastas") as number || 0;
+    const horasPrevistas = row.original.horas_previstas || 0;
+    const ultrapassou = horasGastas > horasPrevistas && horasPrevistas > 0;
     return (
-      <div className="font-medium text-blue-800">
-        {formatarHorasDecimais(horas)}h
+      <div className={`font-medium ${ultrapassou ? "text-red-600 font-bold" : "text-blue-800"}`}>
+        {formatarHorasDecimais(horasGastas)}h
       </div>
     );
   },
@@ -267,7 +281,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
                   status: atividade.status,
                   projeto_id: atividade.projeto_id,
                   prioridade: atividade.prioridade || "normal",
-
+                  horas_previstas: atividade.horas_previstas || 0,
                   colaboradores_atividades: atividade.colaboradores_atividades?.map(item => ({
                     colaborador_id: item.colaboradores.colaborador_id,
                     colaboradores: {

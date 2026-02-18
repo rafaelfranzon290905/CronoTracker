@@ -137,7 +137,7 @@ export default function GestaoDespesas() {
                                         <TableRow key={d.despesa_id}>
                                             <TableCell className="font-medium">{d.colaborador?.nome_colaborador}</TableCell>
                                             <TableCell className="text-xs text-blue-600 font-semibold">{d.projeto?.nome_projeto}</TableCell>
-                                            <TableCell>{new Date(d.data_despesa).toLocaleDateString()}</TableCell>
+                                            <TableCell>{d.data_despesa.split('T')[0].split('-').reverse().join('/')}</TableCell>
                                             <TableCell className="font-bold">
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(d.valor)}
                                             </TableCell>

@@ -766,7 +766,18 @@ app.delete('/projetos/:id', async (req, res) => {
     await prisma.projetos.delete({ where: { projeto_id: parseInt(id) } });
     res.status(204).send();
   } catch (error) {
-    if (error.code === 'P2025') return res.status(404).json({ error: 'Projeto não encontrado.' });
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Projeto não encontrado.' });
+    }
+    
+    // Erro de restrição (Foreign Key Constraint)
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        error: 'Não é possível excluir: este projeto possui atividades, lançamentos de horas ou despesas vinculadas.' 
+      });
+    }
+
+    console.error('Erro ao excluir projeto:', error);
     res.status(500).json({ error: 'Erro interno ao excluir projeto.' });
   }
 });
@@ -1255,11 +1266,27 @@ app.get('/dashboard/stats/:usuario_id', async (req, res) => {
     const META_DIARIA = 8;
     const produtividadeReal = Math.min(Math.round((totalHoje / META_DIARIA) * 100), 100);
 
+
+    // LÓGICA CARD DE DESPESAS
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    
+
+    const despesasMes = await prisma.despesas.aggregate({
+      _sum: { valor: true },
+      where: { 
+        data_despesa: { gte: inicioMes, lte: fimHoje } 
+      }
+    });
+
+    const totalDespesas = Number(despesasMes._sum.valor || 0);
+    console.log("Soma total de despesas (Global):", totalDespesas);
+
     res.json({
       totalHoje: Number(totalHoje.toFixed(1)),
       percentual: Math.round(diferencaPercentual),
       produtividade: produtividadeReal,
-      grafico: graficoData
+      grafico: graficoData,
+      totalDespesas: totalDespesas
     });
   } catch (error) {
     console.error(error);

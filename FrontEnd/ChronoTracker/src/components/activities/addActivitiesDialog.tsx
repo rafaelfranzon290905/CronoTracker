@@ -57,6 +57,10 @@ const activitySchema = z.object({
     prioridade: z.enum(["muito alta", "alta", "normal", "baixa"]).default("normal"),
     colaborador_ids:z.array(z.number()).default([]),
     descr_atividade: z.string().optional().nullable(),
+    horas_previstas: z.preprocess(
+        (val) => (val === "" ? 0 : Number(val)), 
+        z.number().min(0, "As horas não podem ser negativas")
+    ),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
     status: z.boolean({ required_error: "é obrigatório colocar um status" }),
@@ -99,6 +103,7 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
             descr_atividade: "",
             data_prevista_inicio: new Date().toISOString().split('T')[0],
             data_prevista_fim: "",
+            horas_previstas: 0,
             status: true,
             projeto_id: "",
             colaborador_ids: []
@@ -154,6 +159,7 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
         const payload = {
             ...data,
             projeto_id: parseInt(data.projeto_id, 10),
+            horas_previstas: Number(data.horas_previstas) || 0,
             colaborador_ids: selectedColaboradores,
             descr_atividade: data.descr_atividade || null,
             data_prevista_fim: data.data_prevista_fim || null,
@@ -366,6 +372,20 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                         <FormLabel>Data Prevista de Fim</FormLabel>
                                         <FormControl>
                                             <Input type="date" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={formActivities.control}
+                                name="horas_previstas"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horas Previstas para a Atividade</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" placeholder="Ex: 10" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

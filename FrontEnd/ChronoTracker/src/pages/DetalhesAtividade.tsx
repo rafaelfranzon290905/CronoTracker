@@ -161,7 +161,7 @@ export default function DetalhesAtividade() {
 
                                     <Separator className="my-6" />
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                         <div className="flex items-center gap-2 text-sm">
                                             <CalendarDays className="h-4 w-4 text-blue-600" />
                                             <span className="font-semibold">Início Previsto:</span>
@@ -172,7 +172,11 @@ export default function DetalhesAtividade() {
                                             <span className="font-semibold">Fim Previsto:</span>
                                             {atividade.data_prevista_fim ? new Date(atividade.data_prevista_fim).toLocaleDateString("pt-BR") : "N/A"}
                                         </div>
-
+                                        <div className="flex items-center gap-2 text-sm">
+                                                <Timer className="h-4 w-4 text-purple-600" />
+                                                <span className="font-semibold">Horas Previstas:</span>
+                                                <span className="font-medium">{atividade.horas_previstas || 0}h</span>
+                                        </div>
                                         <div className="flex items-center gap-2 text-sm">
                                             <Flag className="h-4 w-4 text-yellow-600" />
                                             <span className="font-semibold">Prioridade:</span>
@@ -185,10 +189,11 @@ export default function DetalhesAtividade() {
                             </Card>
 
                             <Card>
-                                <CardHeader>
+                                <CardHeader>                             
                                     <CardTitle className="text-lg flex items-center gap-2">
                                         <History className="h-5 w-5 text-blue-600" /> Histórico de Horas
                                     </CardTitle>
+            
                                 </CardHeader>
                                 <CardContent>
                                     <div className="space-y-4">
@@ -259,16 +264,37 @@ export default function DetalhesAtividade() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="bg-blue-900 text-white">
+                            <Card className={`${totalDecimal > (atividade.horas_previstas || 0) ? "bg-red-900" : "bg-blue-900"} text-white transition-colors duration-500`}>
                                 <CardContent className="p-6">
-                                    <div className="flex justify-between items-center">
+                                    <div className="space-y-4">
                                         <div>
-                                            <p className="text-blue-200 text-xs uppercase font-bold tracking-wider">Total Acumulado</p>
-                                            <p className="text-3xl font-bold mt-1">
-                                               {formatarHorasDecimais(totalDecimal)}h
-                                            </p>
+                                            <p className="text-white-200 text-[10px] uppercase font-bold tracking-wider">Horas Previstas</p>
+                                            <p className="text-2xl font-bold">{atividade.horas_previstas || 0}h</p>
                                         </div>
-                                        <Timer className="h-8 w-8 text-blue-400 opacity-50" />
+                                        
+                                        <Separator className="bg-white/20" />
+
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <p className="text-white-200 text-[10px] uppercase font-bold tracking-wider">Total Gasto</p>
+                                                <p className="text-3xl font-bold mt-1">
+                                                    {formatarHorasDecimais(totalDecimal)}h
+                                                </p>
+                                            </div>
+                                            <Timer className="h-8 w-8 text-white-400 opacity-50" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <div className="flex justify-between text-[10px] uppercase font-bold text-white-200">
+                                                <span>Progresso</span>
+                                                <span>{atividade.horas_previstas ? Math.round((totalDecimal / atividade.horas_previstas) * 100) : 0}%</span>
+                                            </div>
+                                            <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+                                                <div 
+                                                    className={`h-full transition-all duration-1000 ${totalDecimal > (atividade.horas_previstas || 0) ? "bg-red-400" : "bg-green-400"}`}
+                                                    style={{ width: `${Math.min((totalDecimal / (atividade.horas_previstas || 1)) * 100, 100)}%` }}
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>

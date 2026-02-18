@@ -160,7 +160,12 @@ export default function DetalhesProjeto() {
                                             {projeto.atividades && projeto.atividades.length > 0 ? (
                                                 projeto.atividades.map((atv) => (
                                                     <div key={atv.atividade_id} className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm hover:border-blue-200 transition-all">
-                                                        <span className="text-sm font-medium">{atv.nome_atividade}</span>
+                                                        <span
+  onClick={() => navigate(`/atividades/${atv.atividade_id}`)}
+  className="text-sm font-medium text-blue-900 hover:underline cursor-pointer"
+>
+  {atv.nome_atividade}
+</span>
                                                         <Badge
                                                             variant={atv.status ? "default" : "secondary"}
                                                             className={!atv.status

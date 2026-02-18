@@ -2,6 +2,8 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,9 +47,21 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <span className="font-medium text-left">{row.getValue("nome_atividade")}</span>
-    ),
+   cell: ({ row }) => {
+  const atividadeId = row.original.atividade_id;
+  const navigate = useNavigate();
+
+
+  return (
+    <span
+      onClick={() => navigate(`/atividades/${atividadeId}`)}
+      className="font-medium text-blue-900 hover:underline cursor-pointer"
+    >
+      {row.getValue("nome_atividade")}
+    </span>
+  );
+},
+
     enableHiding: false, // Geralmente útil manter o nome visível
     enableGlobalFilter: true,
   },

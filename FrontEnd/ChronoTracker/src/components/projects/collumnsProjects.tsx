@@ -80,14 +80,26 @@ export const getColumns = (
         );
       },
     },
-    {
-      accessorKey: "clientes.nome_cliente",
-      header: "Cliente",
-      cell: ({ row }) => {
-        const nomeCliente = row.original.clientes?.nome_cliente || "Sem Cliente";
-        return <Badge variant="outline">{nomeCliente}</Badge>;
-      },
-    },
+   {
+  accessorKey: "clientes.nome_cliente",
+  header: "Cliente",
+  cell: ({ row }) => {
+    const cliente = row.original.clientes;
+
+    if (!cliente) {
+      return <Badge variant="outline">Sem Cliente</Badge>;
+    }
+
+    return (
+      <Link
+        to={`/clientes/${cliente.cliente_id}`}
+        className="font-medium text-blue-950 hover:underline"
+      >
+        {cliente.nome_cliente}
+      </Link>
+    );
+  },
+},
     {
       accessorKey: "equipe",
       header: "Equipe",

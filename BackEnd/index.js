@@ -46,7 +46,39 @@ app.get('/clientes', async (req, res) => {
   }
 });
 
-// Get clientes
+app.get('/clientes/:id', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    const cliente = await prisma.clientes.findUnique({
+      where: { cliente_id: clienteId },
+      include: {
+        projetos: {
+          include: {
+            despesas: true
+          }
+        }
+      }
+    });
+
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    res.json(cliente);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+
+
+
 app.get('/clientes/cnpj/:cnpj', async (req, res) => {
   const cnpjLimpo = req.params.cnpj.replace(/[^\d]/g, '');
 
@@ -57,14 +89,17 @@ app.get('/clientes/cnpj/:cnpj', async (req, res) => {
   try {
     // 🔎 Prisma: Usa findUnique para buscar um registro pela chave única (CNPJ)
     const cliente = await prisma.clientes.findUnique({
-      where: {
-        cnpj: cnpjLimpo, // Assumindo que 'cnpj' é um campo único no seu modelo 'clientes'
-      },
-      select: {
-        cliente_id: true, // Ou 'id', dependendo do nome exato no seu schema
-        nome_empresa: true,
-      },
-    });
+  where: { cliente_id: clienteId },
+  include: {
+    projetos: {
+      include: {
+        despesas: true,
+        lancamentos_de_horas: true
+      }
+    }
+  }
+});
+
 
     if (cliente) {
       res.status(200).json({ existe: true, cliente: cliente });
@@ -209,28 +244,34 @@ app.put('/clientes/:id', async (req, res) => {
   }
 })
 
-// GET /clientes/:id/projetos - Lista todos os projetos de um cliente específico
-app.get('/clientes/:id/projetos', async (req, res) => {
+app.get('/clientes/:id', async (req, res) => {
   const clienteId = parseInt(req.params.id);
 
   if (isNaN(clienteId)) {
-    return res.status(400).json({ error: 'ID do cliente inválido.' });
+    return res.status(400).json({ error: 'ID inválido' });
   }
 
   try {
-    const projetosDoCliente = await prisma.projetos.findMany({
-      where: {
-        cliente_id: clienteId,
-      },
-      orderBy: {
-        projeto_id: 'desc',
-      },
+    const cliente = await prisma.clientes.findUnique({
+      where: { cliente_id: clienteId },
+      include: {
+        projetos: {
+          orderBy: {
+            projeto_id: 'desc'
+          }
+        }
+      }
     });
 
-    res.status(200).json(projetosDoCliente);
-  } catch (error) {
-    console.error(`Erro ao buscar projetos do cliente ${clienteId}:`, error);
-    res.status(500).json({ error: 'Erro interno ao buscar projetos do cliente.' });
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    res.status(200).json(cliente);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro interno' });
   }
 });
 

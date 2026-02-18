@@ -14,6 +14,12 @@ import { Toaster } from 'sonner'
 import LancamentoPage from './components/Timesheets/lancamentoForm.tsx'
 import DetalhesProjeto from './pages/DetalhesProjeto.tsx'
 import GestaoDespesas from './pages/GestaoDespesas.tsx'
+import DetalhesClientes from "@/pages/DetalhesClientes";
+
+
+
+
+
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -31,6 +37,8 @@ createRoot(document.getElementById('root')!).render(
         <Route path='/usuarios' element={<UsersPage/>}/>
         <Route path="/TimeSheet/Lancamentos" element={<LancamentoPage/>}/>
         <Route path="/gestao-despesas" element={<GestaoDespesas />} />
+        <Route path="/clientes/:id" element={<DetalhesClientes />} />
+
       </Routes>
     </BrowserRouter>
   </StrictMode>,

@@ -173,8 +173,14 @@ export const getColumns = (
       accessorKey: "horas_gastas",
       header: "Horas gastas",
        cell: ({ row }) => {
-        const horas = row.original.horas_gastas || 0;
-        return <span className="font-medium text-blue-800">{formatarHorasDecimais(horas)}h</span>;
+        const horasGastas = row.original.horas_gastas || 0;
+        const horasPrevistas = row.original.horas_previstas || 0;
+        const ultrapassou = horasPrevistas > 0 && horasGastas > horasPrevistas;
+        return (
+          <span className={`font-medium transition-colors ${ ultrapassou ? "text-red-600 font-bold" : "text-blue-800"}`}>
+            {formatarHorasDecimais(horasGastas)}h
+          </span>
+        );
       },
     },
     {

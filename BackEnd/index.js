@@ -366,7 +366,9 @@ app.get('/atividades', async (req, res) => {
   try {
     const atividades = await prisma.atividades.findMany({
       include: {
-        responsavel: true,
+        colaboradores_atividades: {
+          include: { colaboradores: true }
+        },
         projetos: {
           select: {
             nome_projeto: true
@@ -406,7 +408,11 @@ app.get('/atividades/:atividade_id', async (req, res) => {
     const atividade = await prisma.atividades.findUnique({
       where: { atividade_id: atividadeId },
       include: {
-        responsavel: true,
+        colaboradores_atividades: {
+          include: { 
+            colaboradores: true 
+          }
+        },
         projetos: true,
         lancamentos_de_horas: {
           include: { 
@@ -428,43 +434,77 @@ app.get('/atividades/:atividade_id', async (req, res) => {
   }
 });
 
+app.get('/debug/atividade-colaboradores', async (req, res) => {
+  try {
+    const dados = await prisma.atividade_colaboradores.findMany({
+      include: {
+        atividades: true,
+        colaboradores: true
+      }
+    });
+    res.json(dados);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST /atividades
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id, horas_gastas } = req.body;
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
   }
 
   try {
-    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO 
-    //    const projetoIdNumerico = Number(projeto_id); 
-    //     if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
-    //       return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
-    //     }
     const projetoIdNumerico = Number(projeto_id);
     const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
     const statusBoolean = true;
+    const hPrevistasSolicitadas = Number(horas_previstas) || 0;
 
 
-    // ✍️ Criação da Atividade no Prisma
+    const projeto = await prisma.projetos.findUnique({
+            where: { projeto_id: projetoIdNumerico },
+            select: { horas_previstas: true }
+        });
+
+    const somaAtividades = await prisma.atividades.aggregate({
+            where: { projeto_id: projetoIdNumerico },
+            _sum: { horas_previstas: true }
+        });
+
+    const totalPrevistoJaAlocado = somaAtividades._sum.horas_previstas || 0;
+
+    if ((totalPrevistoJaAlocado + hPrevistasSolicitadas) > (projeto.horas_previstas || 0)) {
+            return res.status(400).json({ 
+                error: `Limite de horas excedido. O projeto permite ${projeto.horas_previstas}h e o total ficaria em ${totalPrevistoJaAlocado + hPrevistasSolicitadas}h.` 
+            });
+        }
+    // Criação da Atividade no Prisma
  const novaAtividade = await prisma.atividades.create({
   data: {
     nome_atividade,
+    prioridade: prioridade || "normal",
     descr_atividade: descr_atividade || "",
     data_prevista_inicio: dataInicio,
     data_prevista_fim: dataFim,
-    horas_gastas: Number(horas_gastas) || 0,
+    horas_previstas: hPrevistasSolicitadas,
+    horas_gastas: 0,
     status: statusBoolean,
     projetos: {
       connect: { projeto_id: projetoIdNumerico }
     },
-    ...(colaborador_id && {
-      responsavel: {
-        connect: { colaborador_id: Number(colaborador_id) }
-      }
-    })
+    // ...(colaborador_id && {
+    //   responsavel: {
+    //     connect: { colaborador_id: Number(colaborador_id) }
+    //   }
+    // })
+    colaboradores_atividades: {
+          create: (colaborador_ids || []).map(id => ({
+            colaborador_id: Number(id)
+          }))
+        }
   }
 });
 
@@ -493,36 +533,70 @@ await prisma.projetos.update({
 // PUT /atividades/:atividade_id
 app.put('/atividades/:atividade_id', async (req, res) => {
   const { atividade_id } = req.params;
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_gastas, status, projeto_id, colaborador_id } = req.body;
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_previstas, status, projeto_id, colaborador_ids } = req.body;
   try {
+    const idAtv = Number(atividade_id);
+    const idProj = Number(projeto_id);
+    const hPrevistasNovas = Number(horas_previstas) || 0;
+
+    const projeto = await prisma.projetos.findUnique({
+      where: { projeto_id: idProj },
+      select: { horas_previstas: true }
+    });
+
+    const somaOutrasAtividades = await prisma.atividades.aggregate({
+      where: { 
+        projeto_id: idProj,
+        NOT: { atividade_id: idAtv } 
+      },
+      _sum: { horas_previstas: true }
+    });
+
+    const totalComEdicao = (somaOutrasAtividades._sum.horas_previstas || 0) + hPrevistasNovas;
+
+    if (totalComEdicao > (projeto.horas_previstas || 0)) {
+      return res.status(400).json({ 
+        error: `Limite excedido. O projeto tem ${projeto.horas_previstas}h e o total planejado seria ${totalComEdicao}h.` 
+      });
+    }
+
     const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : null;
     const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
 
     const atividadeAtualizada = await prisma.atividades.update({
-      where: { atividade_id: Number(atividade_id) },
+      where: { atividade_id: idAtv },
       data: {
         nome_atividade,
+        prioridade,
         descr_atividade: descr_atividade || "",
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
-        horas_gastas: Number(horas_gastas) || 0,
+        horas_previstas: hPrevistasNovas,
         status: Boolean(status),
-        projetos: { connect: { projeto_id: Number(projeto_id) } },
-        responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
+        projetos: { connect: { projeto_id: idProj } },
+        // responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
+        colaboradores_atividades: {
+          deleteMany: {}, // Remove responsáveis antigos
+          create: (colaborador_ids || []).map(id => ({
+            colaborador_id: Number(id)
+          }))
+        }
       },
       include: {
-        responsavel: true,
+        colaboradores_atividades: {
+          include: { colaboradores: true }
+        },
         projetos: true,
       }
     });
 
     const soma = await prisma.atividades.aggregate({
-      where: { projeto_id: Number(projeto_id) },
+      where: { projeto_id: idProj },
       _sum: { horas_gastas: true }
     });
 
 await prisma.projetos.update({
-  where: { projeto_id: Number(projeto_id) },
+  where: { projeto_id: idProj },
   data: {
     horas_gastas: soma._sum.horas_gastas || 0
   }
@@ -547,7 +621,7 @@ app.delete('/atividades/:atividade_id', async (req, res) => {
     res.sendStatus(204);
   } catch (error) {
     console.error("Erro ao deletar:", error);
-    res.status(500).json({ error: "Erro interno ao deletar." });
+    res.status(500).json({ error: "Não é possível excluir uma atividade que possui horas lançadas." });
   }
 });
 
@@ -937,7 +1011,12 @@ app.get('/lancamentos', async (req, res) => {
       },
       orderBy: { data_lancamento: 'desc' }
     });
-    res.status(200).json(lancamentos);
+
+    const formatados = lancamentos.map(item => ({
+      ...item,
+      data: item.data_lancamento, 
+    }));
+    res.status(200).json(formatados);
   } catch (error) {
     console.error('Erro ao buscar lançamentos:', error);
     res.status(500).json({ error: 'Erro ao listar horas.' });

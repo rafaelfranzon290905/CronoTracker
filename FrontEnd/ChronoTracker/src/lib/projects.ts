@@ -40,7 +40,7 @@ export interface Projeto {
     atividades?: {
       atividade_id: number;
         nome_atividade: string;
-        status: boolean;
+        status: "Pendente" | "Em Andamento" | "Concluída" | "Cancelado";
     }[];
     projeto_colaboradores?: {
       colaboradores: {

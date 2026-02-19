@@ -394,10 +394,10 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent className="bg-white">
-                                                <SelectItem value="Pendente">⏳ Pendente</SelectItem>
-                                                <SelectItem value="Em Andamento">🚀 Em Andamento</SelectItem>
-                                                <SelectItem value="Concluída">✅ Concluída</SelectItem>
-                                                <SelectItem value="Cancelado">🚫 Cancelado</SelectItem>
+                                                <SelectItem value="Pendente">Pendente</SelectItem>
+                                                <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                                                <SelectItem value="Concluída">Concluída</SelectItem>
+                                                <SelectItem value="Cancelado">Cancelado</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

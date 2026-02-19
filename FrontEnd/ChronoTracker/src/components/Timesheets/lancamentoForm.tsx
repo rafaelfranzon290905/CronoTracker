@@ -73,7 +73,6 @@ export default function LancamentoPage() {
   const iniciarTimer = () => {
     if (ativo && !pausado) return;
 
-    // Se for o primeiro início (segundos em 0), grava a hora de início real
     if (segundos === 0) {
       const agora = new Date();
       const h = agora.getHours().toString().padStart(2, '0');
@@ -120,8 +119,8 @@ export default function LancamentoPage() {
   const [formData, setFormData] = useState({
     projeto_id: "",
     atividade_id: "",
-    cliente_nome: "", // Visual apenas
-    cliente_id: "",   // Para o banco
+    cliente_nome: "", 
+    cliente_id: "",   
     data: new Intl.DateTimeFormat('fr-CA', {
       year: 'numeric',
       month: '2-digit',
@@ -134,7 +133,6 @@ export default function LancamentoPage() {
   })
 
   useEffect(() => {
-    // 1. Só executa se o user existir
     if (!user || !user.colaborador_id) return;
 
     setIsLoading(true);
@@ -143,13 +141,11 @@ export default function LancamentoPage() {
     fetch(`${API_BASE_URL}/colaboradores`)
       .then(res => res.json())
       .then(data => {
-        // 2. Usar Number() para garantir que a comparação não falhe por tipo
         const eu = data.find((c: any) => Number(c.colaborador_id) === Number(user.colaborador_id));
 
         // console.log("Colaborador encontrado no banco:", eu);
 
         if (eu && eu.projeto_colaboradores) {
-          // 3. Extrair os projetos e filtrar nulos
           const meusProjetos = eu.projeto_colaboradores
             .map((pc: any) => pc.projetos)
             .filter((p: any) => p !== null);
@@ -157,7 +153,6 @@ export default function LancamentoPage() {
           setProjetos(meusProjetos);
           console.log("Meus projetos carregados:", meusProjetos);
 
-          // MEMÓRIA: Recuperar projeto e atividade do localStorage após carregar a lista de projetos
           const lastProj = localStorage.getItem('last_projeto_id');
           const lastAtiv = localStorage.getItem('last_atividade_id');
 
@@ -188,9 +183,8 @@ export default function LancamentoPage() {
         setIsLoading(false)
       });
 
-  }, [user]); // Re-executa quando o objeto user (das permissões) carregar
+  }, [user]); 
 
-  // Quando o projeto muda, preenche cliente e filtra atividades
   const handleProjetoChange = (id: string) => {
     const projeto = projetos.find(p => p.projeto_id.toString() === id)
     if (projeto) {
@@ -199,10 +193,9 @@ export default function LancamentoPage() {
         projeto_id: id,
         cliente_id: String(projeto.cliente_id),
         cliente_nome: projeto.clientes?.nome_cliente || "Cliente não encontrado",
-        atividade_id: "" // Limpa a atividade ao trocar o projeto
+        atividade_id: "" 
       }))
 
-      // Filtra as atividades que pertencem a este projeto
       setAtividades(projeto.atividades as any || [])
     }
   }
@@ -215,7 +208,6 @@ export default function LancamentoPage() {
       const response = await fetch(`${API_BASE_URL}/lancamentos?usuario_id=${idParaBusca}`);
       if (response.ok) {
         const result = await response.json();
-        // Pega apenas os 5 ou 10 últimos para não sobrecarregar
         setRecentes(result.slice(0, 10));
       }
     } catch (error) {
@@ -223,7 +215,6 @@ export default function LancamentoPage() {
     }
   };
 
-  // Chame no useEffect existente
   useEffect(() => {
     if (user) {
       fetchRecentes();
@@ -254,7 +245,6 @@ export default function LancamentoPage() {
     }
 
     try {
-      // Criamos um objeto para envio excluindo o campo que causa erro no Prisma
       const { tipo_lancamento, ...dadosParaEnvio } = formData;
 
       const response = await fetch(`${API_BASE_URL}/lancamentos`, {
@@ -274,7 +264,6 @@ export default function LancamentoPage() {
       })
 
       if (response.ok) {
-        // MEMÓRIA: Salvar no localStorage antes de navegar
         localStorage.setItem('last_projeto_id', formData.projeto_id);
         localStorage.setItem('last_atividade_id', formData.atividade_id);
 
@@ -448,7 +437,6 @@ const confirmDeletion = async () => {
                       </div>
 
                       <div className="flex gap-3">
-                        {/* Botão Play / Pause */}
                         {!ativo || pausado ? (
                           <Button
                             onClick={iniciarTimer}
@@ -540,8 +528,6 @@ const confirmDeletion = async () => {
 
                     {/* Descrição e Confirmação Final */}
                     <div className="space-y-4">
-
-
                       {!ativo && segundos > 0 && (
                         <Button
                           onClick={handleSubmit}
@@ -663,7 +649,7 @@ const confirmDeletion = async () => {
 
             if (response.ok) {
               toast.success("Lançamento atualizado com sucesso!");
-              fetchRecentes(); // Atualiza a lista
+              fetchRecentes(); 
               setIsEditModalOpen(false);
             } else {
               const error = await response.json();

@@ -39,6 +39,39 @@ app.get('/clientes', async (req, res) => {
   }
 });
 
+app.get('/clientes/:id', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    const cliente = await prisma.clientes.findUnique({
+      where: { cliente_id: clienteId },
+      include: {
+        projetos: {
+          include: {
+            despesas: true
+          }
+        }
+      }
+    });
+
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    res.json(cliente);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+
+
+
 // GET /clientes/cnpj/:cnpj
 app.get('/clientes/cnpj/:cnpj', async (req, res) => {
   const cnpjLimpo = req.params.cnpj.replace(/[^\d]/g, '');
@@ -47,8 +80,15 @@ app.get('/clientes/cnpj/:cnpj', async (req, res) => {
   }
   try {
     const cliente = await prisma.clientes.findUnique({
-      where: { cnpj: cnpjLimpo },
-      select: { cliente_id: true, nome_empresa: true },
+      where: { cliente_id: cnpjLimpo },
+      include: {
+        projetos: {
+          include: {
+            despesas: true,
+            lancamentos_de_horas: true
+          }
+        }
+      }
     });
     if (cliente) {
       res.status(200).json({ existe: true, cliente: cliente });
@@ -124,6 +164,38 @@ app.put('/clientes/:id', async (req, res) => {
     return res.status(500).json({ message: 'Erro interno' })
   }
 })
+
+app.get('/clientes/:id', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    const cliente = await prisma.clientes.findUnique({
+      where: { cliente_id: clienteId },
+      include: {
+        projetos: {
+          orderBy: {
+            projeto_id: 'desc'
+          }
+        }
+      }
+    });
+
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    res.status(200).json(cliente);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 
 // DELETE /clientes/:id
 app.delete('/clientes/:id', async (req, res) => {

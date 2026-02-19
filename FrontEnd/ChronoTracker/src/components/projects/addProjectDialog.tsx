@@ -1,5 +1,5 @@
 // src/components/projects/addProjectDialog.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -24,6 +24,38 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { API_BASE_URL } from "@/apiConfig";
 import { type Projeto } from "@/lib/projects";
+
+function AutoResizeTextarea({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
+  }, [value]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder || ""}
+      className="w-full p-2 border border-input rounded-md text-sm"
+      style={{ overflow: "hidden", resize: "none" }}
+    />
+  );
+}
+
 
 // --- Schema do formulário ---
 const formSchema = z.object({
@@ -350,7 +382,12 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
                     <FormItem>
                       <FormLabel>Descrição</FormLabel>
                       <FormControl>
-                        <Input placeholder="Descreva brevemente o projeto" {...field} />
+                        <AutoResizeTextarea
+  value={field.value || ""}
+  onChange={field.onChange}
+  placeholder="Descreva brevemente o projeto"
+/>
+
                       </FormControl>
                       <FormMessage />
                     </FormItem>

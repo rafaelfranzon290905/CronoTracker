@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "../ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { API_BASE_URL } from  "@/apiConfig";
 import {
@@ -47,8 +46,6 @@ function AutoResizeTextarea({ value, onChange, placeholder }: { value: string; o
   );
 }
 
-// --- Componentes UI --- //
-
 
 // --- Schema Zod --- //
 const activitySchema = z.object({
@@ -63,7 +60,7 @@ const activitySchema = z.object({
     ),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
-    status: z.boolean({ required_error: "é obrigatório colocar um status" }),
+    status: z.string().default("Pendente"),
 }).refine((data) => {
     if (!data.data_prevista_inicio || data.data_prevista_fim === "") return true;
     return new Date(data.data_prevista_inicio) <= new Date(data.data_prevista_fim);
@@ -104,7 +101,7 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
             data_prevista_inicio: new Date().toISOString().split('T')[0],
             data_prevista_fim: "",
             horas_previstas: 0,
-            status: true,
+            status: "Pendente",
             projeto_id: "",
             colaborador_ids: []
         },
@@ -125,7 +122,7 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                 descr_atividade: "",
                 data_prevista_inicio: new Date().toISOString().split('T')[0],
                 data_prevista_fim: "",
-                status: true,
+                status: "Pendente",
                 projeto_id: "",
                 colaborador_ids: []
             });
@@ -393,20 +390,25 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                             />
 
                             <FormField control={formActivities.control} name="status"
-                                render={({field}) => (<FormItem><FormLabel>Status</FormLabel>
-                                <div className="flex items-center gap-3 mt-2">
-                                    <FormControl>
-                                    <Switch 
-                                                className="w-10 h-6 block"
-                                                id="status"
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                    />
-                                    </FormControl>
-                                    <p className="font-medium">{field.value ? "Ativa" : "Inativa"}</p>
-                                </div>
-                                    
-                                    </FormItem>)}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Status</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione o status" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="bg-white">
+                                                <SelectItem value="Pendente">⏳ Pendente</SelectItem>
+                                                <SelectItem value="Em Andamento">🚀 Em Andamento</SelectItem>
+                                                <SelectItem value="Concluída">✅ Concluída</SelectItem>
+                                                <SelectItem value="Cancelado">🚫 Cancelado</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
                             {/* Status */}
                             {/* <FormField control={formActivities.control} name="status"

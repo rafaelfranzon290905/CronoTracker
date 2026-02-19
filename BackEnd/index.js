@@ -1010,7 +1010,12 @@ app.get('/lancamentos', async (req, res) => {
       },
       orderBy: { data_lancamento: 'desc' }
     });
-    res.status(200).json(lancamentos);
+
+    const formatados = lancamentos.map(item => ({
+      ...item,
+      data: item.data_lancamento, 
+    }));
+    res.status(200).json(formatados);
   } catch (error) {
     console.error('Erro ao buscar lançamentos:', error);
     res.status(500).json({ error: 'Erro ao listar horas.' });

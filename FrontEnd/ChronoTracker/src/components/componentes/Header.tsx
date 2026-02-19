@@ -49,7 +49,7 @@ export default function Header() {
                 {menuAberto ? <X className="h-10 w-10 text-white"/> : <Menu className="h-10 w-10 text-white"/>}
             </button>
             <img src={CronosBranco} alt="Logo do ChronoTracker " className="h-10 w-10 !bg-transparent mix-blend-normal"></img>
-            <User className="text-black h-10 w-10 bg-gray-300 p-1 rounded-3xl"/>
+            <User className="text-blue h-10 w-10 bg-gray-300 p-1 rounded-3xl"/>
         </div>
                 <div className={`text-white bg-botao-dark flex flex-col fixed top-14 left-0 h-screen p-2 transition-all duration-300 -translate-x-full ${menuAberto ? "w-75 translate-x-0" : ""}`}>
                     <Link to="/">
@@ -97,8 +97,8 @@ export default function Header() {
         <div className="h-10 md:hidden"></div>
 
         {/* Header padrão para telas maiores */}
-        <header className={`flex justify-between p-0 hidden mb-4 md:flex `}>
-            <div className="flex items-center">
+        <header className={`flex justify-end p-0 hidden mb-4 md:flex `}>
+            {/* <div className="flex items-center">
                 <div className="relative">
                     <Input type="text" placeholder="Buscar" className="pl-2 pr-4 py-2 w-64 rounded-2xl" />
                     <Search className="text-white absolute h-8 w-8 right-1 top-0.5 bg-botao-dark p-1 rounded-2xl" />
@@ -107,14 +107,14 @@ export default function Header() {
                 <Calendar className="text-white h-9 w-9 bg-botao-dark rounded-3xl p-2" />
                 <Button className="bg-botao-dark rounded-2xl text-white hover:bg-blue-700 mx-3">+ Criar</Button>
 
-            </div>
+            </div> */}
 
-            <div className="flex mx-3 items-center">
+            <div className="flex  items-right">
                 <Button onClick={toggleDarkMode} className="text-gray-400 h-9 w-9 bg-botao-config rounded-3xl mx-1 flex items-center justify-center" aria-label="Ativa darkmode" aria-expanded={darkmode}>
                     {darkmode ? <Sun className="scale-120"/> : <Moon className="scale-120"/>}
                 </Button>
-                <Bell className="text-gray-400 h-9 w-9 bg-botao-config p-2 rounded-3xl mx-1" />
-                <Settings className="text-gray-400 h-9 w-9 bg-botao-config p-2 rounded-3xl mx-1" />
+                {/* <Bell className="text-gray-400 h-9 w-9 bg-botao-config p-2 rounded-3xl mx-1" />
+                <Settings className="text-gray-400 h-9 w-9 bg-botao-config p-2 rounded-3xl mx-1" /> */}
                 <hr className="border border-muted-foreground h-9 mx-3" />
                 <h3 className="p-1">{userDisplayName}</h3>
                 <User className="text-black h-9 w-9 bg-botao-config p-1 rounded-3xl mx-3" />

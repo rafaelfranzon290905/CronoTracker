@@ -3,6 +3,26 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PlusCircle, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";    
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog, DialogContent, DialogDescription, DialogFooter,
+    DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+    Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "../ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { API_BASE_URL } from  "@/apiConfig";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 // --- AutoResizeTextarea --- //
 function AutoResizeTextarea({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
@@ -28,26 +48,19 @@ function AutoResizeTextarea({ value, onChange, placeholder }: { value: string; o
 }
 
 // --- Componentes UI --- //
-import { Button } from "@/components/ui/button";
-import {
-    Dialog, DialogContent, DialogDescription, DialogFooter,
-    DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "../ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { API_BASE_URL } from  "@/apiConfig";
+
 
 // --- Schema Zod --- //
 const activitySchema = z.object({
     nome_atividade: z.string().min(1, { message: "O nome é obrigatório." }),
     projeto_id: z.string().min(1, { message: "Selecione um projeto" }),
-    colaborador_id: z.string().optional().nullable(),
+    prioridade: z.enum(["muito alta", "alta", "normal", "baixa"]).default("normal"),
+    colaborador_ids:z.array(z.number()).default([]),
     descr_atividade: z.string().optional().nullable(),
+    horas_previstas: z.preprocess(
+        (val) => (val === "" ? 0 : Number(val)), 
+        z.number().min(0, "As horas não podem ser negativas")
+    ),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
     status: z.boolean({ required_error: "é obrigatório colocar um status" }),
@@ -78,19 +91,28 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
+    const [selectedColaboradores, setSelectedColaboradores] = useState<number[]>([]);
+    const [popoverOpen, setPopoverOpen] = useState(false);
+
 
     const formActivities = useForm<ActivityFormValues>({
         resolver: zodResolver(activitySchema),
         defaultValues: {
             nome_atividade: "",
+            prioridade: "normal",
             descr_atividade: "",
             data_prevista_inicio: new Date().toISOString().split('T')[0],
             data_prevista_fim: "",
+            horas_previstas: 0,
             status: true,
             projeto_id: "",
-            colaborador_id: "",
+            colaborador_ids: []
         },
     });
+
+    useEffect(() => {
+        formActivities.setValue("colaborador_ids", selectedColaboradores);
+    }, [selectedColaboradores, formActivities]);
 
     const selectedProjetoId = formActivities.watch("projeto_id");
     const projetoSelecionado = projetos.find(p => String(p.projeto_id) === selectedProjetoId);
@@ -105,7 +127,10 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                 data_prevista_fim: "",
                 status: true,
                 projeto_id: "",
+                colaborador_ids: []
             });
+            setSelectedColaboradores([]);
+            setPopoverOpen(false);
             formActivities.clearErrors();
             setApiError(null);
         }
@@ -134,7 +159,8 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
         const payload = {
             ...data,
             projeto_id: parseInt(data.projeto_id, 10),
-            colaborador_id: data.colaborador_id ? parseInt(data.colaborador_id, 10) : null,
+            horas_previstas: Number(data.horas_previstas) || 0,
+            colaborador_ids: selectedColaboradores,
             descr_atividade: data.descr_atividade || null,
             data_prevista_fim: data.data_prevista_fim || null,
         };
@@ -197,7 +223,7 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                 )}
                             />
 
-                            {/* Descrição com AutoResizeTextarea */}
+                            {/* Descrição */}
                             <FormField control={formActivities.control} name="descr_atividade"
                                 render={({ field }) => (
                                     <FormItem>
@@ -218,7 +244,12 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                             <FormField control={formActivities.control} name="projeto_id" render={({field}) => (
                                 <FormItem>
                                     <FormLabel>Projeto vinculado</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={(value) => {
+                                            field.onChange(value);
+                                            setSelectedColaboradores([]); 
+                                            setPopoverOpen(false); 
+                                            }}  
+                                            defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selecione um projeto"/>
@@ -238,40 +269,89 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                 </FormItem>
                             )}/>
 
-                            {/* Colaborador */}
-                            <FormField control={formActivities.control} name="colaborador_id" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Responsável</FormLabel>
-                                    <Select 
-                                        onValueChange={field.onChange} 
-                                        value={field.value || ""} 
-                                        disabled={!selectedProjetoId || equipeDisponivel.length === 0}
-                                    >
+                             {/* Colaborador */}
+                            <FormField
+                                control={formActivities.control}
+                                name="colaborador_ids"
+                                render={() => (
+                                    <FormItem >
+                                        <FormLabel>Responsáveis pela Atividade</FormLabel>
                                         <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={
-                                                    !selectedProjetoId 
-                                                    ? "Selecione um projeto primeiro" 
-                                                    : equipeDisponivel.length > 0 
-                                                        ? "Selecione o responsável" 
-                                                        : "Este projeto não tem equipe"
-                                                } />
-                                            </SelectTrigger>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full justify-between font-normal"
+                                                        disabled={equipeDisponivel.length === 0}
+                                                    >
+                                                        {selectedColaboradores.length > 0
+                                                            ? `${selectedColaboradores.length} selecionado(s)`
+                                                            : "Selecionar responsáveis..."}
+                                                        <PlusCircle className="ml-2 h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[300px] p-0" align="start" onWheel={(e) => e.stopPropagation()}>
+                                                    <ScrollArea className="h-60">
+                                                        <div className="p-2">
+                                                            {equipeDisponivel.map((v) => (
+                                                                <div key={v.colaboradores.colaborador_id} className="flex items-center space-x-2 p-2 hover:bg-slate-100 rounded-md">
+                                                                    <Checkbox
+                                                                        id={`colab-edit-${v.colaboradores.colaborador_id}`}
+                                                                        checked={selectedColaboradores.includes(v.colaboradores.colaborador_id)}
+                                                                        onCheckedChange={(checked) => {
+                                                                            if (checked) {
+                                                                                setSelectedColaboradores([...selectedColaboradores, v.colaboradores.colaborador_id]);
+                                                                            } else {
+                                                                                setSelectedColaboradores(selectedColaboradores.filter(id => id !== v.colaboradores.colaborador_id));
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <label htmlFor={`colab-edit-${v.colaboradores.colaborador_id}`} className="text-sm cursor-pointer flex-1">
+                                                                        {v.colaboradores.nome_colaborador}
+                                                                    </label>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </ScrollArea>
+                                                </PopoverContent>
+                                            </Popover>
                                         </FormControl>
-                                        <SelectContent>
-                                            {equipeDisponivel.map((vinc) => (
-                                                <SelectItem 
-                                                    key={vinc.colaboradores.colaborador_id} 
-                                                    value={String(vinc.colaboradores.colaborador_id)}
-                                                >
-                                                    {vinc.colaboradores.nome_colaborador}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {selectedColaboradores.map(id => {
+                                                const colab = equipeDisponivel.find(v => v.colaboradores.colaborador_id === id);
+                                                return (
+                                                    <Badge key={id} variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100">
+                                                        {colab?.colaboradores.nome_colaborador.split(' ')[0]}
+                                                    </Badge>
+                                                );
+                                            })}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField control={formActivities.control} name="prioridade"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Prioridade</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione a prioridade" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="bg-white">
+                                                <SelectItem value="muito alta">🔴 Muito Alta</SelectItem>
+                                                <SelectItem value="alta">🟠 Alta</SelectItem>
+                                                <SelectItem value="normal">🔵 Normal</SelectItem>
+                                                <SelectItem value="baixa">⚪ Baixa</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                             {/* Datas e status */}
                             <FormField control={formActivities.control} name="data_prevista_inicio"
@@ -292,6 +372,20 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                         <FormLabel>Data Prevista de Fim</FormLabel>
                                         <FormControl>
                                             <Input type="date" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={formActivities.control}
+                                name="horas_previstas"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horas Previstas para a Atividade</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" placeholder="Ex: 10" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

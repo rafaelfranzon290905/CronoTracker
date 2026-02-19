@@ -39,8 +39,9 @@ function Clientes() {
   
   const { isGerente } = usePermissions();
 
-  const fetchClientes = async () => {
-    setLoading(true);
+  const fetchClientes = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/clientes`);
       const data = await response.json();
@@ -68,7 +69,7 @@ function Clientes() {
 
       if (res.ok) {
         toast.success("Cliente removido com sucesso.");
-        fetchClientes();
+        await fetchClientes(false);
       } else {
         toast.error(data.error || "Não foi possível excluir o cliente pois ele possui projetos ativos.");
       }

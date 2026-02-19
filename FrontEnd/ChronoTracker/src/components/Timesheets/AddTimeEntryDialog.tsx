@@ -3,8 +3,6 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Clock, FileText } from "lucide-react";
-// Importe seus componentes de formulário aqui (Selects de projetos, inputs de hora, etc)
-
 export function AddTimeEntryDialog({ onSuccess }: { onSuccess: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [modo, setModo] = useState<'form' | 'relogio'>('form');

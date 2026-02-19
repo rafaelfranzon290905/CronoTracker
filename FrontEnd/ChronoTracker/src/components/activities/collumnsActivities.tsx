@@ -122,25 +122,6 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     enableGlobalFilter: true,
   },
 
-  // 2. COLUNA: Projeto Vinculado 
-  // NOTA: Se a API retornar o objeto de projeto, troque "projeto_id" por "projetos.nome"
-  {
-    accessorKey: "projetos.nome_projeto",
-    header: "Projeto Vinculado",
-    enableGlobalFilter: true,
-    cell: ({ row }) => {
-      const atividade = row.original;
-      return (
-        <Link
-          to={`/atividades/${atividade.atividade_id}`}
-          className="font-medium text-blue-950 hover:text-blue-800 hover:underline transition-all decoration-2 underline-offset-4 flex items-center justify-center gap-1"
-        >
-          {atividade.nome_atividade}
-        </Link>
-      );
-    },
-    enableHiding: false,
-  },
   {
     accessorKey: "colaboradores_atividades",
     header: "Responsáveis",

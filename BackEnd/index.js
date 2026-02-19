@@ -1416,7 +1416,6 @@ app.get('/dashboard/stats/:usuario_id', async (req, res) => {
     });
 
     const totalDespesas = Number(despesasMes._sum.valor || 0);
-    console.log("Soma total de despesas (Global):", totalDespesas);
 
     res.json({
       totalHoje: Number(totalHoje.toFixed(1)),

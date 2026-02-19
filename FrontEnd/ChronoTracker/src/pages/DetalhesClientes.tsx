@@ -91,10 +91,14 @@ export default function DetalhesCliente() {
     cliente?.projetos?.filter((p: any) => p.status)?.length || 0;
 
   const totalHoras =
-    cliente?.projetos?.reduce(
-      (acc: number, p: any) => acc + (p.horas_gastas || 0),
-      0
-    ) || 0;
+    cliente?.projetos?.reduce((acc: number, projeto: any) => {
+      const somaDoProjeto =
+        projeto.lancamentos_de_horas?.reduce(
+          (total: number, lancamento: any) => total + Number(lancamento.duracao_total || 0),
+          0
+        ) || 0;
+      return acc + somaDoProjeto;
+    }, 0) || 0;
 
   const totalDespesas =
     cliente?.projetos?.reduce((acc: number, p: any) => {
@@ -118,6 +122,13 @@ export default function DetalhesCliente() {
       if (!p.horas_previstas) return false;
       return (p.horas_gastas || 0) > p.horas_previstas;
     })?.length || 0;
+
+    const projectStatusConfig: any = {
+        "Orçando": "bg-amber-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluído": "bg-green-600",
+        "Cancelado": "bg-red-600",
+    };
 
   return (
     <div className="flex h-screen w-full">
@@ -181,14 +192,8 @@ export default function DetalhesCliente() {
                           {proj.nome_projeto}
                         </span>
 
-                        <Badge
-                          className={
-                            proj.status
-                              ? "bg-green-600 text-white"
-                              : "bg-red-600 text-white"
-                          }
-                        >
-                          {proj.status ? "Ativo" : "Inativo"}
+                        <Badge className={`${projectStatusConfig[proj.status] || "bg-slate-400"} text-white border-none`}>
+                            {proj.status || "Orçando"}
                         </Badge>
                       </div>
                     ))

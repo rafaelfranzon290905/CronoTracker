@@ -52,7 +52,11 @@ app.get('/clientes/:id', async (req, res) => {
       include: {
         projetos: {
           include: {
-            despesas: true
+            despesas: true,
+            lancamentos_de_horas: true
+          },
+          orderBy: {
+            projeto_id: 'desc'
           }
         }
       }
@@ -522,7 +526,7 @@ app.get('/debug/atividade-colaboradores', async (req, res) => {
 
 // POST /atividades
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
+  const { status, nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
@@ -563,7 +567,7 @@ app.post('/atividades', async (req, res) => {
     data_prevista_fim: dataFim,
     horas_previstas: hPrevistasSolicitadas,
     horas_gastas: 0,
-    status: statusBoolean,
+    status: status || "Pendente",
     projetos: {
       connect: { projeto_id: projetoIdNumerico }
     },
@@ -644,7 +648,7 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
         horas_previstas: hPrevistasNovas,
-        status: Boolean(status),
+        status: status,
         projetos: { connect: { projeto_id: idProj } },
         // responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
         colaboradores_atividades: {
@@ -708,7 +712,7 @@ app.get('/projetos', async (req, res) => {
     // console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
-        clientes: { select: { nome_cliente: true } },
+        clientes: { select: { cliente_id: true, nome_cliente: true } },
         atividades: { select: { atividade_id: true, nome_atividade: true, status: true } },
         projeto_colaboradores: { include: { colaboradores: true } }
       },
@@ -790,7 +794,7 @@ app.post('/projetos', async (req, res) => {
         data_inicio: inicio,
         data_fim: fim,
         horas_previstas: horas_previstas ? parseInt(horas_previstas) : 0,
-        status: status ?? true,
+        status: status || "Orçando",
         projeto_colaboradores: {
           create: (colaboradores_ids || []).map(id => ({ colaborador_id: id }))
         }
@@ -817,7 +821,7 @@ app.put('/projetos/:id', async (req, res) => {
         data_inicio: data_inicio ? new Date(data_inicio) : undefined,
         data_fim: data_fim ? new Date(data_fim) : undefined,
         horas_previstas: horas_previstas !== undefined ? parseInt(horas_previstas) : undefined,
-        status,
+        status: status,
         projeto_colaboradores: {
           deleteMany: {},
           create: (colaboradores_ids || []).map(idColab => ({ colaborador_id: parseInt(idColab) }))
@@ -871,7 +875,9 @@ app.post('/despesas', async (req, res) => {
   try {
     const projeto = await prisma.projetos.findUnique({ where: { projeto_id: Number(projeto_id) } });
     if (!projeto) return res.status(404).json({ error: "Projeto não encontrado." });
-    if (projeto.status === false) return res.status(400).json({ error: "Projeto inativo." });
+    if (projeto.status === "Cancelado") {
+        return res.status(400).json({ error: "Não é permitido lançar despesas em projetos cancelados." });
+    }
 
     const novaDespesa = await prisma.despesas.create({
       data: {
@@ -1410,7 +1416,6 @@ app.get('/dashboard/stats/:usuario_id', async (req, res) => {
     });
 
     const totalDespesas = Number(despesasMes._sum.valor || 0);
-    console.log("Soma total de despesas (Global):", totalDespesas);
 
     res.json({
       totalHoje: Number(totalHoje.toFixed(1)),

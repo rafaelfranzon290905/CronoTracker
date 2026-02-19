@@ -69,6 +69,12 @@ const formatarHorasDecimais = (totalDecimal: number | null | undefined): string 
 //   }
 // };
 
+const projectStatusConfig: any = {
+    "Orçando": "bg-amber-500",      
+    "Em Andamento": "bg-blue-600",   
+    "Concluído": "bg-green-600",
+    "Cancelado": "bg-red-600 hover:bg-red-700",    
+};
 
 export const getColumns = (
   clientes: { cliente_id: number; nome_cliente: string }[],
@@ -105,25 +111,29 @@ export const getColumns = (
       },
     },
    {
-  accessorKey: "clientes.nome_cliente",
-  header: "Cliente",
-  cell: ({ row }) => {
-    const cliente = row.original.clientes;
+      accessorKey: "clientes.nome_cliente",
+      header: "Cliente",
+      cell: ({ row }) => {
+        const projeto = row.original;
+        const clienteObj = projeto.clientes;
 
-    if (!cliente) {
-      return <Badge variant="outline">Sem Cliente</Badge>;
-    }
+        const idDoCliente = clienteObj?.cliente_id || projeto.cliente_id;
+        const nomeDoCliente = clienteObj?.nome_cliente || "Ver Detalhes";
+      
 
-    return (
-      <Link
-        to={`/clientes/${cliente.cliente_id}`}
-        className="font-medium text-blue-950 hover:underline"
-      >
-        {cliente.nome_cliente}
-      </Link>
-    );
-  },
-},
+        if (!idDoCliente) {
+          return <Badge variant="outline" className="text-slate-500">Sem Cliente</Badge>;
+        }
+        return (
+          <Link
+            to={`/clientes/${idDoCliente}`}
+            className="font-medium text-blue-950 hover:text-blue-800 hover:underline transition-colors"
+          >
+            {nomeDoCliente}
+          </Link>
+        );
+      },
+    },
     {
       accessorKey: "equipe",
       header: "Equipe",
@@ -199,12 +209,11 @@ export const getColumns = (
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status") as boolean;
+        const status = row.getValue("status") as string;
         return (
-          <Badge variant={status ? "default" : "destructive"}
-            className={!status ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}>
-            {status ? "Ativo" : "Inativo"}
-          </Badge>
+          <Badge className={`${projectStatusConfig[status] || "bg-gray-400"} text-white border-none`}>
+        {status}
+      </Badge>
         );
       },
     },

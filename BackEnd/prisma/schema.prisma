@@ -16,7 +16,7 @@ model atividades {
   prioridade           String?                @default("normal") @db.VarChar(20)
   data_prevista_inicio DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
   data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
-  status               Boolean?               @default(true)
+  status               String                 @default("Pendente") @db.VarChar(20)
   colaborador_id       Int?
   horas_previstas      Float?                 @default(0)
   horas_gastas         Float?                 @default(0)
@@ -87,7 +87,7 @@ model projetos {
   descricao             String
   data_inicio           DateTime?               @default(now()) @db.Timestamp(6)
   data_fim              DateTime?               @default(now()) @db.Timestamp(6)
-  status                Boolean?                @default(true)
+  status                String                  @default("Orçando") @db.VarChar(20)
   horas_previstas       Int?                    @default(0)
   horas_gastas          Float?                  @default(0)
   atividades            atividades[]

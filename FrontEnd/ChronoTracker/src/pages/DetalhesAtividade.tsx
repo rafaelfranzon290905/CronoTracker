@@ -101,6 +101,12 @@ export default function DetalhesAtividade() {
         "normal": { color: "bg-blue-500", label: "Normal" },
         "baixa": { color: "bg-slate-500", label: "Baixa" },
     };
+    const statusConfig: any = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
+    };
 
     return (
         <div className="flex h-screen w-full">
@@ -127,8 +133,8 @@ export default function DetalhesAtividade() {
                         }
                     >
                         <div className="flex items-center gap-3">
-                            <Badge className={atividade.status ? "bg-green-600" : "bg-red-600"}>
-                                {atividade.status ? "Ativa" : "Inativa"}
+                            <Badge className={`${statusConfig[atividade.status] || "bg-gray-400"} text-white border-none`}>
+                                {atividade.status}
                             </Badge>
                             {isGerente && (
                                 <Button

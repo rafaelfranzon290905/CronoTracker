@@ -708,7 +708,7 @@ app.get('/projetos', async (req, res) => {
     // console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
-        clientes: { select: { nome_cliente: true } },
+        clientes: { select: { cliente_id: true, nome_cliente: true } },
         atividades: { select: { atividade_id: true, nome_atividade: true, status: true } },
         projeto_colaboradores: { include: { colaboradores: true } }
       },

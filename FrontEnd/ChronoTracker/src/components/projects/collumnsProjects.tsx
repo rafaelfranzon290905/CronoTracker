@@ -111,25 +111,29 @@ export const getColumns = (
       },
     },
    {
-  accessorKey: "clientes.nome_cliente",
-  header: "Cliente",
-  cell: ({ row }) => {
-    const cliente = row.original.clientes;
+      accessorKey: "clientes.nome_cliente",
+      header: "Cliente",
+      cell: ({ row }) => {
+        const projeto = row.original;
+        const clienteObj = projeto.clientes;
 
-    if (!cliente) {
-      return <Badge variant="outline">Sem Cliente</Badge>;
-    }
+        const idDoCliente = clienteObj?.cliente_id || projeto.cliente_id;
+        const nomeDoCliente = clienteObj?.nome_cliente || "Ver Detalhes";
+      
 
-    return (
-      <Link
-        to={`/clientes/${cliente.nome_cliente}`}
-        className="font-medium text-blue-950 hover:underline"
-      >
-        {cliente.nome_cliente}
-      </Link>
-    );
-  },
-},
+        if (!idDoCliente) {
+          return <Badge variant="outline" className="text-slate-500">Sem Cliente</Badge>;
+        }
+        return (
+          <Link
+            to={`/clientes/${idDoCliente}`}
+            className="font-medium text-blue-950 hover:text-blue-800 hover:underline transition-colors"
+          >
+            {nomeDoCliente}
+          </Link>
+        );
+      },
+    },
     {
       accessorKey: "equipe",
       header: "Equipe",

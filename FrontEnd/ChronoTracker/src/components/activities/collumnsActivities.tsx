@@ -122,25 +122,6 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     enableGlobalFilter: true,
   },
 
-  // 2. COLUNA: Projeto Vinculado 
-  // NOTA: Se a API retornar o objeto de projeto, troque "projeto_id" por "projetos.nome"
-  {
-    accessorKey: "projetos.nome_projeto",
-    header: "Projeto Vinculado",
-    enableGlobalFilter: true,
-    cell: ({ row }) => {
-      const atividade = row.original;
-      return (
-        <Link
-          to={`/atividades/${atividade.atividade_id}`}
-          className="font-medium text-blue-950 hover:text-blue-800 hover:underline transition-all decoration-2 underline-offset-4 flex items-center justify-center gap-1"
-        >
-          {atividade.nome_atividade}
-        </Link>
-      );
-    },
-    enableHiding: false,
-  },
   {
     accessorKey: "colaboradores_atividades",
     header: "Responsáveis",
@@ -265,12 +246,17 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const statusBool = row.getValue("status") as boolean;
+      const statusBool = row.getValue("status") as string;
+      const variantMap: Record<string, string> = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
+      };
       return (
-        <Badge variant={statusBool ? "default" : "secondary"}
-          className={!statusBool ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}>
-          {statusBool ? "Ativo" : "Inativo"}
-        </Badge>
+        <Badge className={`${variantMap[statusBool] || "bg-gray-400"} text-white border-none`}>
+        {statusBool}
+      </Badge>
       );
     },
   },

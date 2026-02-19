@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { API_BASE_URL } from "@/apiConfig";
 import { type Projeto } from "@/lib/projects";
@@ -25,7 +25,6 @@ import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { AddExpenseDialog } from "@/components/projects/AddExpenseDialog";
 import { ListaDespesasProjeto } from "@/components/projects/ListaDespesasProjeto";
-import { Link } from "react-router-dom";
 
 export default function DetalhesProjeto() {
     const { id } = useParams();
@@ -93,6 +92,20 @@ export default function DetalhesProjeto() {
         </div>
     );
 
+    const statusConfig: any = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
+    };
+
+    const projectStatusConfig: any = {
+        "Orçando": "bg-amber-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluído": "bg-green-600",
+        "Cancelado": "bg-red-600",
+    };
+
     return (
         <div className="flex h-screen w-full">
             <SideBar />
@@ -114,11 +127,24 @@ export default function DetalhesProjeto() {
                         <>
                             <PageHeader
                                 title={projeto.nome_projeto}
-                                subtitle={`Cliente: ${projeto.clientes?.nome_cliente || "Não informado"}`}
+                                subtitle={<div className="flex items-center gap-1">
+                                        <span>Cliente: </span>
+                                        {projeto.cliente_id ? (
+                                            <Link 
+                                                to={`/clientes/${projeto.cliente_id}`} 
+                                                className="text-blue-850 hover:underline hover:text-blue-800 transition-colors font-medium"
+                                            >
+                                                {projeto.clientes?.nome_cliente || "Ver Detalhes"}
+                                            </Link>
+                                        ) : (
+                                            <span className="text-slate-500">Não informado</span>
+                                        )}
+                                    </div>
+                                }
                             >
                                 <div className="flex items-center gap-3">
-                                    <Badge className={projeto.status ? "bg-green-600" : "bg-red-600"}>
-                                        {projeto.status ? "Ativo" : "Inativo"}
+                                    <Badge className={`${projectStatusConfig[projeto.status] || "bg-slate-400"} text-white border-none`}>
+                                        {projeto.status || "Orçando"}
                                     </Badge>
                                     {projeto.status && user.colaborador_id && (
                                         <AddExpenseDialog
@@ -181,13 +207,9 @@ export default function DetalhesProjeto() {
                                                         <div className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm hover:border-blue-200 transition-all">
                                                             <span className="text-sm font-medium">{atv.nome_atividade}</span>
                                                             <Badge
-                                                                variant={atv.status ? "default" : "secondary"}
-                                                                className={!atv.status
-                                                                    ? "bg-red-600 hover:bg-red-700 text-white"
-                                                                    : "bg-green-600 hover:bg-green-700 text-white"
-                                                                }
+                                                                className={`${statusConfig[atv.status] || "bg-gray-400"} text-white border-none`}
                                                             >
-                                                                {atv.status ? "Ativa" : "Inativa"}
+                                                                {atv.status || "Pendente"}
                                                             </Badge>
                                                         </div>
                                                     </Link>

@@ -25,6 +25,7 @@ import { AddProjectDialog } from "@/components/projects/addProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { AddExpenseDialog } from "@/components/projects/AddExpenseDialog";
 import { ListaDespesasProjeto } from "@/components/projects/ListaDespesasProjeto";
+import { Link } from "react-router-dom";
 
 export default function DetalhesProjeto() {
     const { id } = useParams();
@@ -35,6 +36,15 @@ export default function DetalhesProjeto() {
     const [projeto, setProjeto] = useState<Projeto | null>(null);
     const [clientes, setClientes] = useState<any[]>([])
     const [loading, setLoading] = useState(true);
+    const formatarHorasDecimais = (totalDecimal: number | null | undefined): string => {
+        const valor = totalDecimal || 0;
+        const horas = Math.floor(valor);
+        const minutos = Math.round((valor - horas) * 60);
+        const horasPad = String(horas).padStart(2, '0');
+        const minutosPad = String(minutos).padStart(2, '0');
+        return `${horasPad}:${minutosPad}`;
+    };
+
     const loadData = async () => {
         try {
             setLoading(true);
@@ -60,6 +70,14 @@ export default function DetalhesProjeto() {
     useEffect(() => {
         loadData();
     }, [id]);
+
+    const totalDespesasAprovadas = useMemo(() => {
+        if (!projeto?.despesas) return 0;
+        
+        return projeto.despesas
+            .filter(d => d.status_aprovacao === "Aprovada")
+            .reduce((acc, d) => acc + (Number(d.valor) || 0), 0);
+    }, [projeto?.despesas]);
 
     const progressoConsumido = useMemo(() => {
         if (!projeto || !projeto.horas_previstas || projeto.horas_previstas === 0) return 0;
@@ -159,23 +177,20 @@ export default function DetalhesProjeto() {
                                         <CardContent className="space-y-3">
                                             {projeto.atividades && projeto.atividades.length > 0 ? (
                                                 projeto.atividades.map((atv) => (
-                                                    <div key={atv.atividade_id} className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm hover:border-blue-200 transition-all">
-                                                        <span
-  onClick={() => navigate(`/atividades/${atv.atividade_id}`)}
-  className="text-sm font-medium text-blue-900 hover:underline cursor-pointer"
->
-  {atv.nome_atividade}
-</span>
-                                                        <Badge
-                                                            variant={atv.status ? "default" : "secondary"}
-                                                            className={!atv.status
-                                                                ? "bg-red-600 hover:bg-red-700 text-white"
-                                                                : "bg-green-600 hover:bg-green-700 text-white"
-                                                            }
-                                                        >
-                                                            {atv.status ? "Ativa" : "Inativa"}
-                                                        </Badge>
-                                                    </div>
+                                                    <Link key={atv.atividade_id} to={`/atividades/${atv.atividade_id}`} className="block group">
+                                                        <div className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm hover:border-blue-200 transition-all">
+                                                            <span className="text-sm font-medium">{atv.nome_atividade}</span>
+                                                            <Badge
+                                                                variant={atv.status ? "default" : "secondary"}
+                                                                className={!atv.status
+                                                                    ? "bg-red-600 hover:bg-red-700 text-white"
+                                                                    : "bg-green-600 hover:bg-green-700 text-white"
+                                                                }
+                                                            >
+                                                                {atv.status ? "Ativa" : "Inativa"}
+                                                            </Badge>
+                                                        </div>
+                                                    </Link>
                                                 ))
                                             ) : (
                                                 <p className="text-sm text-muted-foreground italic text-center py-4">Nenhuma atividade vinculada.</p>
@@ -195,15 +210,22 @@ export default function DetalhesProjeto() {
                                         <CardContent className="space-y-4">
                                             {projeto.projeto_colaboradores && projeto.projeto_colaboradores.length > 0 ? (
                                                 projeto.projeto_colaboradores.map((pc, idx) => (
-                                                    <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-                                                        <div className="h-9 w-9 rounded-full bg-blue-950 flex items-center justify-center text-xs text-white font-bold ring-2 ring-blue-100">
-                                                            {pc.colaboradores.nome_colaborador.substring(0, 2).toUpperCase()}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-semibold">{pc.colaboradores.nome_colaborador}</span>
-                                                            <span className="text-[10px] text-muted-foreground">Colaborador</span>
-                                                        </div>
-                                                    </div>
+                                                    <Link 
+                                                        key={idx} 
+                                                        to={`/Collaborators/${pc.colaboradores.colaborador_id}`}
+                                                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-all group border border-transparent hover:border-blue-100"
+                                                    >
+                                                            <div className="h-9 w-9 rounded-full bg-blue-950 flex items-center justify-center text-xs text-white font-bold ring-2 ring-blue-100">
+                                                                {pc.colaboradores.nome_colaborador.substring(0, 2).toUpperCase()}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-sm font-semibold">{pc.colaboradores.nome_colaborador}</span>
+                                                                <span className="text-[10px] text-muted-foreground">{pc.colaboradores.cargo || "Colaborador"}</span>
+                                                            </div>
+                                                            <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Clock className="h-3 w-3 text-blue-400" />
+                                                            </div>
+                                                    </Link>
                                                 ))
                                             ) : (
                                                 <p className="text-xs text-muted-foreground italic">Nenhum colaborador alocado.</p>
@@ -215,7 +237,7 @@ export default function DetalhesProjeto() {
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-muted-foreground italic">Consumo de Horas</span>
                                                     <span className="font-bold text-blue-900">
-                                                        {projeto.horas_gastas?.toFixed(1) || 0}h / {projeto.horas_previstas || 0}h
+                                                        {formatarHorasDecimais(projeto.horas_gastas)}h / {formatarHorasDecimais(projeto.horas_previstas)}h
                                                     </span>
                                                 </div>
 
@@ -248,7 +270,8 @@ export default function DetalhesProjeto() {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="text-2xl font-bold text-blue-700">
-                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(projeto.total_despesas ?? 0)}
+                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+                                                    .format(totalDespesasAprovadas)}
                                             </div>
                                             <p className="text-[10px] text-muted-foreground mt-1 underline decoration-blue-200">
                                                 Custo direto vinculado ao projeto

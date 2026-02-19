@@ -10,6 +10,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { getProjetosColumns } from "@/components/projects/collumnsProjects";
 import { API_BASE_URL } from  "@/apiConfig"
 import { Loader2 } from "lucide-react";
+import { Toaster } from "@/components/ui/sonner";
 
 
 // export interface Projeto {
@@ -81,6 +82,7 @@ function Projetos() {
 
   return (
     <div className="flex h-screen w-full">
+      
       <SideBar />
       <div className="flex-1 p-6 overflow-auto">
         <Header />

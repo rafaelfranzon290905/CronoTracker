@@ -39,6 +39,7 @@
     "es-object-atoms": "^1.1.1",
     "escape-html": "^1.0.3",
     "etag": "^1.8.1",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "exsolve": "^1.0.7",
     "fast-check": "^3.23.2",

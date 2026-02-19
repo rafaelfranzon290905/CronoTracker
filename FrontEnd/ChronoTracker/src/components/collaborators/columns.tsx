@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ListTodo, Info, Briefcase } from "lucide-react"
+import { Link } from "react-router-dom";
 
 
 export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
@@ -36,11 +37,17 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
     )
   },
     cell: ({ row }) => {
+      const colaborador = row.original;
       const isAtivo = row.original.status;
       return (
-        <div className={`font-medium capitalize ${!isAtivo ? "text-muted-foreground line-through opacity-70" : ""}`}>
-          {row.getValue("nome_colaborador")}
-        </div>
+       <Link
+          to={`/collaborators/${colaborador.colaborador_id}`}
+          className={`font-medium text-blue-950 hover:text-blue-800 hover:underline transition-all decoration-2 underline-offset-4 ${
+            !isAtivo ? "text-muted-foreground line-through opacity-70" : ""
+          }`}
+        >
+          {colaborador.nome_colaborador}
+        </Link>
       );
     },
   },
@@ -57,15 +64,15 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
   },
 
    // 5. Coluna de email
-  {
-    accessorKey: "email",
-    header: "E-mail",
-    cell: ({ row }) => {
-      const email = row.getValue("email") as string;
-      // Trocamos 'capitalize' por 'lowercase' para garantir o padrão de e-mail
-      return <div className="font-medium lowercase">{email}</div>
-    },
-  },
+  // {
+  //   accessorKey: "email",
+  //   header: "E-mail",
+  //   cell: ({ row }) => {
+  //     const email = row.getValue("email") as string;
+  //     // Trocamos 'capitalize' por 'lowercase' para garantir o padrão de e-mail
+  //     return <div className="font-medium lowercase">{email}</div>
+  //   },
+  // },
   // Coluna de projetos associados
   {
   id: "projetos",
@@ -146,21 +153,21 @@ export const columns = (isGerente: boolean): ColumnDef<Collaborador>[] => [
   },
 },
     // 6. Coluna de Data de admissao formatada
-  {
-    accessorKey: "data_admissao",
-    header: "Data de Admissão",
-    cell: ({ row }) => {
-      const dataString = row.getValue("data_admissao") as string | null;
-      if (!dataString) return <span className="text-muted-foreground text-sm">Pendente</span>;
-      const data = new Date(dataString);
-      const dataFormatada = data.toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      return <span>{dataFormatada}</span>;
-    },
-  },
+  // {
+  //   accessorKey: "data_admissao",
+  //   header: "Data de Admissão",
+  //   cell: ({ row }) => {
+  //     const dataString = row.getValue("data_admissao") as string | null;
+  //     if (!dataString) return <span className="text-muted-foreground text-sm">Pendente</span>;
+  //     const data = new Date(dataString);
+  //     const dataFormatada = data.toLocaleDateString("pt-BR", {
+  //       day: "2-digit",
+  //       month: "2-digit",
+  //       year: "numeric",
+  //     });
+  //     return <span>{dataFormatada}</span>;
+  //   },
+  // },
   
 // 6. Coluna de Status 
   {

@@ -522,7 +522,7 @@ app.get('/debug/atividade-colaboradores', async (req, res) => {
 
 // POST /atividades
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
+  const { status, nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
@@ -563,7 +563,7 @@ app.post('/atividades', async (req, res) => {
     data_prevista_fim: dataFim,
     horas_previstas: hPrevistasSolicitadas,
     horas_gastas: 0,
-    status: statusBoolean,
+    status: status || "Pendente",
     projetos: {
       connect: { projeto_id: projetoIdNumerico }
     },
@@ -644,7 +644,7 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
         horas_previstas: hPrevistasNovas,
-        status: Boolean(status),
+        status: status,
         projetos: { connect: { projeto_id: idProj } },
         // responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
         colaboradores_atividades: {

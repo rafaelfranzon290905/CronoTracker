@@ -265,12 +265,17 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const statusBool = row.getValue("status") as boolean;
+      const statusBool = row.getValue("status") as string;
+      const variantMap: Record<string, string> = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
+      };
       return (
-        <Badge variant={statusBool ? "default" : "secondary"}
-          className={!statusBool ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}>
-          {statusBool ? "Ativo" : "Inativo"}
-        </Badge>
+        <Badge className={`${variantMap[statusBool] || "bg-gray-400"} text-white border-none`}>
+        {statusBool}
+      </Badge>
       );
     },
   },

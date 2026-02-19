@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2, PlusCircle } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -59,7 +58,7 @@ const editActivitySchema = z.object({
     ),
     data_prevista_inicio: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de início inválida." }),
     data_prevista_fim: z.string().refine((val) => val === "" || !isNaN(Date.parse(val)), { message: "Data de fim inválida." }).or(z.literal("")),
-    status: z.boolean({ required_error: "O status é obrigatório." }), 
+    status: z.string().default("Pendente"), 
     prioridade: z.enum(["muito alta", "alta", "normal", "baixa"]),
 }).refine((data) => {
     if (!data.data_prevista_inicio || data.data_prevista_fim === "") return true;
@@ -77,7 +76,7 @@ export type AtividadesInitialData = {
     descr_atividade: string | null;
     data_prevista_inicio: string | null;
     data_prevista_fim: string | null; 
-    status: boolean; 
+    status: "Pendente" | "Em Andamento" | "Concluída" | "Cancelado"; 
     projeto_id: number;
     colaboradores_atividades?: Array<{
         colaborador_id: number;
@@ -388,21 +387,23 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Status</FormLabel>
-                                        <div className="flex items-center gap-3 mt-2">
-                                        <FormControl>
-                                            <Switch 
-                                                className="w-10 h-6 block"
-                                                id="status"
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <p className="font-medium">{field.value ? "Ativa" : "Inativa"}</p>
-                                        </div>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione o status" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="bg-white">
+                                                <SelectItem value="Pendente">⏳ Pendente</SelectItem>
+                                                <SelectItem value="Em Andamento">🚀 Em Andamento</SelectItem>
+                                                <SelectItem value="Concluída">✅ Concluída</SelectItem>
+                                                <SelectItem value="Cancelado">🚫 Cancelado</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
-
                             {apiError && (<p className="text-sm font-medium text-red-500 mt-2">{apiError}</p>)}
 
                         </form>

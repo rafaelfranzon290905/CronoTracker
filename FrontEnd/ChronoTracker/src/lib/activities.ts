@@ -6,7 +6,7 @@ export type Atividades = {
   descr_atividade: string;
   data_prevista_inicio: string | null; 
   data_prevista_fim: string | null;
-  status: boolean; 
+  status: "Pendente" | "Em Andamento" | "Concluída" | "Cancelado"; 
   horas_previstas: number;
   colaboradores_atividades: Array<{
     colaborador_id: number; 

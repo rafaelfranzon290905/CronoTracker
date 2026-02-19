@@ -1,9 +1,17 @@
 # ChronoTracker
 Repositório referente ao projeto ChronoTracker desenvolvido em colaboração com a Sinosbyte como parte do programa de imersão do projeto Residência em TIC 55 da Brisa, sob orientação.
-O ChronoTracker é uma solução completa de controle de horas, permitindo que colaboradores registrem suas atividades em tempo real enquanto gestores acompanham a produtividade e aprovam lançamentos através de uma interface intuitiva. A aplicação centraliza todas as informações pertinentes para gestão de negócios, contando com registros de clientes, projetos, atividades, colaboradores, usuários e despesas, além disso, é capaz de gerar relatórios .
+O ChronoTracker é uma solução completa de controle de horas, permitindo que colaboradores registrem suas atividades em tempo real enquanto gestores acompanham a produtividade e aprovam lançamentos através de uma interface intuitiva. A aplicação centraliza todas as informações pertinentes para gestão de negócios, contando com registros de clientes, projetos, atividades, colaboradores, usuários e despesas, além disso, é capaz de gerar relatórios.
+
+## Contribuintes
+- Bianca da Silva Franzon - rafaelfranzon2909
+- Fábio Alves da Silva - fabioalves10
+- Izabel Santos (Orientadora) - izabelsantostic55
+- Letícia Carvalho Abreu - abreuleticia
+- Renata Alvez Pinto de Souza - rntvls
+- Rafaela Brietzke de Lima - RafaBrietzke
 
 # Demonstração
-O sistema está disponível para visualização através do Vercel, com o banco de dados sendo hospedado no Render: https://crono-tracker-a5hm.vercel.app/
+O sistema está disponível para visualização através do Vercel, com o banco de dados sendo hospedado pelo Neon e o Backend hospedado pelo Render: https://crono-tracker-a5hm.vercel.app/
 
 ## Tecnologias utilizadas
 - Frontend: **React + Vite**
@@ -90,10 +98,4 @@ Acesse o link disponibilizado no terminal e agora você tem acesso ao site.
 - Colaborador (acesso a todas as páginas de listagens e a página de timeTracking)
 - Gerente (Acesso a todas as páginas e opções de adição, exclusão e edição de entradas nas páginas de listagens, visão das horas de toda a equipe no Timesheet e direito a reprovar horas inseridas)
 
-## Contribuintes
-- Bianca da Silva Franzon
-- Fábio Alves da Silva
-- Izabel Santos (Orientadora)
-- Letícia Carvalho
-- Renata Alvez Pint de Souza
-- Rafaela Brietzke de Lima
+

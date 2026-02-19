@@ -14,6 +14,7 @@ import { Toaster } from 'sonner'
 import LancamentoPage from './components/Timesheets/lancamentoForm.tsx'
 import DetalhesProjeto from './pages/DetalhesProjeto.tsx'
 import GestaoDespesas from './pages/GestaoDespesas.tsx'
+import DetalhesClientes from "@/pages/DetalhesClientes";
 import Relatorios from './pages/Relatorios.tsx'
 import DetalhesAtividade from "./pages/DetalhesAtividade";
 import RouteTracker from './components/componentes/RouteTracker.tsx'
@@ -38,6 +39,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path='/usuarios' element={<UsersPage/>}/>
         <Route path="/TimeSheet/Lancamentos" element={<LancamentoPage/>}/>
         <Route path="/gestao-despesas" element={<GestaoDespesas />} />
+        <Route path="/clientes/:id" element={<DetalhesClientes />} />
         <Route path="/Relatorios" element={<Relatorios/>}/>
       </Routes>
     </BrowserRouter>

@@ -91,10 +91,14 @@ export default function DetalhesCliente() {
     cliente?.projetos?.filter((p: any) => p.status)?.length || 0;
 
   const totalHoras =
-    cliente?.projetos?.reduce(
-      (acc: number, p: any) => acc + (p.horas_gastas || 0),
-      0
-    ) || 0;
+    cliente?.projetos?.reduce((acc: number, projeto: any) => {
+      const somaDoProjeto =
+        projeto.lancamentos_de_horas?.reduce(
+          (total: number, lancamento: any) => total + Number(lancamento.duracao_total || 0),
+          0
+        ) || 0;
+      return acc + somaDoProjeto;
+    }, 0) || 0;
 
   const totalDespesas =
     cliente?.projetos?.reduce((acc: number, p: any) => {

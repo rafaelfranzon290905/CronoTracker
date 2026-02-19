@@ -93,6 +93,13 @@ export default function DetalhesProjeto() {
         </div>
     );
 
+    const statusConfig: any = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
+    };
+
     return (
         <div className="flex h-screen w-full">
             <SideBar />
@@ -181,13 +188,9 @@ export default function DetalhesProjeto() {
                                                         <div className="flex items-center justify-between p-3 border rounded-md bg-white shadow-sm hover:border-blue-200 transition-all">
                                                             <span className="text-sm font-medium">{atv.nome_atividade}</span>
                                                             <Badge
-                                                                variant={atv.status ? "default" : "secondary"}
-                                                                className={!atv.status
-                                                                    ? "bg-red-600 hover:bg-red-700 text-white"
-                                                                    : "bg-green-600 hover:bg-green-700 text-white"
-                                                                }
+                                                                className={`${statusConfig[atv.status] || "bg-gray-400"} text-white border-none`}
                                                             >
-                                                                {atv.status ? "Ativa" : "Inativa"}
+                                                                {atv.status || "Pendente"}
                                                             </Badge>
                                                         </div>
                                                     </Link>

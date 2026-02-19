@@ -29,8 +29,8 @@ export interface Projeto {
     descricao?: string;
     data_inicio: string;
     data_fim: string;
-    status: boolean;
-    horas_previstas: number; // <-- Novo campo
+    status: "Orçando" | "Em Andamento" | "Concluído" | "Cancelado";
+    horas_previstas: number; 
     total_despesas?: number;
     horas_gastas?: number;
     horas_consumidas?: number;

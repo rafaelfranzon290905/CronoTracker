@@ -119,6 +119,13 @@ export default function DetalhesCliente() {
       return (p.horas_gastas || 0) > p.horas_previstas;
     })?.length || 0;
 
+    const projectStatusConfig: any = {
+        "Orçando": "bg-amber-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluído": "bg-green-600",
+        "Cancelado": "bg-red-600",
+    };
+
   return (
     <div className="flex h-screen w-full">
       <SideBar />
@@ -181,14 +188,8 @@ export default function DetalhesCliente() {
                           {proj.nome_projeto}
                         </span>
 
-                        <Badge
-                          className={
-                            proj.status
-                              ? "bg-green-600 text-white"
-                              : "bg-red-600 text-white"
-                          }
-                        >
-                          {proj.status ? "Ativo" : "Inativo"}
+                        <Badge className={`${projectStatusConfig[proj.status] || "bg-slate-400"} text-white border-none`}>
+                            {proj.status || "Orçando"}
                         </Badge>
                       </div>
                     ))

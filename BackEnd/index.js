@@ -790,7 +790,7 @@ app.post('/projetos', async (req, res) => {
         data_inicio: inicio,
         data_fim: fim,
         horas_previstas: horas_previstas ? parseInt(horas_previstas) : 0,
-        status: status ?? true,
+        status: status || "Orçando",
         projeto_colaboradores: {
           create: (colaboradores_ids || []).map(id => ({ colaborador_id: id }))
         }
@@ -817,7 +817,7 @@ app.put('/projetos/:id', async (req, res) => {
         data_inicio: data_inicio ? new Date(data_inicio) : undefined,
         data_fim: data_fim ? new Date(data_fim) : undefined,
         horas_previstas: horas_previstas !== undefined ? parseInt(horas_previstas) : undefined,
-        status,
+        status: status,
         projeto_colaboradores: {
           deleteMany: {},
           create: (colaboradores_ids || []).map(idColab => ({ colaborador_id: parseInt(idColab) }))
@@ -871,7 +871,9 @@ app.post('/despesas', async (req, res) => {
   try {
     const projeto = await prisma.projetos.findUnique({ where: { projeto_id: Number(projeto_id) } });
     if (!projeto) return res.status(404).json({ error: "Projeto não encontrado." });
-    if (projeto.status === false) return res.status(400).json({ error: "Projeto inativo." });
+    if (projeto.status === "Cancelado") {
+        return res.status(400).json({ error: "Não é permitido lançar despesas em projetos cancelados." });
+    }
 
     const novaDespesa = await prisma.despesas.create({
       data: {

@@ -69,6 +69,12 @@ const formatarHorasDecimais = (totalDecimal: number | null | undefined): string 
 //   }
 // };
 
+const projectStatusConfig: any = {
+    "Orçando": "bg-amber-500",      
+    "Em Andamento": "bg-blue-600",   
+    "Concluído": "bg-green-600",
+    "Cancelado": "bg-red-600 hover:bg-red-700",    
+};
 
 export const getColumns = (
   clientes: { cliente_id: number; nome_cliente: string }[],
@@ -116,7 +122,7 @@ export const getColumns = (
 
     return (
       <Link
-        to={`/clientes/${cliente.cliente_id}`}
+        to={`/clientes/${cliente.nome_cliente}`}
         className="font-medium text-blue-950 hover:underline"
       >
         {cliente.nome_cliente}
@@ -199,12 +205,11 @@ export const getColumns = (
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status") as boolean;
+        const status = row.getValue("status") as string;
         return (
-          <Badge variant={status ? "default" : "destructive"}
-            className={!status ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}>
-            {status ? "Ativo" : "Inativo"}
-          </Badge>
+          <Badge className={`${projectStatusConfig[status] || "bg-gray-400"} text-white border-none`}>
+        {status}
+      </Badge>
         );
       },
     },

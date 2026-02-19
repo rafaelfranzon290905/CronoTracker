@@ -11,7 +11,7 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { ChevronDown } from "lucide-react";
-import { Search, FileSpreadsheet } from "lucide-react";
+import { Search, FileSpreadsheet, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Relatorios() {
     const [filtros, setFiltros] = useState({ data_inicio: '', data_fim: '', colaborador_id: '', projeto_id: '', atividade_id: '' });
@@ -20,7 +20,16 @@ export default function Relatorios() {
     const [loading, setLoading] = useState(false);
     const [projetos, setProjetos] = useState([]);
     const [atividades, setAtividades] = useState([]);
-    const [tipoRelatorio ,setTipoRelatorio] = useState('produtividade');
+    const [tipoRelatorio ,setTipoRelatorio] = useState();
+    const [erroTipo, setErroTipo] = useState(false);
+
+    // PAGINAÇÃO
+    const [paginaAtual, setPaginaAtual] = useState(1);
+    const itensPorPagina = 10;
+    const indiceFinal = paginaAtual * itensPorPagina;
+    const indiceInicial = indiceFinal - itensPorPagina;
+    const dadosPaginados = dados.slice(indiceInicial, indiceFinal);
+    const totalPaginas = Math.ceil(dados.length / itensPorPagina);
 
     // Busca lista de colaboradores
     useEffect(() => {
@@ -38,8 +47,15 @@ export default function Relatorios() {
     }, []);
 
     const buscarDados = async () => {
-        setLoading(true);
         console.log("Estado atual dos filtros no Front:", filtros);
+        if (!tipoRelatorio || tipoRelatorio === '') {
+            setErroTipo(true);
+            // Remove o erro automaticamente após 3 segundos
+            setTimeout(() => setErroTipo(false), 3000);
+            return; 
+        }
+        setErroTipo(false); // Limpa o erro se estiver tudo ok
+        setLoading(true);
         try {
             // Criamos um objeto apenas com o que tem valor preenchido
             const filtrosAtivos = {};
@@ -73,9 +89,10 @@ export default function Relatorios() {
         }
     };
 
-    const exportarCSV = () => {
+    const exportarDados = (formato) => {
+    if (!tipoRelatorio) return alert("Selecione um tipo de relatório primeiro.");
     // Pegar apenas os filtros preenchidos igual na busca
-    const filtrosAtivos = { exportar: 'true' }; // Forçamos o modo exportação
+    const filtrosAtivos = { exportar: 'true', formato: formato }; // Forçamos o modo exportação
     if (filtros.data_inicio) filtrosAtivos.data_inicio = filtros.data_inicio;
     if (filtros.data_fim) filtrosAtivos.data_fim = filtros.data_fim;
     
@@ -108,28 +125,37 @@ export default function Relatorios() {
                         title="Relatórios" 
                         subtitle="Checagem e exportação de relatórios" 
                         />
-                        <div className="m-2 w-80 mr-10">
+                        <div className="m-2 w-80 mr-10 relative">
                             <label className="block text-md font-bold text-botao-dark mb-1">Tipo de Relatório</label>
                             <Select value={tipoRelatorio} onValueChange={(value) => {
                                 setTipoRelatorio(value);
+                                setErroTipo(false);
                                 setDados([]);
                                 setFiltros({data_inicio: '', 
                                     data_fim: '', 
                                     colaborador_id: '', 
                                     projeto_id: '', 
                                     atividade_id: ''});
+                                setPaginaAtual(1);
                             }}>
                             <SelectTrigger className="border shadow-md border-gray-300 p-2 rounded h-10 px-3 flex justify-between items-center">
                                 <SelectValue placeholder="Selecione o tipo"/>
                                 {/* <ChevronDown className="h-4 w-4 opacity-50" /> */}
                             </SelectTrigger>
                             <SelectContent className="bg-white border shadow-xl rounded-md z-[999] min-w-[280px] overflow-hidden">
+                                
+                                {/* <SelectItem value="Selecione o tipo" className="p-2 hover:bg-blue-50 cursor-pointer outline-none">Selecione o tipo</SelectItem> */}
                                 <SelectItem value="produtividade" className="p-2 hover:bg-blue-50 cursor-pointer outline-none">Produtividade por colaborador</SelectItem>
                                 <SelectItem value="atividade" className="p-2 hover:bg-blue-50 cursor-pointer outline-none">Por atividade</SelectItem>
                                 <SelectItem value="despesas" className="p-2 hover:bg-blue-50 cursor-pointer outline-none">Relatório de Despesas</SelectItem>
                                 <SelectItem value="projeto" className="p-2 hover:bg-blue-50 cursor-pointer outline-none">Horas por projeto</SelectItem>
                             </SelectContent>
                         </Select>
+                        {erroTipo && (
+                            <span className="mt-2 absolute text-red-500 text-md font-semibold">
+                                ⚠️ Por favor, selecione um tipo de relatório
+                            </span>
+                        )}
                         </div>
                     </div>
                     {/* <PageHeader 
@@ -257,10 +283,19 @@ export default function Relatorios() {
                             {loading ? 'Buscando...' : 'Filtrar'}
                             <Search className="mx-1"/>
                         </button>
-                        <button onClick={exportarCSV} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex">
-                            Exportar Excel
-                            <FileSpreadsheet className="mx-2"/>
-                        </button>
+
+                        {/* ELEMENTO ESPAÇADOR: Isso empurra o que vem depois para a direita */}
+                        {/* <div className="flex-1"></div> */}
+
+                        {/* BOTÕES DE EXPORTAÇÃO */}
+                            <div className="flex gap-2 justify-end">
+                                <button onClick={() => exportarDados('xlsx')} className="bg-green-700 text-white px-3 py-2 rounded hover:bg-green-800 flex items-center">
+                                    <FileSpreadsheet className="mr-2 h-4 w-4"/> Excel
+                                </button>
+                                <button onClick={() => exportarDados('csv')} className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 flex items-center text-sm">
+                                    <FileText className="mr-2 h-4 w-4"/> CSV
+                                </button>
+                            </div>
                     </div>
 
                     {/* Tabela de resultados e cabeçalhos dinamicos */}
@@ -289,7 +324,7 @@ export default function Relatorios() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {dados.length > 0 ? dados.map((item, index) => (
+                                {dadosPaginados.length > 0 ? dadosPaginados.map((item, index) => (
                                     <tr key={index} className="border-b hover:bg-gray-50">
                                         {tipoRelatorio === 'despesas' ? (
                                             <>
@@ -319,20 +354,43 @@ export default function Relatorios() {
                                     </tr>
                                 )}
                             </tbody>
-                            <tfoot className="font-bold">
-                                <tr>
-                                    <td colSpan={tipoRelatorio === 'despesas' ? 3 : 4} className="text-right">TOTAL:</td>
-                                    <td className="p-3">
-                                        {tipoRelatorio === 'despesas' 
-                                            ? `R$ ${dados.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0).toFixed(2)}`
-                                            : `${dados.reduce((acc, curr) => acc + (Number(curr.duracao_total) || 0), 0).toFixed(2)}h`
-                                        }
-                                    </td>
-                                    {tipoRelatorio !== 'despesas' && <td></td>}
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                            {dados.length > 0 && (
+                                <tfoot className="font-bold bg-gray-50 border-t-2">
+                                    <tr>
+                                        <td colSpan={tipoRelatorio === 'despesas' ? 3 : 6} className="p-4 text-right uppercase text-xs tracking-wider text-gray-500">Total Acumulado:</td>
+                                        <td className="p-3 text-md text-botao-dark">
+                                            {tipoRelatorio === 'despesas' 
+                                                ? `R$ ${dados.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                                : `${dados.reduce((acc, curr) => acc + (Number(curr.duracao_total) || 0), 0).toFixed(2)}h`
+                                            }
+                                        </td>
+                                        {tipoRelatorio !== 'despesas' && <td></td>}
+                                    </tr>
+                                </tfoot>
+                            )}
+                            </table>
+                            </div>
+
+                                {dados.length > itensPorPagina && (
+                                    <div className="flex justify-end items-center gap-4 mt-4 p-4">
+                                        <button 
+                                            onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
+                                            disabled={paginaAtual === 1}
+                                            className="p-2 border rounded disabled:opacity-30 font-bold"
+                                        >
+                                            Anterior
+                                        </button>
+                                        <span className="text-sm font-medium min-w-fit">Página {paginaAtual} de {totalPaginas}</span>
+                                        <button 
+                                            onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
+                                            disabled={paginaAtual === totalPaginas}
+                                            className="p-2 border rounded disabled:opacity-30 font-bold"
+                                        >
+                                            Próximo
+                                        </button>
+                                    </div>
+            )}
+
                 </main>
             </div>
         </div>

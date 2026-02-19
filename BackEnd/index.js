@@ -52,7 +52,11 @@ app.get('/clientes/:id', async (req, res) => {
       include: {
         projetos: {
           include: {
-            despesas: true
+            despesas: true,
+            lancamentos_de_horas: true
+          },
+          orderBy: {
+            projeto_id: 'desc'
           }
         }
       }

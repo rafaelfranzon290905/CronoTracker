@@ -23,27 +23,51 @@ import {
 } from "@/components/ui/dialog";
 import { API_BASE_URL } from "@/apiConfig";
 import { Link } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
-
-const deleteProject = async (id: number) => {
-  if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/projetos/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        toast.success("Projeto excluído com sucesso!");
-        window.location.reload();
-      } else {
-        toast.error("Erro ao excluir projeto.");
-      }
-    } catch (error) {
-      console.error("Erro de conexão:", error);
-      toast.error("Erro ao conectar com o servidor.");
-    }
-  }
+const formatarHorasDecimais = (totalDecimal: number | null | undefined): string => {
+  const valor = totalDecimal || 0;
+  const horas = Math.floor(valor);
+  const minutos = Math.round((valor - horas) * 60);
+  
+  const horasPad = String(horas).padStart(2, '0');
+  const minutosPad = String(minutos).padStart(2, '0');
+  
+  return `${horasPad}:${minutosPad}`;
 };
+
+// const deleteProject = async (id: number) => {
+//   if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
+//     try {
+//       const response = await fetch(`${API_BASE_URL}/projetos/${id}`, {
+//         method: 'DELETE',
+//       });
+
+//       if (response.ok) {
+//         toast.success("Projeto excluído com sucesso!");
+        
+//         window.location.reload();
+//       } else {
+//         const errorData = await response.json();
+//       // Apresenta a mensagem clara vinda do backend
+//         toast.error(errorData.error || "Erro ao excluir projeto.");
+//       }
+//     } catch (error) {
+//       // console.error("Erro de conexão:", error);
+//       toast.error("Erro ao conectar com o servidor.");
+//     }
+//   }
+// };
 
 
 export const getColumns = (
@@ -161,8 +185,14 @@ export const getColumns = (
       accessorKey: "horas_gastas",
       header: "Horas gastas",
        cell: ({ row }) => {
-        const horas = row.original.horas_gastas || 0;
-        return <span>{horas.toFixed(1)}h</span>;
+        const horasGastas = row.original.horas_gastas || 0;
+        const horasPrevistas = row.original.horas_previstas || 0;
+        const ultrapassou = horasPrevistas > 0 && horasGastas > horasPrevistas;
+        return (
+          <span className={`font-medium transition-colors ${ ultrapassou ? "text-red-600 font-bold" : "text-blue-800"}`}>
+            {formatarHorasDecimais(horasGastas)}h
+          </span>
+        );
       },
     },
     {
@@ -184,6 +214,26 @@ export const getColumns = (
       cell: ({ row }) => {
         const projeto = row.original;
         const atividades = projeto.atividades || [];
+
+        // Função de exclusão interna para capturar o onSuccess corretamente
+        const handleDelete = async () => {
+          try {
+            const response = await fetch(`${API_BASE_URL}/projetos/${projeto.projeto_id}`, {
+              method: 'DELETE',
+            });
+
+            if (response.ok) {
+              toast.success("Projeto excluído com sucesso!");
+              onSuccess(); // Atualiza a tabela sem dar reload na página inteira
+            } else {
+              const errorData = await response.json();
+              // Aqui ele vai exibir a mensagem clara: "Não é possível excluir: este projeto possui..."
+              toast.error(errorData.error || "Erro ao excluir projeto.");
+            }
+          } catch (error) {
+            toast.error("Erro ao conectar com o servidor.");
+          }
+        };
 
         return (
           <div className="flex justify-center items-center w-full">
@@ -239,12 +289,34 @@ export const getColumns = (
                   projectToEdit={projeto}
                 />
 
-                <DropdownMenuItem
-                  onClick={() => deleteProject(projeto.projeto_id)}
-                  className="flex items-center gap-2 px-2 py-1.5 text-sm outline-none hover:bg-red-50 cursor-pointer rounded-sm text-red-600 focus:text-red-600 transition-colors"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                </DropdownMenuItem>
+                {/* ALERT DIALOG PARA EXCLUSÃO */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem 
+                    onSelect={(e) => e.preventDefault()} // Impede o dropdown de fechar tudo
+                    className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" /> Excluir
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. O projeto <strong>{projeto.nome_projeto}</strong> será removido permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDelete}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      Excluir Projeto
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

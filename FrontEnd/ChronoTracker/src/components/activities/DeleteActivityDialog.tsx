@@ -13,39 +13,46 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { API_BASE_URL } from  "@/apiConfig"
+import { toast } from "sonner";
 
 
 // const API_BASE_URL = 'http://localhost:3001'
 
 interface DeleteActivityProps {
-    activityId: string;
+    activityId: string | number;
     onSuccess: () => void; // Função para atualizar a lista após a exclusão
+    open?: boolean;         
+    onOpenChange?: (open: boolean) => void;
 }
 
 export function DeleteActivityDialog({ activityId, onSuccess }: DeleteActivityProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [open, setOpen] = useState(false);
 
-    const handleDelete = async () => {
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault();
         setIsDeleting(true);
-        setError(null);
+        // setError(null);
         try {
-            // 🎯 Requisição HTTP DELETE para excluir a atividade
             const response = await fetch(`${API_BASE_URL}/atividades/${activityId}`, {
                 method: 'DELETE',
             });
 
-            if (!response.ok) {
-                // Se a API não retornar sucesso, tenta ler o erro
-                const result = await response.json();
-                throw new Error(result.error || "Falha ao excluir a atividade.");
+            const result = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                toast.success("Atividade removida com sucesso!");
+                setOpen(false); // Fecha o modal apenas no sucesso
+                onSuccess(); 
+            } else {
+                const errorMsg = result.error || "Não foi possível excluir a atividade.";
+                toast.error(errorMsg);
             }
-
-            // Sucesso: Chama a função para atualizar a lista no componente pai
             onSuccess(); 
-
         } catch (e: any) {
             console.error("Erro ao deletar:", e);
+            toast.error("Erro de conexão com o servidor.");
             setError(e.message);
         } finally {
             setIsDeleting(false);
@@ -53,10 +60,11 @@ export function DeleteActivityDialog({ activityId, onSuccess }: DeleteActivityPr
     };
 
     return (
-        <AlertDialog>
+        <AlertDialog open={open} onOpenChange={setOpen}>
             <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700">
-                    <Trash2 className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className=" flex items-center gap-2 text-red-500 hover:text-red-700">
+                    <Trash2 className="h-4 w-4" /> 
+                    <span>Excluir</span>
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

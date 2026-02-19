@@ -1,17 +1,12 @@
 require('dotenv').config();
-// Importações
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
+const ExcelJS = require('exceljs');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta-muito-segura';
-
-
-const { PrismaClient } = require('@prisma/client');
-// const { boolean } = require('fast-check');
-// const { error } = require('effect/Brand');
-// const database = require('mime-db');
 
 // Inicialização do Prisma Client
 const prisma = new PrismaClient();
@@ -27,17 +22,15 @@ app.get('/', (req, res) => {
   res.send('Servidor ChronoTracker Backend rodando com Prisma e Neon!');
 });
 
+// ==================================================================
+// ROTAS DE CLIENTES
+// ==================================================================
 
-// Rotas de Clientes
-
-// GET /clientes - Lista todos os clientes (NOVA ROTA)
+// GET /clientes
 app.get('/clientes', async (req, res) => {
   try {
     const todosClientes = await prisma.clientes.findMany({
-      // Opcional: ordenar por cliente_id para garantir a ordem
-      orderBy: {
-        cliente_id: 'asc',
-      },
+      orderBy: { cliente_id: 'asc' },
     });
     res.status(200).json(todosClientes);
   } catch (error) {
@@ -79,28 +72,24 @@ app.get('/clientes/:id', async (req, res) => {
 
 
 
+// GET /clientes/cnpj/:cnpj
 app.get('/clientes/cnpj/:cnpj', async (req, res) => {
   const cnpjLimpo = req.params.cnpj.replace(/[^\d]/g, '');
-
   if (cnpjLimpo.length !== 14) {
     return res.status(400).json({ error: 'formato de CNPJ inválido. Deve ter 14 dígitos.' });
   }
-
   try {
-    // 🔎 Prisma: Usa findUnique para buscar um registro pela chave única (CNPJ)
     const cliente = await prisma.clientes.findUnique({
-  where: { cliente_id: clienteId },
-  include: {
-    projetos: {
+      where: { cliente_id: cnpjLimpo },
       include: {
-        despesas: true,
-        lancamentos_de_horas: true
+        projetos: {
+          include: {
+            despesas: true,
+            lancamentos_de_horas: true
+          }
+        }
       }
-    }
-  }
-});
-
-
+    });
     if (cliente) {
       res.status(200).json({ existe: true, cliente: cliente });
     } else {
@@ -112,16 +101,13 @@ app.get('/clientes/cnpj/:cnpj', async (req, res) => {
   }
 });
 
-// POST /clientes - Cadastra um novo cliente
+// POST /clientes
 app.post('/clientes', async (req, res) => {
   const { cnpj, nome_cliente, nome_contato, cep, endereco, cidade, estado, status } = req.body;
-
   if (!cnpj || !nome_cliente) {
     return res.status(400).json({ error: 'CNPJ e Nome da Empresa são obrigatórios.' });
   }
-
   const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
-
   try {
     const novoCliente = await prisma.clientes.create({
       data: {
@@ -135,10 +121,8 @@ app.post('/clientes', async (req, res) => {
         status: status !== undefined ? status : true,
       }
     });
-
     return res.status(201).json(novoCliente);
   } catch (error) {
-    // 🚨 Aqui está a correção para o "Adicionar"
     if (error.code === 'P2002') {
       return res.status(409).json({ 
         error: 'CNPJ já existente',
@@ -150,54 +134,12 @@ app.post('/clientes', async (req, res) => {
   }
 });
 
-// DELETE /clientes - Exclui um cliente
-app.delete('/clientes/:id', async (req, res) => {
-  const clienteId = parseInt(req.params.id);
-
-  // Validação simples
-  if (isNaN(clienteId)) {
-    return res.status(400).json({ error: 'ID do cliente inválido.' });
-  }
-  try {
-    // Prisma usa delete para remover um registro pelo ID
-    const clienteDeletado = await prisma.clientes.delete({
-      where: {
-        cliente_id: clienteId,
-      },
-    });
-    // Se for bem sucedida
-    res.status(200).json({ message: 'Cliente excluido com sucesso.', cliente: clienteDeletado });
-
-  } catch (error) {
-    if (error.code == 'P2025') {
-      return res.status(404).json({ error: `Cliente com ID ${clienteId} não encontrado` });
-    }
-    if (error.code === 'P2003') {
-      return res.status(400).json({ 
-        error: 'Este cliente não pode ser excluído porque possui projetos ou horas lançadas no sistema.' 
-      });
-    }
-    console.error('Erro ao deletar o cliente:', error);
-    res.status(500).json({ error: 'Erro interno do servidor ao tentar deletar cliente' });
-  }
-})
-
+// PUT /clientes/:id
 app.put('/clientes/:id', async (req, res) => {
   const clienteId = Number(req.params.id)
-  const {
-    cnpj,
-    nome_cliente,
-    nome_contato,
-    cep,
-    endereco,
-    cidade,
-    estado,
-    status
-  } = req.body
-
+  const { cnpj, nome_cliente, nome_contato, cep, endereco, cidade, estado, status } = req.body
   try {
     const cnpjLimpo = cnpj ? cnpj.replace(/\D/g, '') : null
-    
     if (cnpjLimpo) {
       const duplicado = await prisma.clientes.findFirst({
         where: {
@@ -205,40 +147,19 @@ app.put('/clientes/:id', async (req, res) => {
           cliente_id: { not: clienteId }
         }
       })
-
       if (duplicado) {
-        return res.status(409).json({
-          code: 'CNPJ_DUPLICADO',
-          message: 'CNPJ já existente'
-        })
+        return res.status(409).json({ code: 'CNPJ_DUPLICADO', message: 'CNPJ já existente' })
       }
     }
-
     const clienteAtualizado = await prisma.clientes.update({
       where: { cliente_id: clienteId },
-      data: {
-        cnpj: cnpjLimpo, 
-        nome_cliente,
-        nome_contato,
-        cep,
-        endereco,
-        cidade,
-        estado,
-        status
-      }
+      data: { cnpj: cnpjLimpo, nome_cliente, nome_contato, cep, endereco, cidade, estado, status }
     })
-
     return res.status(200).json(clienteAtualizado)
-
   } catch (error) {
-    // Segurança extra
     if (error.code === 'P2002') {
-      return res.status(409).json({
-        code: 'CNPJ_DUPLICADO',
-        message: 'CNPJ já existente'
-      })
+      return res.status(409).json({ code: 'CNPJ_DUPLICADO', message: 'CNPJ já existente' })
     }
-
     console.error(error)
     return res.status(500).json({ message: 'Erro interno' })
   }
@@ -275,9 +196,45 @@ app.get('/clientes/:id', async (req, res) => {
   }
 });
 
-// Rotas de Colaboradores
 
-//get para listagem
+// DELETE /clientes/:id
+app.delete('/clientes/:id', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+  if (isNaN(clienteId)) return res.status(400).json({ error: 'ID do cliente inválido.' });
+  try {
+    const clienteDeletado = await prisma.clientes.delete({
+      where: { cliente_id: clienteId },
+    });
+    res.status(200).json({ message: 'Cliente excluido com sucesso.', cliente: clienteDeletado });
+  } catch (error) {
+    if (error.code == 'P2025') return res.status(404).json({ error: `Cliente com ID ${clienteId} não encontrado` });
+    if (error.code === 'P2003') return res.status(400).json({ error: 'Este cliente não pode ser excluído porque possui projetos ou horas.' });
+    console.error('Erro ao deletar o cliente:', error);
+    res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+})
+
+// GET /clientes/:id/projetos
+app.get('/clientes/:id/projetos', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+  if (isNaN(clienteId)) return res.status(400).json({ error: 'ID do cliente inválido.' });
+  try {
+    const projetosDoCliente = await prisma.projetos.findMany({
+      where: { cliente_id: clienteId },
+      orderBy: { projeto_id: 'desc' },
+    });
+    res.status(200).json(projetosDoCliente);
+  } catch (error) {
+    console.error(`Erro ao buscar projetos do cliente ${clienteId}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar projetos.' });
+  }
+});
+
+// ==================================================================
+// ROTAS DE COLABORADORES
+// ==================================================================
+
+// GET /colaboradores
 app.get('/colaboradores', async (req, res) => {
   try {
     const colaboradores = await prisma.colaboradores.findMany({
@@ -285,32 +242,23 @@ app.get('/colaboradores', async (req, res) => {
         projeto_colaboradores: {
           include: {
             projetos: {
-              include: { 
-                atividades: true, // Traz as atividades de cada projeto
-                clientes: true
-              }
+              include: { atividades: true, clientes: true }
             }
           }
         }
       },
       orderBy: { nome_colaborador: 'asc' }
     });
-
     const colaboradoresFormatados = colaboradores.map(col => {
-      // Extrai apenas os nomes dos projetos em um array simples de strings
       const projetosNomes = col.projeto_colaboradores.map(pc => pc.projetos?.nome_projeto).filter(Boolean);
-
-      // Extrai todas as atividades de todos os projetos que ele participa
       const atividadesEquipe = col.projeto_colaboradores.flatMap(pc => pc.projetos?.atividades || []);
-
       return {
         ...col,
         foto: col.foto ? col.foto.toString('base64') : null,
         listaProjetos: projetosNomes,
-        atividadesEquipe: atividadesEquipe // Nova propriedade com a lista da equipe
+        atividadesEquipe: atividadesEquipe
       };
     });
-
     res.status(200).json(colaboradoresFormatados);
   } catch (error) {
     console.error('Erro ao buscar colaboradores:', error);
@@ -318,22 +266,14 @@ app.get('/colaboradores', async (req, res) => {
   }
 });
 
-// GET /colaboradores/email/:email - Verifica se um colaborador existe pelo EMAIL
-// Exemplo de uso: /colaboradores/email/joao@empresa.com
+// GET /colaboradores/email/:email
 app.get('/colaboradores/email/:email', async (req, res) => {
   const { email } = req.params;
-
-  if (!email || !email.includes('@')) {
-    return res.status(400).json({ error: 'Formato de e-mail inválido.' });
-  }
-
+  if (!email || !email.includes('@')) return res.status(400).json({ error: 'Formato de e-mail inválido.' });
   try {
     const colaborador = await prisma.colaboradores.findUnique({
-      where: {
-        email: email,
-      }
+      where: { email: email }
     });
-
     if (colaborador) {
       res.status(200).json({ existe: true, colaborador: colaborador });
     } else {
@@ -345,14 +285,10 @@ app.get('/colaboradores/email/:email', async (req, res) => {
   }
 });
 
-// POST /colaboradores - Cadastra um novo colaborador
+// POST /colaboradores
 app.post('/colaboradores', async (req, res) => {
   const { nome_colaborador, cargo, email, data_admissao, status, foto } = req.body;
-
-  if (!email || !nome_colaborador || !cargo) {
-    return res.status(400).json({ error: 'Nome, Cargo e E-mail são obrigatórios.' });
-  }
-
+  if (!email || !nome_colaborador || !cargo) return res.status(400).json({ error: 'Nome, Cargo e E-mail são obrigatórios.' });
   try {
     const novoColaborador = await prisma.colaboradores.create({
       data: {
@@ -364,30 +300,147 @@ app.post('/colaboradores', async (req, res) => {
         foto: foto ? Buffer.from(foto, 'base64') : null,
       }
     });
-
-    // Adicionamos o 'return' aqui para parar a execução
     return res.status(201).json(novoColaborador);
-
   } catch (error) {
-    // O bloco catch agora envolve TODA a lógica de erro
-    if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'Este e-mail já está cadastrado para outro colaborador.' });
-    }
-
+    if (error.code === 'P2002') return res.status(409).json({ error: 'Este e-mail já está cadastrado.' });
     console.error('Erro ao cadastrar colaborador:', error);
-    // O return aqui impede que qualquer código abaixo (se houvesse) rodasse
     return res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
 
-// Rota de Atividades
-// GET /atividades - Lista todas as atividades
+app.get('/colaboradores/:id', async (req, res) => {
+  const { id } = req.params;
+  const colaboradorId = parseInt(id);
 
+  if (isNaN(colaboradorId)) {
+    return res.status(400).json({ error: 'ID do colaborador inválido.' });
+  }
+
+  try {
+    const colaborador = await prisma.colaboradores.findUnique({
+      where: { colaborador_id: colaboradorId },
+      include: {
+        projeto_colaboradores: {
+          include: {
+            projetos: true
+          }
+        },
+        atividades: {
+          include: {
+            projetos: { 
+              select: { nome_projeto: true }
+            }
+          },
+          orderBy: { atividade_id: 'desc' }
+        },
+        lancamentos_de_horas: true, 
+        despesas: {               
+          include: {
+            projeto: { select: { nome_projeto: true } }
+          },
+          orderBy: { data_despesa: 'desc' }
+        }
+      }
+    });
+
+    if (!colaborador) {
+      return res.status(404).json({ error: 'Colaborador não encontrado.' });
+    }
+
+    const totalAtividades = colaborador.atividades.length;
+    const despesasAprovadas = colaborador.despesas
+      .filter(d => d.status_aprovacao === 'Aprovada')
+      .reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+
+    const despesasPendentes = colaborador.despesas
+      .filter(d => d.status_aprovacao === 'Pendente')
+      .reduce((acc, curr) => acc + Number(curr.valor || 0), 0);
+
+    const totalHorasAcumuladas = colaborador.lancamentos_de_horas.reduce(
+      (acc, curr) => acc + Number(curr.duracao_total || 0), 0
+    );
+
+    const totalDespesas = colaborador.despesas.reduce(
+      (acc, curr) => acc + Number(curr.valor || 0), 0
+    );
+
+    const colaboradorFormatado = {
+      ...colaborador,
+      foto: colaborador.foto ? colaborador.foto.toString('base64') : null,
+      total_atividades: totalAtividades,
+      total_horas: totalHorasAcumuladas, 
+      total_despesas_valor: totalDespesas,
+      valor_despesas_aprovadas: despesasAprovadas,
+      valor_despesas_pendentes: despesasPendentes,
+      listaProjetos: colaborador.projeto_colaboradores.map(pc => pc.projetos?.nome_projeto).filter(Boolean),
+      historico_lancamentos: colaborador.lancamentos_de_horas,
+      lista_despesas: colaborador.despesas,
+    };
+    delete colaboradorFormatado.lancamentos_de_horas;
+
+    res.status(200).json(colaboradorFormatado);
+  } catch (error) {
+    console.error(`Erro ao buscar detalhes do colaborador ${id}:`, error);
+    res.status(500).json({ error: 'Erro interno ao buscar colaborador.' });
+  }
+});
+
+// PUT /colaboradores/:id
+app.put('/colaboradores/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { nome_colaborador, cargo, email, status, foto, data_admissao } = req.body;
+  if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+  const dadosParaAtualizar = { nome_colaborador, cargo, email, status };
+  if (foto) dadosParaAtualizar.foto = Buffer.from(foto, 'base64');
+  if (data_admissao) dadosParaAtualizar.data_admissao = new Date(data_admissao);
+  try {
+    const colaboradorAtualizado = await prisma.colaboradores.update({
+      where: { colaborador_id: id },
+      data: dadosParaAtualizar,
+    });
+    res.status(200).json(colaboradorAtualizado);
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ error: `Colaborador não encontrado.` });
+    if (error.code === 'P2002') return res.status(400).json({ error: 'E-mail já está em uso.' });
+    console.error('[PUT] Erro:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar.' });
+  }
+});
+
+// DELETE /colaboradores/:id
+app.delete('/colaboradores/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.colaboradores.update({
+        where: { colaborador_id: id },
+        data: { status: false }
+      });
+      await tx.usuarios.updateMany({
+        where: { colaborador_id: id },
+        data: { status: false }
+      });
+    });
+    res.status(200).json({ message: 'Colaborador e Usuário inativados com sucesso.' });
+  } catch (error) {
+    if (error.code === 'P2025') return res.status(404).json({ error: 'Colaborador não encontrado.' });
+    console.error('[DELETE] Erro:', error);
+    res.status(500).json({ error: 'Erro interno ao excluir colaborador.' });
+  }
+});
+
+// ==================================================================
+// ROTAS DE ATIVIDADES
+// ==================================================================
+
+// GET /atividades
 app.get('/atividades', async (req, res) => {
   try {
-    const todasAtividades = await prisma.atividades.findMany({
+    const atividades = await prisma.atividades.findMany({
       include: {
-        responsavel: true,
+        colaboradores_atividades: {
+          include: { colaboradores: true }
+        },
         projetos: {
           select: {
             nome_projeto: true
@@ -398,34 +451,54 @@ app.get('/atividades', async (req, res) => {
         atividade_id: 'asc',
       },
     });
-    res.status(200).json(todasAtividades);
+    const somaHorasAtividades = await prisma.lancamentos_de_horas.groupBy({
+      by: ['atividade_id'],
+      _sum: { duracao_total: true }
+    });
+
+    const atividadesComHorasReais = atividades.map(atv => {
+      const lancamento = somaHorasAtividades.find(l => l.atividade_id === atv.atividade_id);
+      return {
+        ...atv,
+        horas_gastas: lancamento?._sum?.duracao_total || 0
+      };
+    });
+
+
+    res.status(200).json(atividadesComHorasReais);
   } catch (error) {
-    console.error('Erro ao buscar todos as atividades:', error);
+    console.error('Erro ao buscar atividades:', error);
     res.status(500).json({ error: 'Erro interno ao listar atividades.' });
   }
 });
 
-// 🎯 ROTA GET /atividades/:atividade_id - Busca uma única atividade
+// GET /atividades/:atividade_id
 app.get('/atividades/:atividade_id', async (req, res) => {
   const atividadeId = Number(req.params.atividade_id);
-
-  if (!Number.isInteger(atividadeId)) {
-    return res.status(400).json({ error: "ID inválido." });
-  }
-
+  if (!Number.isInteger(atividadeId)) return res.status(400).json({ error: "ID inválido." });
   try {
     const atividade = await prisma.atividades.findUnique({
       where: { atividade_id: atividadeId },
       include: {
-        responsavel: true,
-        projetos: true
+        colaboradores_atividades: {
+          include: { 
+            colaboradores: true 
+          }
+        },
+        projetos: true,
+        lancamentos_de_horas: {
+          include: { 
+            colaboradores: { 
+              select: { nome_colaborador: true } 
+            } 
+          },
+          orderBy: { 
+            data_lancamento: 'desc' 
+          }
+        }
       }
     });
-
-    if (!atividade) {
-      return res.status(404).json({ error: "Atividade não encontrada." });
-    }
-
+    if (!atividade) return res.status(404).json({ error: "Atividade não encontrada." });
     res.json(atividade);
   } catch (error) {
     console.error("Erro ao buscar atividade:", error);
@@ -433,220 +506,227 @@ app.get('/atividades/:atividade_id', async (req, res) => {
   }
 });
 
+app.get('/debug/atividade-colaboradores', async (req, res) => {
+  try {
+    const dados = await prisma.atividade_colaboradores.findMany({
+      include: {
+        atividades: true,
+        colaboradores: true
+      }
+    });
+    res.json(dados);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-// POST /atividades - Cadastra um novo cliente
+// POST /atividades
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_id } = req.body;
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
   }
 
   try {
-    // 1. CONVERSÃO DO PROJETO_ID PARA INTEIRO 
-    //    const projetoIdNumerico = Number(projeto_id); 
-    //     if (isNaN(projetoIdNumerico) || !Number.isInteger(projetoIdNumerico)) {
-    //       return res.status(400).json({ error: 'O ID do projeto deve ser um número inteiro válido.' });
-    //     }
     const projetoIdNumerico = Number(projeto_id);
-    // 2. CONVERSÃO DAS DATAS PARA OBJETO Date 
     const dataInicio = new Date(data_prevista_inicio + 'T00:00:00Z');
     const dataFim = (data_prevista_fim && data_prevista_fim !== "") ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
     const statusBoolean = true;
+    const hPrevistasSolicitadas = Number(horas_previstas) || 0;
 
 
-    // ✍️ Criação da Atividade no Prisma
+    const projeto = await prisma.projetos.findUnique({
+            where: { projeto_id: projetoIdNumerico },
+            select: { horas_previstas: true }
+        });
+
+    const somaAtividades = await prisma.atividades.aggregate({
+            where: { projeto_id: projetoIdNumerico },
+            _sum: { horas_previstas: true }
+        });
+
+    const totalPrevistoJaAlocado = somaAtividades._sum.horas_previstas || 0;
+
+    if ((totalPrevistoJaAlocado + hPrevistasSolicitadas) > (projeto.horas_previstas || 0)) {
+            return res.status(400).json({ 
+                error: `Limite de horas excedido. O projeto permite ${projeto.horas_previstas}h e o total ficaria em ${totalPrevistoJaAlocado + hPrevistasSolicitadas}h.` 
+            });
+        }
+    // Criação da Atividade no Prisma
  const novaAtividade = await prisma.atividades.create({
   data: {
     nome_atividade,
+    prioridade: prioridade || "normal",
     descr_atividade: descr_atividade || "",
     data_prevista_inicio: dataInicio,
     data_prevista_fim: dataFim,
-    horas_gastas: Number(horas_gastas) || 0,
+    horas_previstas: hPrevistasSolicitadas,
+    horas_gastas: 0,
     status: statusBoolean,
     projetos: {
       connect: { projeto_id: projetoIdNumerico }
     },
-    ...(colaborador_id && {
-      responsavel: {
-        connect: { colaborador_id: Number(colaborador_id) }
-      }
-    })
+    // ...(colaborador_id && {
+    //   responsavel: {
+    //     connect: { colaborador_id: Number(colaborador_id) }
+    //   }
+    // })
+    colaboradores_atividades: {
+          create: (colaborador_ids || []).map(id => ({
+            colaborador_id: Number(id)
+          }))
+        }
   }
 });
 
-// 🔽 RECALCULA AS HORAS DO PROJETO
+// RECALCULA AS HORAS DO PROJETO
 const soma = await prisma.atividades.aggregate({
   where: { projeto_id: projetoIdNumerico },
   _sum: { horas_gastas: true }
 });
 
-// 🔽 ATUALIZA O PROJETO
+// ATUALIZA O PROJETO
 await prisma.projetos.update({
   where: { projeto_id: projetoIdNumerico },
   data: {
-    horas_consumidas: soma._sum.horas_gastas || 0
+    horas_gastas: soma._sum.horas_gastas || 0
   }
 });
 
-res.status(201).json(novaAtividade);
-
+    res.status(201).json(novaAtividade);
   } catch (error) {
-    // Tratamento de erro específico para chave estrangeira (P2003)
-    if (error.code === 'P2003') {
-      return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
-    }
-
+    if (error.code === 'P2003') return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
     console.error('Erro ao cadastrar atividade:', error);
-    res.status(500).json({ error: 'Erro interno do servidor. Verifique os logs para detalhes.' });
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
-// Rota DELETE para Atividades
-
-app.delete('/atividades/:atividade_id', async (req, res) => {
-  const atividadeId = Number(req.params.atividade_id);
-
-  if (!Number.isInteger(atividadeId)) {
-    return res.status(400).json({ error: "ID inválido." });
-  }
-
-  try {
-    const existe = await prisma.atividades.findUnique({
-      where: { atividade_id: atividadeId }
-    });
-
-    if (!existe) {
-      return res.status(404).json({ error: `Atividade ${atividadeId} não existe.` });
-    }
-
-    await prisma.atividades.delete({
-      where: { atividade_id: atividadeId }
-    });
-
-    res.sendStatus(204);
-  } catch (error) {
-    console.error("Erro ao deletar:", error);
-    res.status(500).json({ error: "Erro interno ao deletar." });
-  }
-});
-
-
-// 🎯 ROTA PUT /atividades/:atividade_id - Atualiza uma atividade existente
+// PUT /atividades/:atividade_id
 app.put('/atividades/:atividade_id', async (req, res) => {
   const { atividade_id } = req.params;
-  const {
-    nome_atividade,
-    descr_atividade,
-    data_prevista_inicio, // String 'YYYY-MM-DD' ou null
-    data_prevista_fim, // String 'YYYY-MM-DD' ou null
-    horas_gastas,
-    status,    
-    projeto_id,
-    colaborador_id
-  } = req.body;
-
+  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, horas_previstas, status, projeto_id, colaborador_ids } = req.body;
   try {
-    const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T00:00:00Z') : null;
-    const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T00:00:00Z') : null;
+    const idAtv = Number(atividade_id);
+    const idProj = Number(projeto_id);
+    const hPrevistasNovas = Number(horas_previstas) || 0;
+
+    const projeto = await prisma.projetos.findUnique({
+      where: { projeto_id: idProj },
+      select: { horas_previstas: true }
+    });
+
+    const somaOutrasAtividades = await prisma.atividades.aggregate({
+      where: { 
+        projeto_id: idProj,
+        NOT: { atividade_id: idAtv } 
+      },
+      _sum: { horas_previstas: true }
+    });
+
+    const totalComEdicao = (somaOutrasAtividades._sum.horas_previstas || 0) + hPrevistasNovas;
+
+    if (totalComEdicao > (projeto.horas_previstas || 0)) {
+      return res.status(400).json({ 
+        error: `Limite excedido. O projeto tem ${projeto.horas_previstas}h e o total planejado seria ${totalComEdicao}h.` 
+      });
+    }
+
+    const dataInicio = data_prevista_inicio ? new Date(data_prevista_inicio + 'T12:00:00Z') : null;
+    const dataFim = data_prevista_fim ? new Date(data_prevista_fim + 'T12:00:00Z') : null;
 
     const atividadeAtualizada = await prisma.atividades.update({
-      where: { atividade_id: Number(atividade_id) },
+      where: { atividade_id: idAtv },
       data: {
         nome_atividade,
+        prioridade,
         descr_atividade: descr_atividade || "",
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
-        horas_gastas: Number(horas_gastas) || 0,
+        horas_previstas: hPrevistasNovas,
         status: Boolean(status),
-        projetos: {
-          connect: { projeto_id: Number(projeto_id) }
-        },
-        responsavel: colaborador_id
-          ? { connect: { colaborador_id: Number(colaborador_id) } }
-          : { disconnect: true }
+        projetos: { connect: { projeto_id: idProj } },
+        // responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
+        colaboradores_atividades: {
+          deleteMany: {}, // Remove responsáveis antigos
+          create: (colaborador_ids || []).map(id => ({
+            colaborador_id: Number(id)
+          }))
+        }
       },
       include: {
-        responsavel: true,
-        projetos: true
+        colaboradores_atividades: {
+          include: { colaboradores: true }
+        },
+        projetos: true,
       }
     });
 
     const soma = await prisma.atividades.aggregate({
-  where: { projeto_id: Number(projeto_id) },
-  _sum: { horas_gastas: true }
-});
+      where: { projeto_id: idProj },
+      _sum: { horas_gastas: true }
+    });
 
 await prisma.projetos.update({
-  where: { projeto_id: Number(projeto_id) },
+  where: { projeto_id: idProj },
   data: {
-    horas_consumidas: soma._sum.horas_gastas || 0
+    horas_gastas: soma._sum.horas_gastas || 0
   }
 });
 
     res.status(200).json(atividadeAtualizada);
-
   } catch (error) {
-    // Erro: Atividade não encontrada no banco de dados (Prisma P2025)
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: "Atividade não encontrada para o ID fornecido." });
-    }
-    // Erro: Projeto ID não encontrado (Prisma P2003)
-    if (error.code === 'P2003') {
-      return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
-    }
-
-    console.error("Erro ao atualizar atividade:", error);
-    res.status(500).json({ error: "Erro interno do servidor ao tentar atualizar a atividade." });
+    if (error.code === 'P2025') return res.status(404).json({ error: "Atividade não encontrada." });
+    console.error("Erro ao atualizar:", error);
+    res.status(500).json({ error: "Erro interno." });
   }
 });
-// ----------------------------------------------------
-// 🎯 ROTAS DE PROJETOS
-// ----------------------------------------------------
-// GET /projetos - Listar Projetos (com dados do Cliente)
+
+// DELETE /atividades/:atividade_id
+app.delete('/atividades/:atividade_id', async (req, res) => {
+  const atividadeId = Number(req.params.atividade_id);
+  if (!Number.isInteger(atividadeId)) return res.status(400).json({ error: "ID inválido." });
+  try {
+    const existe = await prisma.atividades.findUnique({ where: { atividade_id: atividadeId } });
+    if (!existe) return res.status(404).json({ error: `Atividade não existe.` });
+    await prisma.atividades.delete({ where: { atividade_id: atividadeId } });
+    res.sendStatus(204);
+  } catch (error) {
+    console.error("Erro ao deletar:", error);
+    res.status(500).json({ error: "Não é possível excluir uma atividade que possui horas lançadas." });
+  }
+});
+
+// ==================================================================
+// ROTAS DE PROJETOS
+// ==================================================================
+
+// GET /projetos
 app.get('/projetos', async (req, res) => {
   try {
     const totalLancamentos = await prisma.lancamentos_de_horas.count();
-    console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
+    // console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
-        clientes: {
-          select: { nome_cliente: true }
-        },
-        atividades: {
-          select: {
-            atividade_id: true,
-            nome_atividade: true,
-            status: true
-          }
-        },
-        projeto_colaboradores: {
-          include: {
-            colaboradores: true
-          }
-        }
+        clientes: { select: { nome_cliente: true } },
+        atividades: { select: { atividade_id: true, nome_atividade: true, status: true } },
+        projeto_colaboradores: { include: { colaboradores: true } }
       },
       orderBy: { projeto_id: 'desc' }
     });
     const agregacaoHoras = await prisma.lancamentos_de_horas.groupBy({
       by: ['projeto_id'],
-      _sum: {
-        duracao_total: true
-      }
+      _sum: { duracao_total: true }
     });
-
     const projetosComHoras = projetos.map(projeto => {
       const calculo = agregacaoHoras.find(h => Number(h.projeto_id) === Number(projeto.projeto_id));
       const total = calculo?._sum?.duracao_total || 0;
       
       return {
         ...projeto,
-        horas_consumidas: total, 
         horas_gastas: total
       };
     });
-
-    // console.log("Exemplo de projeto: ", JSON.stringify(projetos[0], null, 2));
     res.status(200).json(projetosComHoras);
   } catch (error) {
     console.error('Erro ao buscar projetos:', error);
@@ -654,14 +734,11 @@ app.get('/projetos', async (req, res) => {
   }
 });
 
+// GET /projetos/:id
 app.get('/projetos/:id', async (req, res) => {
   const { id } = req.params;
   const projetoId = parseInt(id);
-
-  if (isNaN(projetoId)) {
-    return res.status(400).json({ error: "ID do projeto inválido." });
-  }
-
+  if (isNaN(projetoId)) return res.status(400).json({ error: "ID do projeto inválido." });
   try {
     const [projeto, somaDespesas, somaHoras] = await Promise.all([
       prisma.projetos.findUnique({
@@ -670,73 +747,41 @@ app.get('/projetos/:id', async (req, res) => {
           clientes: { select: { nome_cliente: true } },
           atividades: { orderBy: { atividade_id: 'asc' } },
           projeto_colaboradores: { include: { colaboradores: true } },
-          despesas: { 
-            orderBy: { data_despesa: 'desc' },
-            include: { colaborador: { select: { nome_colaborador: true } } }
-          }
+          despesas: { orderBy: { data_despesa: 'desc' }, include: { colaborador: { select: { nome_colaborador: true } } } }
         }
       }),
-
       prisma.despesas.aggregate({
-        where: { 
-          projeto_id: projetoId,
-          status_aprovacao: "Aprovada" 
-        },
+        where: { projeto_id: projetoId, status_aprovacao: "Aprovada" },
         _sum: { valor: true }
       }),
-
       prisma.lancamentos_de_horas.aggregate({
         where: { projeto_id: projetoId },
         _sum: { duracao_total: true }
       })
     ]);
-
-    if (!projeto) {
-      return res.status(404).json({ error: 'Projeto não encontrado.' });
-    }
-
+    if (!projeto) return res.status(404).json({ error: 'Projeto não encontrado.' });
     res.status(200).json({
       ...projeto,
-      horas_consumidas: somaHoras._sum.duracao_total || 0,
       horas_gastas: somaHoras._sum.duracao_total || 0,
       total_despesas: Number(somaDespesas._sum.valor) || 0
     });
-
   } catch (error) {
     console.error(`Erro ao buscar projeto ${id}:`, error);
     res.status(500).json({ error: 'Erro interno ao buscar detalhes do projeto.' });
   }
 });
 
-// POST /projetos - Criar Projeto
+// POST /projetos
 app.post('/projetos', async (req, res) => {
   const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;
-
   if (!cliente_id || !nome_projeto || !data_inicio || !data_fim) {
     return res.status(400).json({ error: 'Campos obrigatórios: Cliente, Nome, Data Início, Data Fim.' });
   }
-
   try {
     const inicio = new Date(data_inicio);
     const fim = new Date(data_fim);
-    if (fim < inicio) {
-      return res.status(400).json({ error: 'A Data Prevista de Fim não pode ser anterior à Data de Início.' });
-    }
-    const projetoExistente = await prisma.projetos.findFirst({
-      where: {
-        cliente_id: parseInt(cliente_id),
-        nome_projeto: {
-          equals: nome_projeto,
-          mode: 'insensitive'
-        }
-      }
-    });
-
-    if (projetoExistente) {
-      return res.status(409).json({ error: `Este cliente já possui um projeto chamado "${nome_projeto}".` });
-    }
-
-    // Criação
+    if (fim < inicio) return res.status(400).json({ error: 'Data Fim não pode ser anterior à Data Início.' });
+    
     const novoProjeto = await prisma.projetos.create({
       data: {
         cliente_id: parseInt(cliente_id),
@@ -747,44 +792,22 @@ app.post('/projetos', async (req, res) => {
         horas_previstas: horas_previstas ? parseInt(horas_previstas) : 0,
         status: status ?? true,
         projeto_colaboradores: {
-          create: (colaboradores_ids || []).map(id => ({
-            colaborador_id: id
-          }))
+          create: (colaboradores_ids || []).map(id => ({ colaborador_id: id }))
         }
       }
     });
-
     res.status(201).json(novoProjeto);
-
   } catch (error) {
     console.error('Erro ao criar projeto:', error);
     res.status(500).json({ error: 'Erro interno ao criar projeto.' });
   }
 });
 
-// PUT /projetos/:id - Atualizar Projeto
+// PUT /projetos/:id
 app.put('/projetos/:id', async (req, res) => {
   const { id } = req.params;
   const { cliente_id, nome_projeto, descricao, data_inicio, data_fim, status, horas_previstas, colaboradores_ids } = req.body;
-
   try {
-    if (data_inicio && data_fim) {
-      if (new Date(data_fim) < new Date(data_inicio)) {
-        return res.status(400).json({ error: 'A Data Prevista de Fim não pode ser anterior à Data de Início.' });
-      }
-    }
-
-    if (cliente_id && nome_projeto) {
-      const duplicado = await prisma.projetos.findFirst({
-        where: {
-          cliente_id: parseInt(cliente_id),
-          nome_projeto: { equals: nome_projeto, mode: 'insensitive' },
-          projeto_id: { not: parseInt(id) }
-        }
-      });
-      if (duplicado) return res.status(409).json({ error: 'Nome de projeto já existe para este cliente.' });
-    }
-
     const projetoAtualizado = await prisma.projetos.update({
       where: { projeto_id: parseInt(id) },
       data: {
@@ -797,20 +820,11 @@ app.put('/projetos/:id', async (req, res) => {
         status,
         projeto_colaboradores: {
           deleteMany: {},
-          create: (colaboradores_ids || []).map(idColab => ({
-            colaborador_id: parseInt(idColab)
-          }))
+          create: (colaboradores_ids || []).map(idColab => ({ colaborador_id: parseInt(idColab) }))
         }
       },
-      include: {
-        projeto_colaboradores: {
-          include: {
-            colaboradores: true
-          }
-        }
-      }
+      include: { projeto_colaboradores: { include: { colaboradores: true } } }
     });
-
     res.status(200).json(projetoAtualizado);
   } catch (error) {
     console.error('Erro ao atualizar:', error);
@@ -818,96 +832,71 @@ app.put('/projetos/:id', async (req, res) => {
   }
 });
 
-// DELETE /projetos/:id - Excluir Projeto
+// DELETE /projetos/:id
 app.delete('/projetos/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.projetos.delete({
-      where: { projeto_id: parseInt(id) }
-    });
+    await prisma.projetos.delete({ where: { projeto_id: parseInt(id) } });
     res.status(204).send();
   } catch (error) {
-    console.error('Erro ao excluir projeto:', error);
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Projeto não encontrado.' });
     }
+    
+    // Erro de restrição (Foreign Key Constraint)
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        error: 'Não é possível excluir: este projeto possui atividades, lançamentos de horas ou despesas vinculadas.' 
+      });
+    }
+
+    console.error('Erro ao excluir projeto:', error);
     res.status(500).json({ error: 'Erro interno ao excluir projeto.' });
   }
 });
 
-// POST /despesas - Cadastro de Despesa
+// ==================================================================
+// ROTAS DE DESPESAS
+// ==================================================================
+
+// POST /despesas
 app.post('/despesas', async (req, res) => {
   const { projeto_id, colaborador_id, tipo_despesa, data_despesa, valor, descricao, anexo } = req.body;
-
   if (!projeto_id || !colaborador_id || !tipo_despesa || !data_despesa || !valor || !descricao || !anexo) {
-    return res.status(400).json({ error: "Todos os campos, incluindo o anexo, são obrigatórios." });
+    return res.status(400).json({ error: "Todos os campos são obrigatórios." });
   }
-
-  const tiposPermitidos = ["Transporte", "Refeição", "Estadia", "Outros"];
-  if (!tiposPermitidos.includes(tipo_despesa)) {
-    return res.status(400).json({ error: "Tipo de despesa inválido." });
-  }
-
   const valorNumerico = parseFloat(valor);
-  if (isNaN(valorNumerico) || valorNumerico <= 0) {
-    return res.status(400).json({ error: "O valor da despesa deve ser maior que zero." });
-  }
-
-  const dataLancamento = new Date(data_despesa);
-  const hoje = new Date();
-  if (dataLancamento > hoje) {
-    return res.status(400).json({ error: "A data da despesa não pode ser futura." });
-  }
-
-  if (descricao.trim().length < 5) {
-    return res.status(400).json({ error: "A descrição deve ter no mínimo 5 caracteres." });
-  }
+  if (isNaN(valorNumerico) || valorNumerico <= 0) return res.status(400).json({ error: "Valor inválido." });
 
   try {
     const projeto = await prisma.projetos.findUnique({ where: { projeto_id: Number(projeto_id) } });
-    
-    if (!projeto) {
-      return res.status(404).json({ error: "Projeto não encontrado." });
-    }
-
-    if (projeto.status === false) { 
-      return res.status(400).json({ error: "Não é permitido lançar despesas em projetos inativos ou encerrados." });
-    }
+    if (!projeto) return res.status(404).json({ error: "Projeto não encontrado." });
+    if (projeto.status === false) return res.status(400).json({ error: "Projeto inativo." });
 
     const novaDespesa = await prisma.despesas.create({
       data: {
         projeto_id: Number(projeto_id),
         colaborador_id: Number(colaborador_id),
         tipo_despesa,
-        data_despesa: dataLancamento,
+        data_despesa: new Date(data_despesa),
         valor: valorNumerico,
         descricao,
         anexo, 
         status_aprovacao: "Pendente" 
       }
     });
-
     res.status(201).json(novaDespesa);
   } catch (error) {
     console.error("Erro ao cadastrar despesa:", error);
-    res.status(500).json({ error: "Erro interno ao processar o lançamento da despesa." });
+    res.status(500).json({ error: "Erro interno." });
   }
 });
 
-// PATCH /despesas/:id/status - Aprovar ou Reprovar Despesa (Apenas Gerentes)
+// PATCH /despesas/:id/status
 app.patch('/despesas/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status, motivo_reprovacao, cargo } = req.body; 
-
-  if (!cargo || cargo.toLowerCase() !== 'gerente') {
-    return res.status(403).json({ error: "Acesso negado. Apenas gerentes podem aprovar despesas." });
-  }
-
-  const statusPermitidos = ["Aprovada", "Reprovada", "Pendente"];
-  if (!statusPermitidos.includes(status)) {
-    return res.status(400).json({ error: "Status inválido." });
-  }
-
+  if (!cargo || cargo.toLowerCase() !== 'gerente') return res.status(403).json({ error: "Apenas gerentes podem aprovar." });
   try {
     const despesaAtualizada = await prisma.despesas.update({
       where: { despesa_id: parseInt(id) },
@@ -916,18 +905,16 @@ app.patch('/despesas/:id/status', async (req, res) => {
         motivo_reprovacao: status === "Reprovada" ? motivo_reprovacao : null
       }
     });
-
     res.status(200).json(despesaAtualizada);
   } catch (error) {
     console.error("Erro ao atualizar status da despesa:", error);
-    res.status(500).json({ error: 'Erro interno ao processar aprovação.' });
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
-// GET /despesas - Lista todas as despesas 
+// GET /despesas
 app.get('/despesas', async (req, res) => {
   const { status } = req.query;
-  console.log("Filtro recebido na URL:", status);
   try {
     const despesas = await prisma.despesas.findMany({
       where: status ? { status_aprovacao: status } : {},
@@ -937,181 +924,49 @@ app.get('/despesas', async (req, res) => {
       },
       orderBy: { data_despesa: 'desc' }
     });
-    console.log(`Foram encontradas ${despesas.length} despesas.`);
     res.status(200).json(despesas);
   } catch (error) {
     console.error("Erro ao listar despesas:", error);
-    res.status(500).json({ error: "Erro interno ao buscar despesas." });
+    res.status(500).json({ error: "Erro interno." });
   }
 });
 
-// Rotas de Login
+// ==================================================================
+// ROTAS DE LOGIN E USUÁRIOS
+// ==================================================================
+
 app.post('/login', async (req, res) => {
   const { nome_usuario, senha } = req.body;
-
-  if (!nome_usuario || !senha) {
-    return res.status(400).json({ error: "Nome de usuário e senha são obrigatórios." });
-  }
-
+  if (!nome_usuario || !senha) return res.status(400).json({ error: "Campos obrigatórios." });
   try {
-    const usuario = await prisma.usuarios.findUnique({
-      where: { nome_usuario },
-    });
-    if (!usuario) {
-      return res.status(401).json({ error: "Credenciais inválidas." });
-    }
-
+    const usuario = await prisma.usuarios.findUnique({ where: { nome_usuario } });
+    if (!usuario) return res.status(401).json({ error: "Credenciais inválidas." });
     const senhaValida = await bcrypt.compare(senha, usuario.hash_senha);
-
-    if (!senhaValida) {
-      return res.status(401).json({ error: "Credenciais inválidas." });
-    }
+    if (!senhaValida) return res.status(401).json({ error: "Credenciais inválidas." });
 
     const token = jwt.sign(
-            { 
-                usuarioId: usuario.usuario_id, 
-                cargo: usuario.cargo, // ✅ Incluir o cargo para RBAC
-                nomeUsuario: usuario.nome_usuario,
-                colaborador_id: usuario.colaborador_id 
-            }, 
-            JWT_SECRET, 
-            { expiresIn: '8h' } // Token expira em 8 horas
-        );
-
-        // 4. Retornar o token e dados do usuário (sem a senha!)
-        res.json({
-            message: "Login bem-sucedido!",
-            token,
-            user: {
-                usuario_id: usuario.usuario_id,
-                nome_usuario: usuario.nome_usuario,
-                cargo: usuario.cargo,
-                nome_completo: usuario.nome_completo,
-                colaborador_id: usuario.colaborador_id,
-            }
-        });
-
+        { usuarioId: usuario.usuario_id, cargo: usuario.cargo, nomeUsuario: usuario.nome_usuario, colaborador_id: usuario.colaborador_id }, 
+        JWT_SECRET, 
+        { expiresIn: '8h' }
+    );
+    res.json({
+        message: "Login bem-sucedido!",
+        token,
+        user: {
+            usuario_id: usuario.usuario_id,
+            nome_usuario: usuario.nome_usuario,
+            cargo: usuario.cargo,
+            nome_completo: usuario.nome_completo,
+            colaborador_id: usuario.colaborador_id,
+        }
+    });
   } catch (error) {
     console.error("Erro no login:", error);
-    res.status(500).json({ error: "Erro interno do servidor." });
+    res.status(500).json({ error: "Erro interno." });
   }
 });
 
-
-// PUT /colaboradores/:id - Atualiza colaborador
-app.put('/colaboradores/:id', async (req, res) => {
-  const id = parseInt(req.params.id);
-  const { nome_colaborador, cargo, email, status, foto, data_admissao } = req.body;
-
-  console.log(`[PUT] Tentativa de atualização para ID: ${id}`);
-
-  if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
-
-  // Debug: Verificar cabeçalhos para ajudar no diagnóstico
-  const contentType = req.headers['content-type'];
-  console.log(`[PUT] Content-Type recebido: ${contentType}`);
-
-  // Verifica se o body está vazio
-  if (!req.body || Object.keys(req.body).length === 0) {
-    console.error('[PUT] Erro: req.body vazio.');
-
-    // Feedback específico se o Content-Type estiver errado
-    if (!contentType || !contentType.includes('application/json')) {
-      return res.status(400).json({
-        error: 'Erro de Formato: O servidor espera JSON. Verifique se o frontend está enviando headers: {"Content-Type": "application/json"}.'
-      });
-    }
-
-    return res.status(400).json({ error: 'Nenhum dado recebido. O corpo da requisição está vazio.' });
-  }
-
-  console.log('[PUT] Dados recebidos:', { nome_colaborador, cargo, email, status, temFoto: !!foto });
-
-  const dadosParaAtualizar = {
-    nome_colaborador,
-    cargo,
-    email,
-    status
-  };
-
-  // Só adiciona a foto se ela foi enviada (para não apagar a existente se vier null/undefined)
-  if (foto) {
-    dadosParaAtualizar.foto = Buffer.from(foto, 'base64');
-  }
-  // Só atualiza data_admissao se fornecida
-  if (data_admissao) {
-    dadosParaAtualizar.data_admissao = new Date(data_admissao);
-  }
-
-  try {
-    const colaboradorAtualizado = await prisma.colaboradores.update({
-      where: { colaborador_id: id },
-      data: dadosParaAtualizar,
-    });
-
-    console.log('[PUT] Sucesso ID:', colaboradorAtualizado.colaborador_id);
-    res.status(200).json(colaboradorAtualizado);
-
-  } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: `Colaborador ID ${id} não encontrado.` });
-    }
-    if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'E-mail já está em uso.' });
-    }
-    console.error('[PUT] Erro:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar.' });
-  }
-});
-
-// DELETE /colaboradores/:id - Exclui um colaborador
-app.delete('/colaboradores/:id', async (req, res) => {
-
-  const id = parseInt(req.params.id);
-
-  try {
-    const colabId = parseInt(id);
-
-    await prisma.$transaction(async (tx) => {
-      // Inativa o Colaborador
-      await tx.colaboradores.update({
-        where: { colaborador_id: colabId },
-        data: { status: false }
-      });
-
-      // Inativa o Usuário que aponta para este colaborador
-      await tx.usuarios.updateMany({
-        where: { colaborador_id: colabId },
-        data: { status: false }
-      });
-    });
-
-    res.status(200).json({ message: 'Colaborador e Usuário inativados com sucesso.' });
-
-  } catch (error) {
-    console.error('[DELETE] Erro no Prisma:', error);
-
-    // Erro P2025: Registro não encontrado
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Colaborador não encontrado.' });
-    }
-
-    // Erro P2003: Chave estrangeira (tem vínculos)
-    if (error.code === 'P2003') {
-      return res.status(400).json({
-        error: 'Não é possível excluir: Este colaborador possui vínculos (vendas/projetos). Tente inativá-lo.'
-      });
-    }
-
-    res.status(500).json({ error: 'Erro interno ao excluir colaborador.' });
-  }
-});
-
-// ----------------------------------------------------
-// 🎯 ROTAS DE USUÁRIOS (GESTÃO E PERMISSÕES)
-// ----------------------------------------------------
-
-// GET /usuarios - Listar Usuários
+// GET /usuarios
 app.get('/usuarios', async (req, res) => {
   try {
     const usuarios = await prisma.usuarios.findMany({
@@ -1122,188 +977,102 @@ app.get('/usuarios', async (req, res) => {
         email: true,
         cargo: true,
         status: true,
+        colaborador_id: true,
         // hash_senha: false <-- Segurança: Nunca enviar o hash
       },
       orderBy: { nome_completo: 'asc' }
     });
     res.status(200).json(usuarios);
   } catch (error) {
-    console.error('Erro ao listar usuários:', error);
-    res.status(500).json({ error: 'Erro interno ao listar usuários.' });
+    res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
-// POST /usuarios - Criar novo usuário
+// POST /usuarios
 app.post('/usuarios', async (req, res) => {
   const { nome_usuario, senha, nome_completo, email, cargo } = req.body;
-
-  if (!nome_usuario || !senha || !email) {
-    return res.status(400).json({ error: 'Usuário, senha e e-mail são obrigatórios.' });
-  }
-
   try {
     const salt = await bcrypt.genSalt(10);
     const hash_senha = await bcrypt.hash(senha, salt);
-
     const novoUsuario = await prisma.$transaction(async (tx) => {
-      // data: {
-      //     nome_usuario,
-      //     hash_senha,
-      //     nome_completo,
-      //     email,
-      //     cargo: cargo || 'Colaborador',
-      //     status: true
-      // }
       const colaborador = await tx.colaboradores.create({
-        data: {
-          nome_colaborador: nome_completo,
-          email: email,
-          cargo: cargo || 'Colaborador',
-          data_admissao: new Date(), // Data padrão de hoje
-          status: true
-        }
+        data: { nome_colaborador: nome_completo, email, cargo: cargo || 'Colaborador', data_admissao: new Date(), status: true }
       });
-
-      // Cria o usuário vinculado ao colaborador criado acima
       const usuario = await tx.usuarios.create({
-        data: {
-          nome_usuario,
-          hash_senha,
-          nome_completo,
-          email,
-          cargo: cargo || 'Colaborador',
-          status: true,
-          colaborador_id: colaborador.colaborador_id
-        }
+        data: { nome_usuario, hash_senha, nome_completo, email, cargo: cargo || 'Colaborador', status: true, colaborador_id: colaborador.colaborador_id }
       });
-
       return usuario;
     });
-
-    // Remove a senha do objeto de retorno
     const { hash_senha: _, ...userSemSenha } = novoUsuario;
-    res.status(201).json({ message: "Usuário e Colaborador criados com sucesso!", userSemSenha });
-
+    res.status(201).json({ message: "Usuário criado!", userSemSenha });
   } catch (error) {
-    if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'Usuário ou E-mail já cadastrados.' });
-    }
+    if (error.code === 'P2002') return res.status(409).json({ error: 'Usuário ou E-mail já cadastrados.' });
     res.status(500).json({ error: 'Erro ao criar usuário.' });
   }
 });
 
-// PUT /usuarios/:id 
+// PUT /usuarios/:id
 app.put('/usuarios/:id', async (req, res) => {
   const { id } = req.params;
   const { nome_completo, email, cargo, status, senha, nome_usuario } = req.body;
-
   try {
-    const usuarioIdNum = parseInt(id);
-    const dadosParaAtualizar = {
-      nome_completo,
-      email,
-      cargo,
-      status,
-      nome_usuario
-    };
-
+    const dadosParaAtualizar = { nome_completo, email, cargo, status, nome_usuario };
     if (senha && senha.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
       dadosParaAtualizar.hash_senha = await bcrypt.hash(senha, salt);
     }
     const resultado = await prisma.$transaction(async (tx) => {
-      // Busca o usuário para garantir que existe e pegar o vínculo
-      const usuarioOriginal = await tx.usuarios.findUnique({
-        where: { usuario_id: usuarioIdNum }
-      });
-
-      if (!usuarioOriginal) {
-        throw new Error("P2025");
-      }
-
-      // Atualiza o Usuário
-      const usuarioAtualizado = await tx.usuarios.update({
-        where: { usuario_id: usuarioIdNum },
-        data: dadosParaAtualizar
-      });
-
-      // sincroniza status com o Colaborador
+      const usuarioOriginal = await tx.usuarios.findUnique({ where: { usuario_id: parseInt(id) } });
+      if (!usuarioOriginal) throw new Error("P2025");
+      const usuarioAtualizado = await tx.usuarios.update({ where: { usuario_id: parseInt(id) }, data: dadosParaAtualizar });
       if (status !== undefined && usuarioOriginal.colaborador_id) {
-        await tx.colaboradores.update({
-          where: { colaborador_id: usuarioOriginal.colaborador_id },
-          data: { status: status }
-        });
+        await tx.colaboradores.update({ where: { colaborador_id: usuarioOriginal.colaborador_id }, data: { status: status } });
       }
-
       return usuarioAtualizado;
     });
-
     const { hash_senha: _, ...userSemSenha } = resultado;
     res.status(200).json(userSemSenha);
-
   } catch (error) {
-    if (error.code === 'P2002' || error.message.includes('unique constraint')) {
-      return res.status(409).json({ error: 'Conflito: Usuário ou E-mail já existem.' });
-    }
-    if (error.code === 'P2025' || error.message === "P2025") {
-      return res.status(404).json({ error: 'Usuário não encontrado.' });
-    }
-    console.error('Erro ao atualizar usuário:', error);
-    res.status(500).json({ error: 'Erro ao atualizar usuário.' });
+    if (error.code === 'P2002') return res.status(409).json({ error: 'Conflito: Usuário ou E-mail já existem.' });
+    if (error.message === "P2025") return res.status(404).json({ error: 'Usuário não encontrado.' });
+    res.status(500).json({ error: 'Erro ao atualizar.' });
   }
 });
 
-
+// DELETE /usuarios/:id
 app.delete('/usuarios/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const usuarioIdNum = parseInt(id);
-
     await prisma.$transaction(async (tx) => {
-      const usuario = await tx.usuarios.findUnique({
-        where: { usuario_id: usuarioIdNum },
-        select: { colaborador_id: true }
-      });
+      const usuario = await tx.usuarios.findUnique({ where: { usuario_id: parseInt(id) } });
       if (!usuario) throw new Error("Usuário não encontrado");
-      await tx.usuarios.update({
-        where: { usuario_id: usuarioIdNum },
-        data: { status: false }
-      });
+      await tx.usuarios.update({ where: { usuario_id: parseInt(id) }, data: { status: false } });
       if (usuario.colaborador_id) {
-        await tx.colaboradores.update({
-          where: { colaborador_id: usuario.colaborador_id },
-          data: { status: false }
-        });
+        await tx.colaboradores.update({ where: { colaborador_id: usuario.colaborador_id }, data: { status: false } });
       }
     });
-    res.status(200).json({ message: 'Usuário e Colaborador inativados com sucesso.' });
+    res.status(200).json({ message: 'Inativado com sucesso.' });
   } catch (error) {
-    console.error('Erro ao inativar usuário:', error);
     res.status(500).json({ error: 'Erro ao inativar usuário.' });
   }
 });
 
-// ROTAS DE TIMESHEETS
+// ==================================================================
+// ROTAS DE TIMESHEETS (Lançamento de Horas)
+// ==================================================================
 
-// GET /lancamentos - Lista as horas (Filtra por usuário ou traz tudo se for gerente)
+// GET /lancamentos
 app.get('/lancamentos', async (req, res) => {
   const { usuario_id, cargo } = req.query;
-
   try {
     let whereClause = {};
-    
-    // Se NÃO for gerente OU se for gerente mas NÃO estiver pedindo para ver a equipe
     if (cargo !== 'gerente' && usuario_id) {
       const usuario = await prisma.usuarios.findUnique({
         where: { usuario_id: Number(usuario_id) },
         select: { colaborador_id: true }
       });
-      
-      if (usuario?.colaborador_id) {
-        whereClause.colaborador_id = usuario.colaborador_id;
-      }
+      if (usuario?.colaborador_id) whereClause.colaborador_id = usuario.colaborador_id;
     }
-
     const lancamentos = await prisma.lancamentos_de_horas.findMany({
       where: whereClause,
       include: {
@@ -1312,10 +1081,14 @@ app.get('/lancamentos', async (req, res) => {
         clientes: { select: { nome_cliente: true } },
         atividades: { select: { nome_atividade: true } }
       },
-      orderBy: { data_lancamento: 'desc' } // Ordenar pela data do trabalho, não da criação
+      orderBy: { data_lancamento: 'desc' }
     });
 
-    res.status(200).json(lancamentos);
+    const formatados = lancamentos.map(item => ({
+      ...item,
+      data: item.data_lancamento, 
+    }));
+    res.status(200).json(formatados);
   } catch (error) {
     console.error('Erro ao buscar lançamentos:', error);
     res.status(500).json({ error: 'Erro ao listar horas.' });
@@ -1324,86 +1097,239 @@ app.get('/lancamentos', async (req, res) => {
 
 // POST /lancamentos
 app.post('/lancamentos', async (req, res) => {
-  // Ajustado para receber 'data' e 'cliente_id' vindos do front
   const { 
     usuario_id, projeto_id, atividade_id, cliente_id,
     data, hora_inicio, hora_fim, descricao, tipo_lancamento 
   } = req.body;
 
-  // console.log("Dados recebidos no backend:", req.body); // Log para debug
+  console.log("Dados recebidos no backend:", req.body); // Log para debug
 
-  // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
-  const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
+  // // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
+  // const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
+  // const hoje = new Date();
+  // hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
 
-  if (dataLancamento > hoje) {
-    return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
-  }
+  // if (dataLancamento > hoje) {
+  //   return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
+  // }
 
   try {
-    if (!usuario_id) {
-      return res.status(400).json({ error: "ID do usuário não fornecido." });
+    // 1. Validação de Data Futura
+    const dataLancamentoLocal = new Date(`${data}T00:00:00`); 
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0); 
+
+    if (dataLancamentoLocal > hoje) {
+      return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
     }
-    // Busca o usuário para confirmar o cargo e o ID do colaborador vinculado
-    const usuario = await prisma.usuarios.findUnique({
-      where: { usuario_id: Number(usuario_id) }
+
+    // 2. Buscar o usuário e colaborador (apenas uma vez)
+    if (!usuario_id) return res.status(400).json({ error: "ID do usuário não fornecido." });
+
+    const usuarioExistente = await prisma.usuarios.findUnique({
+      where: { usuario_id: Number(usuario_id) },
+      select: { colaborador_id: true }
     });
 
-    if (!usuario) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+    if (!usuarioExistente) return res.status(404).json({ error: "Usuário não encontrado." });
+    if (!usuarioExistente.colaborador_id) return res.status(400).json({ error: "Este usuário não possui um colaborador vinculado." });
+
+    const colabId = usuarioExistente.colaborador_id;
+
+    // 3. Preparação dos horários para comparação (UTC para evitar erros de fuso)
+    const inicioDate = new Date(`${data}T${hora_inicio}:00Z`);
+    const fimDate = new Date(`${data}T${hora_fim}:00Z`);
+    const dataLancamentoBanco = new Date(`${data}T12:00:00Z`);
+
+    // 4. Verificação de Sobreposição
+    const sobreposicao = await prisma.lancamentos_de_horas.findFirst({
+      where: {
+        colaborador_id: colabId,
+        data_lancamento: dataLancamentoBanco,
+        AND: [
+          { hora_inicio: { lt: fimDate } },
+          { hora_fim: { gt: inicioDate } }
+        ]
+      }
+    });
+
+    if (sobreposicao) {
+      const hI = sobreposicao.hora_inicio.getUTCHours().toString().padStart(2, '0');
+      const mI = sobreposicao.hora_inicio.getUTCMinutes().toString().padStart(2, '0');
+      const hF = sobreposicao.hora_fim.getUTCHours().toString().padStart(2, '0');
+      const mF = sobreposicao.hora_fim.getUTCMinutes().toString().padStart(2, '0');
+
+      return res.status(400).json({ 
+        error: `Você já possui um lançamento registrado entre [${hI}:${mI}] e [${hF}:${mF}] nesta data.` 
+      });
     }
 
-    if (!usuario.colaborador_id) {
-      return res.status(400).json({ error: "Este usuário não possui um colaborador vinculado." });
-    }
-
-    // Regra: Gerentes têm aprovação automática
-    const statusInicial = 'aprovado';
-
-    // 1. Preparar a data base para as horas (evita confusão de fuso horário)
-    const dataBase = data; // '2026-01-14'
-
-    // 2. Converter as strings "12:00" em objetos Date válidos para o Prisma
-    const inicioDate = new Date(`${dataBase}T${hora_inicio}:00Z`);
-    const fimDate = new Date(`${dataBase}T${hora_fim}:00Z`);
-
-    // 3. Calcular a duracao_total (opcional, mas recomendado já que a coluna existe)
+    // 5. Cálculo de duração
     const diffMs = fimDate.getTime() - inicioDate.getTime();
     const duracaoHoras = diffMs / (1000 * 60 * 60);
 
-   const novoLancamento = await prisma.lancamentos_de_horas.create({
-  data: {
-    colaborador_id: 38,
-    projeto_id: 27,
-    atividade_id: 90,
-    cliente_id: 13,
-    data_lancamento: new Date(),
-    hora_inicio: inicioDate,
-    hora_fim: fimDate,
-    duracao_total: duracaoHoras,
-    descricao: "a",
-    status_aprovacao: "aprovado",
-    // tipo_lancamento: "manual",  <-- 
-  }
-})
+    if (isNaN(duracaoHoras) || duracaoHoras <= 0) {
+      return res.status(400).json({ error: "O horário de término deve ser maior que o de início." });
+    }
 
+    const novoLancamento = await prisma.lancamentos_de_horas.create({
+      data: {
+        colaborador_id: colabId,
+        projeto_id: Number(projeto_id),
+        atividade_id: Number(atividade_id),
+        cliente_id: Number(cliente_id),
+        data_lancamento: new Date(`${data}T12:00:00Z`),
+        hora_inicio: inicioDate,
+        hora_fim: fimDate,
+        duracao_total: duracaoHoras,
+        descricao: descricao || "",
+        status_aprovacao: 'aprovado',
+        tipo_lancamento: tipo_lancamento || "manual"
+      }
+    });
     res.status(201).json(novoLancamento);
   } catch (error) {
-    console.error("Erro Prisma:", error);
+    console.error("Erro ao lançar horas:", error);
     res.status(500).json({ error: 'Erro interno ao registrar horas.' });
   }
 });
 
-// PATCH /lancamentos/:id/status - Aprovar ou Rejeitar (Apenas Gerentes)
+// PUT /lancamentos/:id
+app.put('/lancamentos/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  console.log("=== TENTATIVA DE EDIÇÃO ===");
+  const { 
+    projeto_id, atividade_id, cliente_id, 
+    data_lancamento, hora_inicio, hora_fim, 
+    descricao, motivo_edicao 
+  } = req.body;
+
+  try {
+    // 1. Validações e Tratamento
+    if (!projeto_id || !atividade_id) {
+       return res.status(400).json({ error: "Projeto e Atividade são obrigatórios." });
+    }
+
+    const idLancamento = Number(id);
+    const idProjeto = Number(projeto_id);
+    const idAtividade = Number(atividade_id);
+    const idCliente = cliente_id ? Number(cliente_id) : null;
+
+    if (isNaN(idProjeto) || isNaN(idAtividade)) {
+        return res.status(400).json({ error: "IDs inválidos." });
+    }
+
+    const dataBase = data_lancamento && data_lancamento.includes('T') 
+        ? data_lancamento.split('T')[0] 
+        : data_lancamento;
+    
+    if (!dataBase) return res.status(400).json({ error: "Data obrigatória." });
+
+    const timeToDate = (dateStr, timeStr) => {
+        if(!timeStr) return null;
+        const timeParts = timeStr.split(':');
+        const d = new Date(dateStr);
+        d.setUTCHours(Number(timeParts[0]), Number(timeParts[1]), 0, 0);
+        return d;
+    };
+
+    const inicioDate = timeToDate(dataBase, hora_inicio);
+    const fimDate = timeToDate(dataBase, hora_fim);
+    const dataLancamentoDate = new Date(`${dataBase}T12:00:00Z`);
+
+    const conflito = await prisma.lancamentos_de_horas.findFirst({
+  where: {
+    lancamento_id: { not: idLancamento }, // Ignora o registro atual
+    colaborador_id: (await prisma.lancamentos_de_horas.findUnique({ 
+        where: { lancamento_id: idLancamento }, 
+        select: { colaborador_id: true } 
+    })).colaborador_id,
+    data_lancamento: dataLancamentoDate,
+    AND: [
+      { hora_inicio: { lt: fimDate } },
+      { hora_fim: { gt: inicioDate } }
+    ]
+  }
+});
+
+if (conflito) {
+  const hI = conflito.hora_inicio.getUTCHours().toString().padStart(2, '0');
+  const mI = conflito.hora_inicio.getUTCMinutes().toString().padStart(2, '0');
+  const hF = conflito.hora_fim.getUTCHours().toString().padStart(2, '0');
+  const mF = conflito.hora_fim.getUTCMinutes().toString().padStart(2, '0');
+
+  return res.status(400).json({ 
+    error: `Você já possui um lançamento de horas registrado entre [${hI}:${mI}] e [${hF}:${mF}] nesta data.` 
+  });
+}
+
+    let duracaoHoras = 0;
+    if (inicioDate && fimDate) {
+        const diffMs = fimDate.getTime() - inicioDate.getTime();
+        duracaoHoras = diffMs / (1000 * 60 * 60);
+    }
+
+    // --- CORREÇÃO DO MOTIVO ---
+    // Como a coluna 'motivo_edicao' não existe no banco, 
+    // vamos concatenar o motivo dentro da 'descricao' para não perder a informação.
+    let descricaoFinal = descricao || "";
+    if (motivo_edicao && motivo_edicao.trim() !== "") {
+        descricaoFinal = `${descricaoFinal} | [Motivo Edição: ${motivo_edicao}]`;
+    }
+
+    // 2. ATUALIZAÇÃO NO PRISMA
+    const lancamentoAtualizado = await prisma.lancamentos_de_horas.update({
+      where: { lancamento_id: idLancamento },
+      data: {
+        projetos: { connect: { projeto_id: idProjeto } },
+        atividades: { connect: { atividade_id: idAtividade } },
+        // Lógica condicional para cliente (só conecta se tiver ID)
+        ...(idCliente && { clientes: { connect: { cliente_id: idCliente } } }),
+        
+        data_lancamento: dataLancamentoDate,
+        hora_inicio: inicioDate,
+        hora_fim: fimDate,
+        duracao_total: duracaoHoras,
+        
+        descricao: descricaoFinal, // Salvamos aqui!
+        
+        // motivo_edicao: motivo_edicao <-- REMOVIDO POIS NÃO EXISTE NO BANCO
+      },
+    });
+
+    console.log("=== SUCESSO ===");
+    res.json(lancamentoAtualizado);
+
+  } catch (error) {
+    console.error("ERRO NO UPDATE:", error);
+    
+    if (error.code === 'P2025') return res.status(404).json({ error: "Lançamento não encontrado." });
+    if (error.code === 'P2003') return res.status(400).json({ error: "Projeto ou Atividade informados não existem." });
+    
+    res.status(500).json({ error: "Erro interno no servidor", details: error.message });
+  }
+});
+
+// DELETE /lancamentos/:id
+app.delete('/lancamentos/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.lancamentos_de_horas.delete({
+      where: { lancamento_id: Number(id) },
+    });
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao excluir." });
+  }
+});
+
+// PATCH /lancamentos/:id/status
 app.patch('/lancamentos/:id/status', async (req, res) => {
   const { id } = req.params;
-  const { status, cargo } = req.body; // status: 'aprovado' ou 'rejeitado'
-
-  if (cargo !== 'gerente') {
-    return res.status(403).json({ error: "Apenas gerentes podem aprovar horas." });
-  }
-
+  const { status, cargo } = req.body;
+  if (cargo !== 'gerente') return res.status(403).json({ error: "Apenas gerentes podem aprovar horas." });
   try {
     const atualizado = await prisma.lancamentos_de_horas.update({
       where: { lancamento_id: parseInt(id) },
@@ -1411,115 +1337,336 @@ app.patch('/lancamentos/:id/status', async (req, res) => {
     });
     res.status(200).json(atualizado);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar status do lançamento.' });
+    res.status(500).json({ error: 'Erro ao atualizar status.' });
   }
 });
 
 // GET /dashboard/stats/:usuario_id
 app.get('/dashboard/stats/:usuario_id', async (req, res) => {
   const { usuario_id } = req.params;
-
   try {
-    const usuario = await prisma.usuarios.findUnique({
-      where: { usuario_id: Number(usuario_id) },
-    });
-
+    const usuario = await prisma.usuarios.findUnique({ where: { usuario_id: parseInt(usuario_id) } });
     if (!usuario?.colaborador_id) return res.status(404).json({ error: "Colaborador não encontrado" });
 
-    // ---DATAS---
+    // Ajuste Datas (UTC-3 fixo simples ou UTC)
     const agora = new Date();
-    // Ajuste para o fuso de Brasília (UTC-3)
     const hojeLocal = new Date(agora.getTime() - (3 * 60 * 60 * 1000)); 
+    const inicioHoje = new Date(hojeLocal); inicioHoje.setUTCHours(0, 0, 0, 0);
+    const fimHoje = new Date(hojeLocal); fimHoje.setUTCHours(23, 59, 59, 999);
+    
+    const inicioOntem = new Date(inicioHoje); inicioOntem.setUTCDate(inicioHoje.getUTCDate() - 1);
+    const fimOntem = new Date(fimHoje); fimOntem.setUTCDate(fimHoje.getUTCDate() - 1);
+    const seteDiasAtras = new Date(inicioHoje); seteDiasAtras.setUTCDate(inicioHoje.getUTCDate() - 6);
 
-    const inicioHoje = new Date(hojeLocal);
-    inicioHoje.setUTCHours(0, 0, 0, 0);
-
-    const fimHoje = new Date(hojeLocal);
-    fimHoje.setUTCHours(23, 59, 59, 999);
-
-    // Para a porcentagem (Ontem)
-    const inicioOntem = new Date(inicioHoje);
-    inicioOntem.setUTCDate(inicioHoje.getUTCDate() - 1);
-
-    const fimOntem = new Date(fimHoje);
-    fimOntem.setUTCDate(fimHoje.getUTCDate() - 1);
-
-    const seteDiasAtras = new Date(inicioHoje);
-    seteDiasAtras.setUTCDate(inicioHoje.getUTCDate() - 6);
-
-    // ---BUSCAS---
-    // 1. Horas de Hoje
     const horasHoje = await prisma.lancamentos_de_horas.aggregate({
       _sum: { duracao_total: true },
-      where: {
-        colaborador_id: usuario.colaborador_id,
-        data_lancamento: { gte: inicioHoje, lte: fimHoje }
-      }
+      where: { colaborador_id: usuario.colaborador_id, data_lancamento: { gte: inicioHoje, lte: fimHoje } }
+    });
+    const horasOntem = await prisma.lancamentos_de_horas.aggregate({
+      _sum: { duracao_total: true },
+      where: { colaborador_id: usuario.colaborador_id, data_lancamento: { gte: inicioOntem, lte: fimOntem } }
     });
 
-const horasOntem = await prisma.lancamentos_de_horas.aggregate({
-  _sum: { duracao_total: true },
-  where: {
-    colaborador_id: usuario.colaborador_id,
-    data_lancamento: { gte: inicioHoje, lte: fimOntem }
-  }
-});
-
-const totalHoje = Number(horasHoje._sum.duracao_total || 0);
-const totalOntem = Number(horasOntem._sum.duracao_total || 0);
-
-// Lógica da porcentagem
-let diferencaPercentual = 0;
-if (totalOntem > 0) {
-  diferencaPercentual = ((totalHoje - totalOntem) / totalOntem) * 100;
-} else if (totalHoje > 0) {
-  diferencaPercentual = 100; // Se ontem foi 0 e hoje tem algo, cresceu 100%
-}
-
+    const totalHoje = Number(horasHoje._sum.duracao_total || 0);
+    const totalOntem = Number(horasOntem._sum.duracao_total || 0);
+    let diferencaPercentual = 0;
+    if (totalOntem > 0) {
+      diferencaPercentual = ((totalHoje - totalOntem) / totalOntem) * 100;
+    } else if (totalHoje > 0) {
+      diferencaPercentual = 100;
+    }
 
     const lancamentosSemana = await prisma.lancamentos_de_horas.groupBy({
       by: ['data_lancamento'],
       _sum: { duracao_total: true },
-      where: {
-        colaborador_id: usuario.colaborador_id,
-        data_lancamento: { gte: seteDiasAtras, lte: fimHoje }
-      },
+      where: { colaborador_id: usuario.colaborador_id, data_lancamento: { gte: seteDiasAtras, lte: fimHoje } },
       orderBy: { data_lancamento: 'asc' }
     });
 
-    // ---GRÁFICO---
-    // Formatar dados para o gráfico (Recharts)
     const diasSemanaNomes = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    
-    // Criamos um mapa para facilitar a busca
     const mapaDeHoras = {};
     lancamentosSemana.forEach(item => {
         const dataObj = new Date(item.data_lancamento);
-        const diaIndex = dataObj.getUTCDay(); // Pega o dia da semana 0-6
+        const diaIndex = dataObj.getUTCDay();
         mapaDeHoras[diaIndex] = Number(item._sum.duracao_total || 0);
     });
-    
     const graficoData = diasSemanaNomes.map((nome, index) => ({
         dia: nome,
         horas: Number((mapaDeHoras[index] || 0).toFixed(1))
     }));
-
-    // Meta Diária e produtividade
     const META_DIARIA = 8;
     const produtividadeReal = Math.min(Math.round((totalHoje / META_DIARIA) * 100), 100);
 
+
+    // LÓGICA CARD DE DESPESAS
+    const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+    
+
+    const despesasMes = await prisma.despesas.aggregate({
+      _sum: { valor: true },
+      where: { 
+        data_despesa: { gte: inicioMes, lte: fimHoje } 
+      }
+    });
+
+    const totalDespesas = Number(despesasMes._sum.valor || 0);
+    console.log("Soma total de despesas (Global):", totalDespesas);
 
     res.json({
       totalHoje: Number(totalHoje.toFixed(1)),
       percentual: Math.round(diferencaPercentual),
       produtividade: produtividadeReal,
-      grafico: graficoData
+      grafico: graficoData,
+      totalDespesas: totalDespesas
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro ao calcular estatísticas" });
   }
+});
+
+// ROTA DO LOG DE SEGURANÇA
+// No seu arquivo do servidor (Backend)
+app.post('/logs', async (req, res) => {
+  const { usuario_id, evento, tela_acessada } = req.body;
+
+  // 🛡️ PROTEÇÃO: Se o ID for inválido, nem tenta mandar pro Prisma
+  const parsedId = parseInt(usuario_id);
+  
+  if (isNaN(parsedId)) {
+    console.error("Tentativa de log com usuario_id INVÁLIDO:", usuario_id);
+    return res.status(400).json({ error: "usuario_id é obrigatório e deve ser um número" });
+  }
+
+  try {
+    const novoLog = await prisma.logs_acesso.create({
+      data: {
+        usuario_id: parseInt(usuario_id),
+        evento: evento,
+        tela_acessada: tela_acessada || null,
+        // Removi o IP conforme combinamos
+      }
+    });
+    res.status(201).json(novoLog);
+  } catch (error) {
+    console.error("Erro ao salvar log:", error);
+    res.status(500).json({ error: "Erro ao salvar log" });
+  }
+});
+
+// Inicialização
+// --- ROTAS DE RELATÓRIO
+// GET /relatorios - Gera dados para visualização ou download
+// --- ROTAS DE RELATÓRIO
+app.get('/relatorios', async (req, res) => {
+  try {
+    console.log("Query Params recebidos no servidor:", req.query);
+    const { data_inicio, data_fim, colaborador_id, projeto_id, atividade_id, exportar, formato } = req.query;
+
+    // 1. Montagem do Filtro (Where)
+    let whereClause = {};
+
+    // Filtro de Datas (com ajuste de horas para cobrir o dia todo)
+    if (data_inicio || data_fim) {
+      whereClause.data_lancamento = {};
+      if (data_inicio) whereClause.data_lancamento.gte = new Date(`${data_inicio}T00:00:00.000Z`);
+      if (data_fim) whereClause.data_lancamento.lte = new Date(`${data_fim}T23:59:59.999Z`);
+    }
+
+    if (colaborador_id) {
+    const idNum = parseInt(colaborador_id);
+    if (!isNaN(idNum) && idNum > 0) {
+        whereClause.colaborador_id = idNum;
+    } else {
+        // Se cair aqui, o Front ainda está enviando texto em vez de número
+        console.error("ERRO CRÍTICO: O servidor recebeu um nome em vez de ID:", colaborador_id);
+    }
+}
+
+    // Filtro de Projeto
+    if (projeto_id && projeto_id !== "") {
+      const idProj = parseInt(projeto_id);
+      if (!isNaN(idProj)) whereClause.projeto_id = idProj;
+    }
+
+    if (atividade_id) whereClause.atividade_id = parseInt(atividade_id);
+
+    console.log("Where Clause final para o Prisma:", whereClause);
+    console.log("Filtros finais aplicados no Prisma:", JSON.stringify(whereClause, null, 2));
+
+    // 2. Execução da Busca Única
+    const dados = await prisma.lancamentos_de_horas.findMany({
+      where: whereClause,
+      include: {
+        colaboradores: { select: { nome_colaborador: true } },
+        projetos: { select: { nome_projeto: true } },
+        clientes: { select: { nome_cliente: true } },
+        atividades: { select: { nome_atividade: true } }
+      },
+      orderBy: { data_lancamento: "asc" }
+    });
+
+    // 3. Lógica de Resposta (Exportação vs JSON)
+    if (exportar === 'true') {
+      if (formato === 'xlsx') {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Relatório de Horas');
+        worksheet.columns = [
+          { header: 'Data', key: 'data', width: 15 },
+          { header: 'Colaborador', key: 'colab', width: 25 },
+          { header: 'Projeto', key: 'proj', width: 25 },
+          { header: 'Atividade', key: 'ativ', width: 25 },
+          { header: 'Horas', key: 'horas', width: 10 },
+          { header: 'Descrição', key: 'desc', width: 40 }
+        ];
+
+        dados.forEach(item => {
+          worksheet.addRow({
+            data: item.data_lancamento ? item.data_lancamento.toLocaleDateString('pt-BR') : '',
+            colab: item.colaboradores?.nome_colaborador || '',
+            proj: item.projetos?.nome_projeto || '',
+            ativ: item.atividades?.nome_atividade || '',
+            horas: Number(item.duracao_total) || 0,
+            desc: item.descricao || ''
+          });
+        });
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getColumn('horas').numFmt = '0.00';
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=relatorio_horas.xlsx');
+        await workbook.xlsx.write(res);
+        return res.end();
+      }
+
+      const instrucaoExcel = "sep=;\n";
+      const cabecalho = "Data;Colaborador;Cliente;Projeto;Atividade;Horas;Descricao\n";
+      const csv = dados.map(item => {
+        const dataFormatada = item.data_lancamento ? item.data_lancamento.toISOString().split('T')[0] : "";
+        const horas = item.duracao_total ? item.duracao_total.toFixed(2).replace('.', ',') : "0,00";
+
+        // Escapa ponto e vírgula e aspas dentro dos textos
+        const limparTexto = (texto) => texto ? `"${texto.toString().replace(/"/g, '""').replace(/;/g, ',')}"` : '""';
+
+        return `${dataFormatada};` +
+               `"${item.colaboradores?.nome_colaborador || ''}";` +
+               `"${item.clientes?.nome_cliente || ''}";` +
+               `"${item.projetos?.nome_projeto || ''}";` +
+               `"${item.atividades?.nome_atividade || ''}";` +
+               `${horas};` +
+               `"${limparTexto(item.descricao)}"`;
+      }).join("\n");
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename=relatorio_horas.csv');
+      return res.status(200).send("\ufeff" + instrucaoExcel + cabecalho + csv); // \ufeff ajuda o Excel a entender UTF-8
+    }
+
+    // Retorno padrão para a tabela do Front
+    return res.json(dados);
+
+  } catch (error) {
+    console.error("Erro na rota /relatorios:", error);
+    return res.status(500).json({ error: "Erro ao gerar relatório" });
+  }
+});
+
+// GET /relatorios/despesas
+app.get('/relatorios/despesas', async (req, res) => {
+    try {
+        const { data_inicio, data_fim, projeto_id, exportar, formato } = req.query;
+        let whereClause = {
+          status_aprovacao: 'Aprovada'
+        };
+
+        if (data_inicio || data_fim) {
+            whereClause.data_despesa = {};
+            if (data_inicio) whereClause.data_despesa.gte = new Date(`${data_inicio}T00:00:00Z`);
+            if (data_fim) whereClause.data_despesa.lte = new Date(`${data_fim}T23:59:59Z`);
+        }
+
+        if (projeto_id) {
+            whereClause.projeto_id = parseInt(projeto_id);
+        }
+
+        // Filtro de Projeto (Verifique se projeto_id é o nome correto na tabela)
+        if (projeto_id && projeto_id !== "") {
+            const id = parseInt(projeto_id);
+            if (!isNaN(id)) whereClause.projeto_id = id;
+        }
+
+        const despesas = await prisma.despesas.findMany({
+            where: whereClause,
+            include: {
+                projeto: { select: { nome_projeto: true } }
+            },
+            orderBy: { data_despesa: 'asc' }
+        });
+
+        if (exportar === 'true') {
+          if (formato === 'xlsx') {
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('Despesas Aprovadas');
+
+                worksheet.columns = [
+                    { header: 'Data', key: 'data', width: 15 },
+                    { header: 'Projeto', key: 'projeto', width: 30 },
+                    { header: 'Tipo', key: 'tipo', width: 20 },
+                    { header: 'Descrição', key: 'desc', width: 40 },
+                    { header: 'Valor (R$)', key: 'valor', width: 15 },
+                ];
+
+                despesas.forEach(d => {
+                    worksheet.addRow({
+                        data: d.data_despesa ? d.data_despesa.toLocaleDateString('pt-BR') : '',
+                        projeto: d.projeto?.nome_projeto || '',
+                        tipo: d.tipo_despesa || '',
+                        desc: d.descricao || '',
+                        valor: Number(d.valor)
+                    });
+                });
+
+                // Estilização básica do cabeçalho
+                worksheet.getRow(1).font = { bold: true };
+
+                // Formatação da coluna de valor para moeda no Excel
+                worksheet.getColumn('valor').numFmt = '"R$ "#,##0.00';
+                worksheet.getRow(1).font = { bold: true };
+                
+                res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                res.setHeader('Content-Disposition', 'attachment; filename=relatorio_despesas.xlsx');
+                
+                await workbook.xlsx.write(res);
+                return res.end();
+            }
+
+            const cabecalho = "Data;Projeto;Tipo;Descricao;Valor\n";
+            const csv = despesas.map(d => {
+                const data = d.data_despesa ? d.data_despesa.toISOString().split('T')[0] : "";
+                const valor = d.valor ? Number(d.valor).toFixed(2).replace('.', ',') : "0,00";
+                const desc = d.descricao ? `"${d.descricao.replace(/"/g, '""')}"` : "";
+                return `${data};"${d.projeto?.nome_projeto || ''}";"${d.tipo_despesa || ''}";${desc};${valor}`;
+            }).join("\n");
+
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename=relatorio_despesas.csv');
+            return res.status(200).send("\ufeff" + cabecalho + csv);
+        }
+
+        // Formatação para o front (ajuste os nomes das colunas conforme seu banco)
+        // Retorno para a tabela
+        res.json(despesas.map(d => ({
+            data: d.data_despesa,
+            tipo_gasto: d.tipo_despesa || "Geral",
+            descricao: d.descricao || "Sem descrição",
+            valor: Number(d.valor) || 0,
+            projeto: d.projeto?.nome_projeto || "Sem projeto"
+        })));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erro ao buscar despesas" });
+    }
 });
 
 

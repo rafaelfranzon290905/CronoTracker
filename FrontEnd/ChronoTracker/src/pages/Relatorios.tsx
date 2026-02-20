@@ -10,8 +10,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
-import { ChevronDown } from "lucide-react";
-import { Search, FileSpreadsheet, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, FileSpreadsheet, FileText } from "lucide-react";
 
 export default function Relatorios() {
     const [filtros, setFiltros] = useState({ data_inicio: '', data_fim: '', colaborador_id: '', projeto_id: '', atividade_id: '' });
@@ -23,7 +22,6 @@ export default function Relatorios() {
     const [tipoRelatorio ,setTipoRelatorio] = useState();
     const [erroTipo, setErroTipo] = useState(false);
 
-    // PAGINAÇÃO
     const [paginaAtual, setPaginaAtual] = useState(1);
     const itensPorPagina = 10;
     const indiceFinal = paginaAtual * itensPorPagina;
@@ -40,7 +38,7 @@ export default function Relatorios() {
         fetch(`${API_BASE_URL}/projetos`)
             .then(res => res.json())
             .then(data => setProjetos(data));
-        fetch(`${API_BASE_URL}/atividades`) // Certifique-se que esta rota existe para listar os tipos de atividades
+        fetch(`${API_BASE_URL}/atividades`) 
         .then(res => res.json())
         .then(data => setAtividades(data))
         .catch(err => console.error("Erro ao carregar atividades", err));
@@ -50,30 +48,24 @@ export default function Relatorios() {
         console.log("Estado atual dos filtros no Front:", filtros);
         if (!tipoRelatorio || tipoRelatorio === '') {
             setErroTipo(true);
-            // Remove o erro automaticamente após 3 segundos
             setTimeout(() => setErroTipo(false), 3000);
             return; 
         }
-        setErroTipo(false); // Limpa o erro se estiver tudo ok
+        setErroTipo(false); 
         setLoading(true);
         try {
-            // Criamos um objeto apenas com o que tem valor preenchido
             const filtrosAtivos = {};
-            // Só adiciona se realmente houver um valor
             if (filtros.data_inicio) filtrosAtivos.data_inicio = filtros.data_inicio;
             if (filtros.data_fim) filtrosAtivos.data_fim = filtros.data_fim;
             
-            // Enviamos os IDs apenas se eles não forem vazios
             if (filtros.colaborador_id) filtrosAtivos.colaborador_id = filtros.colaborador_id;
             if (filtros.projeto_id) filtrosAtivos.projeto_id = filtros.projeto_id;
             if (filtros.atividade_id) filtrosAtivos.atividade_id = filtros.atividade_id;
 
             const params = new URLSearchParams(filtrosAtivos).toString();
 
-            // Define a rota baseada no tipo
             const endpoint = tipoRelatorio === 'despesas' ? 'despesas' : '';
             const response = await fetch(`${API_BASE_URL}/relatorios/${endpoint}?${params}`);
-            // // Log para você ver no console do navegador se o ID está indo na URL
             // console.log("Chamando URL:", `${API_BASE_URL}/relatorios?${params}&exportar=false`);
             // const response = await fetch(`${API_BASE_URL}/relatorios?${params}&exportar=false`);
 
@@ -91,19 +83,16 @@ export default function Relatorios() {
 
     const exportarDados = (formato) => {
     if (!tipoRelatorio) return alert("Selecione um tipo de relatório primeiro.");
-    // Pegar apenas os filtros preenchidos igual na busca
-    const filtrosAtivos = { exportar: 'true', formato: formato }; // Forçamos o modo exportação
+    const filtrosAtivos = { exportar: 'true', formato: formato }; 
     if (filtros.data_inicio) filtrosAtivos.data_inicio = filtros.data_inicio;
     if (filtros.data_fim) filtrosAtivos.data_fim = filtros.data_fim;
     
-    // Escolhe o ID correto baseado no relatório
     if (tipoRelatorio === 'despesas' || tipoRelatorio === 'projeto') {
         if (filtros.projeto_id) filtrosAtivos.projeto_id = filtros.projeto_id;
     } else {
         if (filtros.colaborador_id) filtrosAtivos.colaborador_id = filtros.colaborador_id;
     }
 
-    // Passa todos os IDs que estiverem preenchidos
     if (filtros.colaborador_id) filtrosAtivos.colaborador_id = filtros.colaborador_id;
     if (filtros.projeto_id) filtrosAtivos.projeto_id = filtros.projeto_id;
     if (filtros.atividade_id) filtrosAtivos.atividade_id = filtros.atividade_id;
@@ -163,7 +152,6 @@ export default function Relatorios() {
                         subtitle="Checagem e exportação de relatórios" 
                     /> */}
 
-                    {/* ESCOLHER O TIPO DE RELATÓRIO */}
                     {/* <div className="mb-2 w-72">
                         <label className="block text-sm font-medium mb-1">Tipo de Relatório</label>
                         <Select value={tipoRelatorio} onValueChange={(value) => {
@@ -229,10 +217,8 @@ export default function Relatorios() {
                                     const projId = e.target.value;
                                     const projetoSelecionado = projetos.find(p => p.projeto_id.toString() === projId);
                                     
-                                    // 1. Atualiza o filtro de projeto e reseta a atividade
                                     setFiltros({ ...filtros, projeto_id: projId, atividade_id: '' });
                                     
-                                    // 2. Carrega as atividades específicas desse projeto (igual você faz no lançamento)
                                     if (projetoSelecionado) {
                                         setAtividades(projetoSelecionado.atividades || []);
                                     } else {
@@ -265,7 +251,6 @@ export default function Relatorios() {
                             </>
                         )}
 
-                        {/* NOVO: Filtro de Projeto (Aparece em Projeto e Despesas) */}
                         {(tipoRelatorio === 'projeto' || tipoRelatorio === 'despesas') && (
                             <div>
                                 <label className="block text-sm font-medium">Projeto:</label>
@@ -284,7 +269,6 @@ export default function Relatorios() {
                             <Search className="mx-1"/>
                         </button>
 
-                        {/* ELEMENTO ESPAÇADOR: Isso empurra o que vem depois para a direita */}
                         {/* <div className="flex-1"></div> */}
 
                         {/* BOTÕES DE EXPORTAÇÃO */}

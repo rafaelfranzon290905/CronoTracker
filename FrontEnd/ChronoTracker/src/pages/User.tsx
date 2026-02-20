@@ -65,34 +65,6 @@ export default function UsersPage() {
     useEffect(() => { fetchData(); }, [isGerente]);
 
 
-    // const handleInativar = async (user: Usuario) => {
-    //     if (user.usuario_id === userLogado?.usuario_id) {
-    //         alert("Operação negada: Você não pode inativar seu próprio usuário.");
-    //         return;
-    //     }
-
-    //     // Confirmação com o usuário
-    //     const confirmacao = confirm(`Deseja realmente inativar o acesso de ${user.nome_completo}?`);
-
-    //     if (confirmacao) {
-    //         try {
-    //             const response = await fetch(`http://localhost:3001/usuarios/${user.usuario_id}`, {
-    //                 method: 'DELETE', 
-    //             });
-
-    //             if (!response.ok) {
-    //                 throw new Error("Falha ao inativar usuário no servidor.");
-    //             }
-    //             fetchData();
-    //             alert("Usuário inativado com sucesso!");
-
-    //         } catch (error) {
-    //             console.error("Erro ao inativar:", error);
-    //             alert("Erro ao processar inativação.");
-    //         }
-    //     }
-    // };
-
     const handleInativarTrigger = (user: Usuario) => {
         if (user.usuario_id === userLogado?.usuario_id) {
             toast.error("Operação negada: Você não pode inativar seu próprio usuário.");

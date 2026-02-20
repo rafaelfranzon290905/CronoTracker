@@ -1,5 +1,4 @@
-// src/components/projects/addProjectDialog.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,13 +15,44 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { API_BASE_URL } from "@/apiConfig";
 import { type Projeto } from "@/lib/projects";
+
+function AutoResizeTextarea({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        textareaRef.current.scrollHeight + "px";
+    }
+  }, [value]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder || ""}
+      className="w-full p-2 border border-input rounded-md text-sm"
+      style={{ overflow: "hidden", resize: "none" }}
+    />
+  );
+}
+
 
 // --- Schema do formulário ---
 const formSchema = z.object({
@@ -32,7 +62,9 @@ const formSchema = z.object({
   data_inicio: z.string().min(1, { message: "A data de início é obrigatória." }),
   data_fim: z.string().min(1, { message: "A data de fim é obrigatória." }),
   horas_previstas: z.coerce.number().min(1, { message: "Mínimo 1 hora." }),
-  status: z.boolean(),
+  status: z.enum(["Orçando", "Em Andamento", "Concluído", "Cancelado"], {
+    required_error: "Selecione um status válido",
+  }),
 }).refine((data) => {
   const inicio = new Date(data.data_inicio);
   const fim = new Date(data.data_fim);
@@ -69,7 +101,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
       data_inicio: "",
       data_fim: "",
       horas_previstas: 0,
-      status: true,
+      status: "Orçando",
     },
   });
 
@@ -112,7 +144,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
           data_inicio: "",
           data_fim: "",
           horas_previstas: 0,
-          status: true,
+          status: "Orçando",
         });
         setSelectedColaboradores([]);
       }
@@ -148,7 +180,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
       if (!isEditMode) formProjects.reset();
       onSuccess();
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       alert("Erro ao conectar com o servidor.");
     } finally {
       setIsLoading(false);
@@ -281,19 +313,27 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
                     name="status"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Status</FormLabel>
-                        <div className="flex content-center gap-4">
+                        <FormLabel>Status do Projeto</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o status" />
+                            </SelectTrigger>
                           </FormControl>
-                          <span className="text-sm">{field.value ? "Ativo" : "Inativo"}</span>
-                        </div>
+                          <SelectContent className="bg-white">
+                            <SelectItem value="Orçando">Orçando</SelectItem>
+                            <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                            <SelectItem value="Concluído">Concluído</SelectItem>
+                            <SelectItem value="Cancelado">Cancelado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
 
-                {/* Campo de Equipe fora do grid para ocupar largura total */}
+                {/* Campo de Equipe */}
                 <div className="space-y-3 border-t pt-4">
                   <Label className="text-sm font-semibold">Equipe do Projeto</Label>
                   <Popover>
@@ -351,7 +391,12 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
                     <FormItem>
                       <FormLabel>Descrição</FormLabel>
                       <FormControl>
-                        <Input placeholder="Descreva brevemente o projeto" {...field} />
+                        <AutoResizeTextarea
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          placeholder="Descreva brevemente o projeto"
+                        />
+
                       </FormControl>
                       <FormMessage />
                     </FormItem>

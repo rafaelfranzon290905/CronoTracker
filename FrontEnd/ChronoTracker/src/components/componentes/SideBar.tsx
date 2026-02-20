@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Home, Users, FileText, DollarSign, Clock, Rocket, Activity, LogOut, Ghost, ListChecks, UserCog2, Building, Building2, Briefcase, Contact2 } from "lucide-react"
+import { Home, Users, FileText, DollarSign, Clock, Rocket, LogOut, ListChecks, UserCog2, Building2 } from "lucide-react"
 import ChronosAzulFundoRemovido from "../../imagens/ChronosAzulFundoRemovido.png"
 import { useNavigate } from "react-router-dom"
 
@@ -11,13 +11,8 @@ export default function SideBar() {
 
   // Função de Logout
   const handleLogout = () => {
-    // 1. Limpa os dados de login
     localStorage.removeItem('currentUser');
-    
-    // Se você usar sessionStorage ou tokens, limpe-os aqui também:
-    // localStorage.clear(); // Opcional: limpa TUDO no storage
 
-    // 2. Redireciona para o login (ou raiz)
     navigate("/");
   };
 

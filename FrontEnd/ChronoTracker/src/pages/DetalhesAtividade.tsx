@@ -62,7 +62,7 @@ export default function DetalhesAtividade() {
 
     const handleEditSuccess = () => {
         setIsEditModalOpen(false);
-        loadData(); // Recarrega os detalhes após editar
+        loadData(); 
     };
 
     if (loading) return (
@@ -83,7 +83,6 @@ export default function DetalhesAtividade() {
         const horas = Math.floor(totalDecimal);
         const minutos = Math.round((totalDecimal - horas) * 60);
         
-        // Formata para garantir dois dígitos (01:05 ao invés de 1:5)
         const horasPad = String(horas).padStart(2, '0');
         const minutosPad = String(minutos).padStart(2, '0');
         
@@ -100,6 +99,12 @@ export default function DetalhesAtividade() {
         "alta": { color: "bg-orange-500", label: "Alta" },
         "normal": { color: "bg-blue-500", label: "Normal" },
         "baixa": { color: "bg-slate-500", label: "Baixa" },
+    };
+    const statusConfig: any = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
     };
 
     return (
@@ -127,8 +132,8 @@ export default function DetalhesAtividade() {
                         }
                     >
                         <div className="flex items-center gap-3">
-                            <Badge className={atividade.status ? "bg-green-600" : "bg-red-600"}>
-                                {atividade.status ? "Ativa" : "Inativa"}
+                            <Badge className={`${statusConfig[atividade.status] || "bg-gray-400"} text-white border-none`}>
+                                {atividade.status}
                             </Badge>
                             {isGerente && (
                                 <Button

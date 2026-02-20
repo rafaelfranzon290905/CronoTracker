@@ -2,6 +2,8 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, Flag, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,12 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type Atividades } from "@/lib/activities";
-import { Link } from "react-router-dom";
 import { type AtividadesInitialData } from "./EditActivitiesDialog";
 import { DeleteActivityDialog } from "./DeleteActivityDialog";
-
-
-
 // import { usePermissions } from "@/hooks/usePermissions";
 
 const formatarData = (dateString: string | null | undefined): string => {
@@ -88,33 +86,38 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
       );
     },
   },
-  // COLUNA: Nome da Atividade (Com Ordenação)
+  // Nome da Atividade
   {
     accessorKey: "nome_atividade",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="px-0 py-0 h-auto" // Otimiza o estilo do botão de ordenação
+        className="px-0 py-0 h-auto" 
       >
         Nome da Atividade
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => {
-      const atividade = row.original;
-      return (
-        <Link
-          to={`/atividades/${atividade.atividade_id}`}
-          className="font-medium text-blue-950 hover:text-blue-800 hover:underline transition-all decoration-2 underline-offset-4 flex items-center justify-center gap-1"
-        >
-          {atividade.nome_atividade}
-        </Link>
-      );
-    },
-    enableHiding: false,
+   cell: ({ row }) => {
+  const atividadeId = row.original.atividade_id;
+  const navigate = useNavigate();
+
+
+  return (
+    <span
+      onClick={() => navigate(`/atividades/${atividadeId}`)}
+      className="font-medium text-blue-900 hover:underline cursor-pointer"
+    >
+      {row.getValue("nome_atividade")}
+    </span>
+  );
+},
+
+    enableHiding: false, 
     enableGlobalFilter: true,
   },
+
   {
     accessorKey: "colaboradores_atividades",
     header: "Responsáveis",
@@ -150,14 +153,14 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     }
   },
 
-  // 3. COLUNA: Descrição
+  // Descrição
   // {
   //   accessorKey: "descr_atividade",
   //   header: "Descrição",
   //   cell: ({ row }) => <span className="text-sm">{row.getValue("descr_atividade")}</span>,
   // },
 
-  // 4. COLUNA: Início Previsto
+  // Início Previsto
   {
     accessorKey: "data_prevista_inicio",
     header: "Início Previsto",
@@ -167,7 +170,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
 
-  // 5. COLUNA: Fim Previsto 
+  // Fim Previsto 
   {
     accessorKey: "data_prevista_fim",
     header: "Fim Previsto",
@@ -234,22 +237,27 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
   },
 },
 
-  // 6. COLUNA: Status 
+  // Status 
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const statusBool = row.getValue("status") as boolean;
+      const statusBool = row.getValue("status") as string;
+      const variantMap: Record<string, string> = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
+      };
       return (
-        <Badge variant={statusBool ? "default" : "secondary"}
-          className={!statusBool ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}>
-          {statusBool ? "Ativo" : "Inativo"}
-        </Badge>
+        <Badge className={`${variantMap[statusBool] || "bg-gray-400"} text-white border-none`}>
+        {statusBool}
+      </Badge>
       );
     },
   },
 
-  // 7. COLUNA: Ações (Dropdown Menu)
+  // Ações 
   {
     id: "actions",
     header: "Ações",

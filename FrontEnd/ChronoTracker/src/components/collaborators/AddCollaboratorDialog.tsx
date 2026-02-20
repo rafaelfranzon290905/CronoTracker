@@ -35,8 +35,6 @@ import {
 } from "@/components/ui/select"
 import { API_BASE_URL } from  "@/apiConfig"
 
-// URL da  API
-// const API_BASE_URL = 'http://localhost:3001'
 
 const formSchema = z.object({
   nome_colaborador: z.string().min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),

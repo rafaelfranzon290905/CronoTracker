@@ -13,10 +13,6 @@ import { Button } from "../ui/button"
 import { Switch } from "../ui/switch"
 import { API_BASE_URL } from  "@/apiConfig"
 
-
-// const API_BASE_URL = 'http://localhost:3001'
-
-// Definindo o tipo de dados do colaborador
 interface ColaboradorFormData {
     nome_colaborador: string;
     cargo: string;
@@ -26,49 +22,43 @@ interface ColaboradorFormData {
 }
 
 export default function DialogColaboradores() {
-    // 1. ESTADO DO FORMULÁRIO
     const [formData, setFormData] = useState<ColaboradorFormData>({
         nome_colaborador: "",
         cargo: "",
         email: "",
-        data_admissao: new Date().toISOString().split('T')[0], // Data de hoje como padrão
+        data_admissao: new Date().toISOString().split('T')[0], 
         status: true, 
     });
 
-    // Estado separado para o arquivo de foto
     const [fotoArquivo, setFotoArquivo] = useState<File | null>(null);
-    const [isOpen, setIsOpen] = useState(false); // Controle manual do dialog para fechar após salvar
+    const [isOpen, setIsOpen] = useState(false); 
 
-     // Função genérica para atualizar os inputs de texto/data
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Função específica para o campo 'status' (Switch)
     const handleStatusChange = (checked: boolean) => {
         setFormData(prev => ({ ...prev, status: checked }));
     };
 
-    // Função específica para o input de arquivo
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFotoArquivo(e.target.files[0]);
         }
     };
 
-    // 2. FUNÇÃO DE SUBMISSÃO
+    // FUNÇÃO DE SUBMISSÃO
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         try {
-            // Criação do FormData para permitir envio de arquivo (foto)
             const dataToSend = new FormData();
             dataToSend.append('nome_colaborador', formData.nome_colaborador);
             dataToSend.append('cargo', formData.cargo);
             dataToSend.append('email', formData.email);
             dataToSend.append('data_admissao', formData.data_admissao);
-            dataToSend.append('status', String(formData.status)); // Backend deve tratar string 'true'/'false'
+            dataToSend.append('status', String(formData.status)); 
             
             if (fotoArquivo) {
                 dataToSend.append('foto', fotoArquivo);
@@ -76,8 +66,6 @@ export default function DialogColaboradores() {
 
             const response = await fetch(`${API_BASE_URL}/colaboradores`, {
                 method: 'POST',
-                // Não definimos 'Content-Type': 'application/json' aqui 
-                // para que o browser defina o boundary do multipart/form-data automaticamente
                 body: dataToSend,
             });
 
@@ -88,9 +76,8 @@ export default function DialogColaboradores() {
                 throw new Error(errorMessage);
             }
 
-            console.log("Colaborador cadastrado com sucesso!");
+            // console.log("Colaborador cadastrado com sucesso!");
             
-            // Limpa o formulário e fecha
             setFormData({ 
                 nome_colaborador: "", 
                 cargo: "", 
@@ -99,12 +86,10 @@ export default function DialogColaboradores() {
                 status: true 
             });
             setFotoArquivo(null);
-            setIsOpen(false); // Fecha o modal
+            setIsOpen(false); 
             
-            // Aqui você poderia chamar uma função de recarregar a lista (ex: aoSalvar())
-
         } catch (error) {
-            console.error('Erro ao enviar formulário:', error);
+            // console.error('Erro ao enviar formulário:', error);
             alert(`Erro: ${error instanceof Error ? error.message : "Falha ao salvar"}`);
         }
     };
@@ -135,7 +120,7 @@ export default function DialogColaboradores() {
                         />
                     </div>
                     
-                    {/* Cargo e Email na mesma linha (opcional, igual ao style do cliente) */}
+                    {/* Cargo e Email */}
                     <div className="flex gap-4">
                         <div className="flex-1">
                             <Label htmlFor="cargo">Cargo</Label>

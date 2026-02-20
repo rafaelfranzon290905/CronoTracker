@@ -3,6 +3,7 @@ import { type Cliente } from "@/lib/clients";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, MoreHorizontal, Trash2, Eye, Edit } from "lucide-react";
+import { Link } from "react-router-dom"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,21 +25,28 @@ export const getColumns = (
   onViewProjects: (id: number, nome: string) => void
 ): ColumnDef<Cliente>[] => {
   const columns: ColumnDef<Cliente>[] = [
-    {
-      accessorKey: "nome_cliente",
-      header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Empresa <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => <span className="font-medium">{row.getValue("nome_cliente")}</span>,
-    },
-    { accessorKey: "nome_contato", header: "Contato" },
-    {
-      accessorKey: "cnpj",
-      header: "CNPJ",
-      cell: ({ row }) => <span>{formatarCNPJ(row.getValue("cnpj"))}</span>,
-    },
+   {
+  accessorKey: "nome_cliente",
+  header: ({ column }) => (
+    <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+      Empresa <ArrowUpDown className="ml-2 h-4 w-4" />
+    </Button>
+  ),
+  cell: ({ row }) => (
+    <Link
+      to={`/clientes/${row.original.cliente_id}`}
+      className="hover:underline text-blue-900 font-medium"
+    >
+      {row.getValue("nome_cliente")}
+    </Link>
+  ),
+},
+{ accessorKey: "nome_contato", header: "Contato" },
+{
+  accessorKey: "cnpj",
+  header: "CNPJ",
+  cell: ({ row }) => <span>{formatarCNPJ(row.getValue("cnpj"))}</span>,
+},
     {
       header: "Localização",
       cell: ({ row }) => `${row.original.cidade}/${row.original.estado}`,

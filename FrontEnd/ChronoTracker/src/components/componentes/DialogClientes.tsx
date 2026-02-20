@@ -11,16 +11,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "../ui/button"
 import { Switch } from "../ui/switch"
-// import { Loader2 } from "lucide-react"
-// import { useEffect } from "react"
 import { toast } from "sonner"
 import { API_BASE_URL } from  "@/apiConfig"
 import { PlusCircle } from "lucide-react"
 
 
-// const API_BASE_URL = 'http://localhost:3001'
-
-// Definindo o tipo de dados do cliente para o estado do formulário
 interface ClienteFormData {
     cnpj: string;
     nome_cliente: string;
@@ -29,7 +24,7 @@ interface ClienteFormData {
     endereco: string;
     cidade: string;
     estado: string;
-    status: boolean; // O campo booleano
+    status: boolean; 
 }
 
 interface DialogClientesProps {
@@ -39,7 +34,7 @@ interface DialogClientesProps {
 }
 
 const formatarCNPJ = (valor: string) => {
-  const v = valor.replace(/\D/g, ""); // Remove tudo que não é dígito
+  const v = valor.replace(/\D/g, "");
   return v
     .replace(/^(\d{2})(\d)/, "$1.$2")
     .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
@@ -54,7 +49,6 @@ const formatarCEP = (valor: string) => {
 };
 
 export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogClientesProps) {
-    // 1. ESTADO DO FORMULÁRIO: Inicializa com valores vazios e status TRUE por padrão (ativo)
     const [formData, setFormData] = useState<ClienteFormData>({
         cnpj: "",
         nome_cliente: "",
@@ -72,7 +66,7 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
         estado: ""
     });
 
-     // Função genérica para atualizar os inputs
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         let valorFormatado = value;
@@ -83,18 +77,16 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
         setErrors(prev => ({ ...prev, [name]: "" }));
     };
 
-    // Função específica para o campo 'status' (Switch)
     const handleStatusChange = (checked: boolean) => {
         setFormData(prev => ({ ...prev, status: checked }));
     };
 
-    // 2. FUNÇÃO DE SUBMISSÃO
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         let temErro = false;
         const novosErros = { cnpj: "", cep: "", estado: "" };
-       const cnpjLimpo = formData.cnpj.replace(/\D/g, ''); // Remove pontos e traços
+       const cnpjLimpo = formData.cnpj.replace(/\D/g, ''); 
        const cepLimpo = formData.cep.replace(/\D/g, '');
         
         if (cnpjLimpo.length !== 14) {
@@ -114,7 +106,7 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
 
         if (temErro) {
             setErrors(novosErros);
-            return; // Interrompe o envio
+            return; 
         }
         
         try {
@@ -129,18 +121,14 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
             const result = await response.json();
 
             if (!response.ok) {
-                // Captura a mensagem de erro do servidor (ex: "CNPJ já cadastrado")
                 const errorMessage = result.error || "Erro desconhecido ao cadastrar cliente.";
                 throw new Error(errorMessage);
             }
 
-            // Sucesso: Fecha o modal e limpa o formulário (ou faz o que for necessário, como recarregar a lista)
-            // IMPORTANTE: Use um modal customizado de sucesso em vez de alert() em produção.
-            console.log("Cliente cadastrado com sucesso!");
+            // console.log("Cliente cadastrado com sucesso!");
             toast.success("Cliente cadastrado com sucesso!", {
               description: `O cliente ${formData.nome_cliente} foi cadastrado com sucesso`
             });
-            // Limpa o formulário e fecha
             setFormData(prev => ({ ...prev, 
                 cnpj: "", nome_cliente: "", nome_contato: "", cep: "", 
                 endereco: "", cidade: "", estado: "", status: true 
@@ -151,12 +139,11 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
             onOpenChange(false);
 
         } catch (error: any) {
-            console.log(error);
+            // console.log(error);
             console.error('Erro ao enviar formulário:', error);
-            // Mostra o erro de validação ou de servidor
-        
+            
         } finally {
-            console.log("jdanjadnja")
+            // console.log("finalizado.");
         }
     };
 
@@ -211,10 +198,8 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
                         <Input id="cnpj-1" name="cnpj" value={formData.cnpj} onChange={handleChange} required maxLength={18}/>
                         {errors.cnpj && <span className="text-sm font-medium text-red-500 mt-2">{errors.cnpj}</span>}
                     </div>
-                    {/* Linha 7: Status (Switch/Alternador) */}
                         <div className="flex items-center space-x-2 pt-2">
                             <Label htmlFor="status">Status</Label>
-                            {/* O Switch recebe o estado booleano e o handler de mudança */}
                             <Switch 
                                 id="status"
                                 name="status"
@@ -224,7 +209,6 @@ export default function DialogClientes({ open, onOpenChange, aoSalvar }: DialogC
                              <span className="text-sm font-medium">{formData.status ? 'Ativo' : 'Inativo'}</span>
                         </div>
                 </div>
-                {/* Botão de Submit */}
                     <div className="pt-4 flex justify-end">
                         <Button type="submit" className="bg-botao-dark">
                                 Salvar

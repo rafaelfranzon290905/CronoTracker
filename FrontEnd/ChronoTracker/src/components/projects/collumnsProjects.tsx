@@ -46,29 +46,13 @@ const formatarHorasDecimais = (totalDecimal: number | null | undefined): string 
   return `${horasPad}:${minutosPad}`;
 };
 
-// const deleteProject = async (id: number) => {
-//   if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
-//     try {
-//       const response = await fetch(`${API_BASE_URL}/projetos/${id}`, {
-//         method: 'DELETE',
-//       });
 
-//       if (response.ok) {
-//         toast.success("Projeto excluído com sucesso!");
-        
-//         window.location.reload();
-//       } else {
-//         const errorData = await response.json();
-//       // Apresenta a mensagem clara vinda do backend
-//         toast.error(errorData.error || "Erro ao excluir projeto.");
-//       }
-//     } catch (error) {
-//       // console.error("Erro de conexão:", error);
-//       toast.error("Erro ao conectar com o servidor.");
-//     }
-//   }
-// };
-
+const projectStatusConfig: any = {
+    "Orçando": "bg-amber-500",      
+    "Em Andamento": "bg-blue-600",   
+    "Concluído": "bg-green-600",
+    "Cancelado": "bg-red-600 hover:bg-red-700",    
+};
 
 export const getColumns = (
   clientes: { cliente_id: number; nome_cliente: string }[],
@@ -104,12 +88,28 @@ export const getColumns = (
         );
       },
     },
-    {
+   {
       accessorKey: "clientes.nome_cliente",
       header: "Cliente",
       cell: ({ row }) => {
-        const nomeCliente = row.original.clientes?.nome_cliente || "Sem Cliente";
-        return <Badge variant="outline">{nomeCliente}</Badge>;
+        const projeto = row.original;
+        const clienteObj = projeto.clientes;
+
+        const idDoCliente = clienteObj?.cliente_id || projeto.cliente_id;
+        const nomeDoCliente = clienteObj?.nome_cliente || "Ver Detalhes";
+      
+
+        if (!idDoCliente) {
+          return <Badge variant="outline" className="text-slate-500">Sem Cliente</Badge>;
+        }
+        return (
+          <Link
+            to={`/clientes/${idDoCliente}`}
+            className="font-medium text-blue-950 hover:text-blue-800 hover:underline transition-colors"
+          >
+            {nomeDoCliente}
+          </Link>
+        );
       },
     },
     {
@@ -120,7 +120,7 @@ export const getColumns = (
 
         const equipe = projeto.projeto_colaboradores || [];
 
-        console.log(`Projeto ${projeto.nome_projeto}`, equipe);
+        // console.log(`Projeto ${projeto.nome_projeto}`, equipe);
 
         if (equipe.length === 0) {
           return <span className="text-muted-foreground text-xs italic">Sem equipe</span>;
@@ -187,12 +187,11 @@ export const getColumns = (
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status") as boolean;
+        const status = row.getValue("status") as string;
         return (
-          <Badge variant={status ? "default" : "destructive"}
-            className={!status ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}>
-            {status ? "Ativo" : "Inativo"}
-          </Badge>
+          <Badge className={`${projectStatusConfig[status] || "bg-gray-400"} text-white border-none`}>
+        {status}
+      </Badge>
         );
       },
     },
@@ -203,7 +202,6 @@ export const getColumns = (
         const projeto = row.original;
         const atividades = projeto.atividades || [];
 
-        // Função de exclusão interna para capturar o onSuccess corretamente
         const handleDelete = async () => {
           try {
             const response = await fetch(`${API_BASE_URL}/projetos/${projeto.projeto_id}`, {
@@ -212,10 +210,9 @@ export const getColumns = (
 
             if (response.ok) {
               toast.success("Projeto excluído com sucesso!");
-              onSuccess(); // Atualiza a tabela sem dar reload na página inteira
+              onSuccess(); 
             } else {
               const errorData = await response.json();
-              // Aqui ele vai exibir a mensagem clara: "Não é possível excluir: este projeto possui..."
               toast.error(errorData.error || "Erro ao excluir projeto.");
             }
           } catch (error) {
@@ -277,7 +274,6 @@ export const getColumns = (
                   projectToEdit={projeto}
                 />
 
-                {/* ALERT DIALOG PARA EXCLUSÃO */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem 

@@ -32,7 +32,7 @@ export default function TimesheetPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
 
-  // Estados para Alerta de Exclusão (Substituindo o confirm nativo)
+  // Estados para Alerta de Exclusão 
   const [isDelAlertOpen, setIsDelAlertOpen] = useState(false);
   const [idToDelete, setIdToDelete] = useState<number | null>(null);
 
@@ -87,13 +87,11 @@ export default function TimesheetPage() {
     setEditModalOpen(true);
   };
 
-  // Abre o alerta de confirmação em vez do confirm() do navegador
   const handleDelete = (id: number) => {
     setIdToDelete(id);
     setIsDelAlertOpen(true);
   };
 
-  // Função que realmente executa o DELETE
   const confirmDeletion = async () => {
     if (!idToDelete) return;
     try {

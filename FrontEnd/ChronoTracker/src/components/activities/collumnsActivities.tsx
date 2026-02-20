@@ -13,12 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type Atividades } from "@/lib/activities";
-import { Link } from "react-router-dom";
 import { type AtividadesInitialData } from "./EditActivitiesDialog";
 import { DeleteActivityDialog } from "./DeleteActivityDialog";
-
-
-
 // import { usePermissions } from "@/hooks/usePermissions";
 
 const formatarData = (dateString: string | null | undefined): string => {
@@ -90,14 +86,14 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
       );
     },
   },
-  // COLUNA: Nome da Atividade (Com Ordenação)
+  // Nome da Atividade
   {
     accessorKey: "nome_atividade",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="px-0 py-0 h-auto" // Otimiza o estilo do botão de ordenação
+        className="px-0 py-0 h-auto" 
       >
         Nome da Atividade
         <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -118,7 +114,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
   );
 },
 
-    enableHiding: false, // Geralmente útil manter o nome visível
+    enableHiding: false, 
     enableGlobalFilter: true,
   },
 
@@ -157,14 +153,14 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     }
   },
 
-  // 3. COLUNA: Descrição
+  // Descrição
   // {
   //   accessorKey: "descr_atividade",
   //   header: "Descrição",
   //   cell: ({ row }) => <span className="text-sm">{row.getValue("descr_atividade")}</span>,
   // },
 
-  // 4. COLUNA: Início Previsto
+  // Início Previsto
   {
     accessorKey: "data_prevista_inicio",
     header: "Início Previsto",
@@ -174,7 +170,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
 
-  // 5. COLUNA: Fim Previsto 
+  // Fim Previsto 
   {
     accessorKey: "data_prevista_fim",
     header: "Fim Previsto",
@@ -241,7 +237,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
   },
 },
 
-  // 6. COLUNA: Status 
+  // Status 
   {
     accessorKey: "status",
     header: "Status",
@@ -261,7 +257,7 @@ export const columns = (handleDeleteActivity: DeleteActivityHandler, handleEditA
     },
   },
 
-  // 7. COLUNA: Ações (Dropdown Menu)
+  // Ações 
   {
     id: "actions",
     header: "Ações",

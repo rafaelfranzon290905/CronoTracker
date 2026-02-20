@@ -13,9 +13,6 @@ import { toast } from "sonner";
 
 
 
-// Base da API (MANTENHA O MESMO OU VERIFIQUE SUA PORTA)
-// const API_BASE_URL = 'http://localhost:3001';
-
 type ProjetoSelect = {
     projeto_id: number;
     nome_projeto: string;
@@ -25,17 +22,6 @@ type ProjetoSelect = {
 }
 
 function Atividades() {
-    // ESTADOS PARA O MODAL (Adicionar/Editar)
-    //     const [aberto, setAberto] = useState(false);
-    //     const [tipo, setTipo] = useState<"add" | "edit" | null>(null);
-
-    // Função para abrir o modal e definir o tipo (add ou edit)
-    //     const openModal = (type: "add" | "edit") => {
-    //         setTipo(type)
-    //         setAberto(true)
-    //     }
-
-    // ESTADOS PARA OS DADOS DA ATIVIDADE
     const [atividades, setAtividades] = useState<AtividadeType[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -45,7 +31,7 @@ function Atividades() {
 
     const [activityToEdit, setActivityToEdit] = useState<AtividadesInitialData | null>(null);
 
-    // Função para buscar os dados da API (GET /atividades)
+    // Função para buscar os dados da API 
     const fetchAtividades = async () => {
         setLoading(true);
         try {
@@ -84,7 +70,7 @@ function Atividades() {
             }));
 
             setProjetos(projetosMapeados);
-            console.log("Projetos carregados:", projetosMapeados.length);
+            // console.log("Projetos carregados:", projetosMapeados.length);
 
         } catch (err) {
             console.error("Erro ao buscar projetos:", err);
@@ -104,47 +90,11 @@ function Atividades() {
         fetchAtividades();
     };
 
-    // const handleDeleteActivity = async (atividadeId: number) => {
-    //     if (!confirm(`Tem certeza que deseja deletar a atividade ${atividadeId}`)) {
-    //         return;
-    //     }
-    //     try {
-    //         const response = await fetch(`${API_BASE_URL}/atividades/${atividadeId}`, {
-    //             method: 'DELETE',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //         });
-    //         if (response.ok) {
-    //             toast.success("Atividade excluída com sucesso!");
-    //             // window.alert(`Atividade ${atividadeId} deletada com sucesso`);
-    //             // console.log(`Atividade ${atividadeId} deletada com sucesso`);
-    //             fetchAtividades()
-    //         } else {
-    //            let errorMessage = "Erro desconhecido";
-    //             try {
-    //                 const errorData = await response.json();
-    //                 errorMessage = errorData.error || errorData.message || response.statusText;
-    //             } catch {
-    //                 errorMessage = `Erro HTTP: ${response.status}`;
-    //             }
-                
-    //             toast.error(errorMessage);
-    //         } 
-    //     } catch (err) {
-    //         // console.log("Erro ao deletar atividade:", err);
-    //         // alert("Erro ao deletar atividade. Verifique o console.");
-    //         toast.error("Erro de conexão ao tentar excluir.");
-    //     }
-    // };
-
     const handleEditActivity = (activity: AtividadesInitialData) => {
-        // Converte a data_prevista_inicio/fim para string 'YYYY-MM-DD'
         const dataInicio = activity.data_prevista_inicio ? new Date(activity.data_prevista_inicio).toISOString().split('T')[0] : '';
         const dataFim = activity.data_prevista_fim ? new Date(activity.data_prevista_fim).toISOString().split('T')[0] : '';
         const prioridadeValida = activity.prioridade || "normal";
 
-        // Define os dados iniciais, garantindo o formato de data correto
         setActivityToEdit({
             ...activity,
             prioridade: prioridadeValida,
@@ -195,7 +145,6 @@ function Atividades() {
                     )}
                 </main>
             </div>
-            {/* NOVO: Componente de Edição */}
             {activityToEdit && (
                 <EditActivitiesDialog
                     open={isEditModalOpen}

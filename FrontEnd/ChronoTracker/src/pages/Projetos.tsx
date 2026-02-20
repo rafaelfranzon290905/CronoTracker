@@ -10,33 +10,6 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { getProjetosColumns } from "@/components/projects/collumnsProjects";
 import { API_BASE_URL } from  "@/apiConfig"
 import { Loader2 } from "lucide-react";
-import { Toaster } from "@/components/ui/sonner";
-
-
-// export interface Projeto {
-//     projeto_id: number;
-//     cliente_id: number;
-//     nome_projeto: string;
-//     descricao?: string;
-//     data_inicio: string;
-//     data_fim: string;
-//     status: boolean;
-//     horas_previstas: number; // <-- Novo campo
-//     clientes?: {
-//         nome_cliente: string;
-//     };
-//     atividades?: {
-//       atividade_id: number;
-//         nome_atividade: string;
-//         status: boolean;
-//     }[];
-//     projeto_colaboradores?: {
-//       colaboradores: {
-//         colaborador_id: number;
-//         nome_colaborador: string;
-//       }
-//     }[];
-// }
 
 function Projetos() {
   const [data, setData] = useState<Projeto[]>([]);

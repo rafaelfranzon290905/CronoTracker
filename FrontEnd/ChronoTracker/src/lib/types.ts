@@ -33,7 +33,6 @@ export type Collaborador = {
     data_lancamento: string;
   }[];
   status: boolean;            
-  // foto?: string | null;        //ainda nao vamos implementar
 };
 
 export interface Usuario {

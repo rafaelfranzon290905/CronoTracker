@@ -1,11 +1,9 @@
 import { useMemo } from "react";
 // import { type Usuario } from "@/lib/types";
-import { useState,useEffect } from "react";
 import { type Usuario } from "@/lib/types";
 
 
 export function usePermissions() {
-    // 1. Obtém os dados do usuário do localStorage
     const userJson = typeof window !== 'undefined' ? localStorage.getItem('currentUser') : null;
     return useMemo(() => {
         const userJson = typeof window !== 'undefined' ? localStorage.getItem('currentUser') : null;

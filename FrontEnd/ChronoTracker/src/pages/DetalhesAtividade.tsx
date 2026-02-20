@@ -62,7 +62,7 @@ export default function DetalhesAtividade() {
 
     const handleEditSuccess = () => {
         setIsEditModalOpen(false);
-        loadData(); // Recarrega os detalhes após editar
+        loadData(); 
     };
 
     if (loading) return (
@@ -83,7 +83,6 @@ export default function DetalhesAtividade() {
         const horas = Math.floor(totalDecimal);
         const minutos = Math.round((totalDecimal - horas) * 60);
         
-        // Formata para garantir dois dígitos (01:05 ao invés de 1:5)
         const horasPad = String(horas).padStart(2, '0');
         const minutosPad = String(minutos).padStart(2, '0');
         

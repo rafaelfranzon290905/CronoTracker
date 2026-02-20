@@ -16,11 +16,9 @@ import { API_BASE_URL } from  "@/apiConfig"
 import { toast } from "sonner";
 
 
-// const API_BASE_URL = 'http://localhost:3001'
-
 interface DeleteActivityProps {
     activityId: string | number;
-    onSuccess: () => void; // Função para atualizar a lista após a exclusão
+    onSuccess: () => void; 
     open?: boolean;         
     onOpenChange?: (open: boolean) => void;
 }
@@ -43,7 +41,7 @@ export function DeleteActivityDialog({ activityId, onSuccess }: DeleteActivityPr
 
             if (response.ok) {
                 toast.success("Atividade removida com sucesso!");
-                setOpen(false); // Fecha o modal apenas no sucesso
+                setOpen(false); 
                 onSuccess(); 
             } else {
                 const errorMsg = result.error || "Não foi possível excluir a atividade.";
@@ -51,7 +49,7 @@ export function DeleteActivityDialog({ activityId, onSuccess }: DeleteActivityPr
             }
             onSuccess(); 
         } catch (e: any) {
-            console.error("Erro ao deletar:", e);
+            // console.error("Erro ao deletar:", e);
             toast.error("Erro de conexão com o servidor.");
             setError(e.message);
         } finally {

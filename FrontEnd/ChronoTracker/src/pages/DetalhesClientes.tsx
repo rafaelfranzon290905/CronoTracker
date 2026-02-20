@@ -52,7 +52,7 @@ export default function DetalhesCliente() {
       const data = await res.json();
       setCliente(data);
     } catch (error) {
-      console.error("Erro ao carregar cliente:", error);
+      // console.error("Erro ao carregar cliente:", error);
       setCliente(null);
     } finally {
       setLoading(false);
@@ -82,8 +82,6 @@ export default function DetalhesCliente() {
       </div>
     );
   }
-
-  // ===== CÁLCULOS ESTRATÉGICOS =====
 
   const totalProjetos = cliente?.projetos?.length || 0;
 
@@ -298,7 +296,6 @@ export default function DetalhesCliente() {
             </div>
           </div>
 
-          {/* MODAL PADRÃO PROJETOS */}
           <Dialog open={openModal} onOpenChange={setOpenModal}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>

@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"; 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/apiConfig";
 
@@ -20,7 +19,6 @@ export function EditTimeEntryModal({ open, onOpenChange, entry, onSave }: EditTi
   const [projetos, setProjetos] = useState<any[]>([]);
   const [atividades, setAtividades] = useState<any[]>([]);
   
-  // Estado do Formulário
   const [formData, setFormData] = useState({
     projeto_id: "",
     atividade_id: "",
@@ -31,7 +29,6 @@ export function EditTimeEntryModal({ open, onOpenChange, entry, onSave }: EditTi
     motivo_edicao: ""
   });
 
-  // 1. Carregar listas de apoio (Projetos e Atividades)
   useEffect(() => {
     if (open) {
       const fetchListas = async () => {
@@ -51,10 +48,8 @@ export function EditTimeEntryModal({ open, onOpenChange, entry, onSave }: EditTi
     }
   }, [open]);
 
-  // 2. Preencher o formulário quando um lançamento é selecionado
   useEffect(() => {
     if (entry && open) {
-      // Formata data e hora para os inputs HTML (YYYY-MM-DD e HH:mm)
       const dataFormatada = new Date(entry.data_lancamento).toISOString().split('T')[0];
       
       const formatTime = (dateString: string) => {
@@ -141,9 +136,6 @@ export function EditTimeEntryModal({ open, onOpenChange, entry, onSave }: EditTi
     <option value="">Selecione...</option>
     {Array.isArray(atividades) && atividades
       .filter(a => {
-        // CORREÇÃO AQUI:
-        // Se não tiver projeto selecionado, mostra tudo.
-        // Se tiver, compara o ID direto (a.projeto_id) e não o objeto (a.projetos)
         if (!formData.projeto_id) return true;
         return String(a.projeto_id) === String(formData.projeto_id);
       })

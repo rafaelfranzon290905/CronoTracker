@@ -201,7 +201,7 @@ export default function TimesheetPage() {
             }}
           />
 
-=          <AlertDialog open={isDelAlertOpen} onOpenChange={setIsDelAlertOpen}>
+          <AlertDialog open={isDelAlertOpen} onOpenChange={setIsDelAlertOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Excluir Lançamento</AlertDialogTitle>

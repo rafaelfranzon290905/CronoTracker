@@ -16,7 +16,7 @@ import { toast } from "sonner";
 type ProjetoSelect = {
     projeto_id: number;
     nome_projeto: string;
-    status: boolean;
+    status: string;
     data_inicio: string;
     projeto_colaboradores?: any[];
 }
@@ -77,8 +77,9 @@ function Atividades() {
         }
     };
 
-    const projetosAtivos = projetos.filter(p => p.status === true);
-
+    const projetosAtivos = projetos.filter(p => 
+        p.status !== "Concluído" && p.status !== "Cancelado"
+    );
     useEffect(() => {
         fetchAtividades();
         fetchProjetos();

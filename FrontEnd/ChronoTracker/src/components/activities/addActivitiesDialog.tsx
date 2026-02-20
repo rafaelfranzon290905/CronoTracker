@@ -85,6 +85,7 @@ type ProjetoSelect = {
 
 // --- Componente AddActivitiesDialog --- //
 export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: ProjetoSelect[]; onSuccess: () => void }) {
+    console.log("Projetos recebidos no Modal:", projetos);
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
@@ -253,13 +254,16 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {projetos.map((projeto) => (
-                                                <SelectItem
-                                                    key={projeto.projeto_id}
-                                                    value={String(projeto.projeto_id)}>
-                                                    ({projeto.projeto_id}) - {projeto.nome_projeto}
-                                                </SelectItem>
-                                            ))}
+                                           <ScrollArea className="h-[200px]"> {/* Defina a altura que desejar */}
+                                                {projetos.map((projeto) => (
+                                                    <SelectItem
+                                                        key={projeto.projeto_id}
+                                                        value={String(projeto.projeto_id)}
+                                                    >
+                                                        ({projeto.projeto_id}) - {projeto.nome_projeto}
+                                                    </SelectItem>
+                                                ))}
+                                            </ScrollArea>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

@@ -1032,93 +1032,77 @@ app.post('/lancamentos', async (req, res) => {
 
   console.log("Dados recebidos no backend:", req.body); // Log para debug
 
-  // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
-  const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
+  // // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
+  // const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
+  // const hoje = new Date();
+  // hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
 
-  if (dataLancamento > hoje) {
-    return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
-  }
+  // if (dataLancamento > hoje) {
+  //   return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
+  // }
 
   try {
     // 1. Validação de Data Futura
-    if (data) {
-      const dataLancamento = new Date(`${data}T00:00:00`); 
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0); 
-      if (dataLancamento > hoje) return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
+    const dataLancamentoLocal = new Date(`${data}T00:00:00`); 
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0); 
+
+    if (dataLancamentoLocal > hoje) {
+      return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
     }
 
-    // 2. Validação de Usuário
+    // 2. Buscar o usuário e colaborador (apenas uma vez)
     if (!usuario_id) return res.status(400).json({ error: "ID do usuário não fornecido." });
 
-    const usuario = await prisma.usuarios.findUnique({
-      where: { usuario_id: Number(usuario_id) }
+    const usuarioExistente = await prisma.usuarios.findUnique({
+      where: { usuario_id: Number(usuario_id) },
+      select: { colaborador_id: true }
     });
 
-    if (!usuario) return res.status(404).json({ error: "Usuário não encontrado" });
-    if (!usuario.colaborador_id) return res.status(400).json({ error: "Este usuário não possui um colaborador vinculado." });
+    if (!usuarioExistente) return res.status(404).json({ error: "Usuário não encontrado." });
+    if (!usuarioExistente.colaborador_id) return res.status(400).json({ error: "Este usuário não possui um colaborador vinculado." });
 
-    // 3. Preparação dos dados
-    const statusInicial = 'aprovado';
-    const inicioDate = new Date(`${data}T${hora_inicio}:00z`);
-    const fimDate = new Date(`${data}T${hora_fim}:00z`);
+    const colabId = usuarioExistente.colaborador_id;
 
-    if (inicioDate >= fimDate) {
-      return res.status(400).json({ error: "A hora de início deve ser menor que a hora de fim." });
-    }
+    // 3. Preparação dos horários para comparação (UTC para evitar erros de fuso)
+    const inicioDate = new Date(`${data}T${hora_inicio}:00Z`);
+    const fimDate = new Date(`${data}T${hora_fim}:00Z`);
+    const dataLancamentoBanco = new Date(`${data}T12:00:00Z`);
 
-    // 2. REGRA DE NEGÓCIO: Verificação de Sobreposição
-    // Procuramos qualquer lançamento do mesmo colaborador na mesma data 
-    // onde o intervalo de tempo se sobreponha ao novo
+    // 4. Verificação de Sobreposição
     const sobreposicao = await prisma.lancamentos_de_horas.findFirst({
       where: {
-        colaborador_id: usuario.colaborador_id,
-        data_lancamento: new Date(`${data}T12:00:00Z`),
-        OR: [
-          {
-            // Caso 1: O novo início está dentro de um lançamento existente
-            hora_inicio: { lte: inicioDate },
-            hora_fim: { gt: inicioDate }
-          },
-          {
-            // Caso 2: O novo fim está dentro de um lançamento existente
-            hora_inicio: { lt: fimDate },
-            hora_fim: { gte: fimDate }
-          },
-          {
-            // Caso 3: O novo lançamento engloba totalmente um existente
-            hora_inicio: { gte: inicioDate },
-            hora_fim: { lte: fimDate }
-          }
+        colaborador_id: colabId,
+        data_lancamento: dataLancamentoBanco,
+        AND: [
+          { hora_inicio: { lt: fimDate } },
+          { hora_fim: { gt: inicioDate } }
         ]
       }
     });
 
     if (sobreposicao) {
-      // Formata as horas para a mensagem de erro amigável
       const hI = sobreposicao.hora_inicio.getUTCHours().toString().padStart(2, '0');
       const mI = sobreposicao.hora_inicio.getUTCMinutes().toString().padStart(2, '0');
       const hF = sobreposicao.hora_fim.getUTCHours().toString().padStart(2, '0');
       const mF = sobreposicao.hora_fim.getUTCMinutes().toString().padStart(2, '0');
 
       return res.status(400).json({ 
-        error: `Você já possui um lançamento de horas registrado entre [${hI}:${mI}] e [${hF}:${mF}] nesta data.` 
+        error: `Você já possui um lançamento registrado entre [${hI}:${mI}] e [${hF}:${mF}] nesta data.` 
       });
     }
 
+    // 5. Cálculo de duração
     const diffMs = fimDate.getTime() - inicioDate.getTime();
     const duracaoHoras = diffMs / (1000 * 60 * 60);
 
-    // Adicione esta pequena trava de segurança antes do Prisma Create:
     if (isNaN(duracaoHoras) || duracaoHoras <= 0) {
-        return res.status(400).json({ error: "Horário de início ou fim inválido." });
+      return res.status(400).json({ error: "O horário de término deve ser maior que o de início." });
     }
 
     const novoLancamento = await prisma.lancamentos_de_horas.create({
       data: {
-        colaborador_id: usuario.colaborador_id,
+        colaborador_id: colabId,
         projeto_id: Number(projeto_id),
         atividade_id: Number(atividade_id),
         cliente_id: Number(cliente_id),
@@ -1127,7 +1111,7 @@ app.post('/lancamentos', async (req, res) => {
         hora_fim: fimDate,
         duracao_total: duracaoHoras,
         descricao: descricao || "",
-        status_aprovacao: statusInicial,
+        status_aprovacao: 'aprovado',
         tipo_lancamento: tipo_lancamento || "manual"
       }
     });
@@ -1182,22 +1166,31 @@ app.put('/lancamentos/:id', async (req, res) => {
     const fimDate = timeToDate(dataBase, hora_fim);
     const dataLancamentoDate = new Date(`${dataBase}T12:00:00Z`);
 
-    const sobreposicao = await prisma.lancamentos_de_horas.findFirst({
-      where: {
-        colaborador_id: lancamentoExistente.colaborador_id, // Você precisará dar um findUnique antes para pegar o colaborador_id
-        lancamento_id: { not: idLancamento }, // IGNORA O PRÓPRIO REGISTRO
-        data_lancamento: dataLancamentoDate,
-        OR: [
-          { hora_inicio: { lte: inicioDate }, hora_fim: { gt: inicioDate } },
-          { hora_inicio: { lt: fimDate }, hora_fim: { gte: fimDate } },
-          { hora_inicio: { gte: inicioDate }, hora_fim: { lte: fimDate } }
-        ]
-      }
-    });
+    const conflito = await prisma.lancamentos_de_horas.findFirst({
+  where: {
+    lancamento_id: { not: idLancamento }, // Ignora o registro atual
+    colaborador_id: (await prisma.lancamentos_de_horas.findUnique({ 
+        where: { lancamento_id: idLancamento }, 
+        select: { colaborador_id: true } 
+    })).colaborador_id,
+    data_lancamento: dataLancamentoDate,
+    AND: [
+      { hora_inicio: { lt: fimDate } },
+      { hora_fim: { gt: inicioDate } }
+    ]
+  }
+});
 
-    if (sobreposicao) {
-        return res.status(400).json({ error: "Sobreposição de horário detectada." });
-    }
+if (conflito) {
+  const hI = conflito.hora_inicio.getUTCHours().toString().padStart(2, '0');
+  const mI = conflito.hora_inicio.getUTCMinutes().toString().padStart(2, '0');
+  const hF = conflito.hora_fim.getUTCHours().toString().padStart(2, '0');
+  const mF = conflito.hora_fim.getUTCMinutes().toString().padStart(2, '0');
+
+  return res.status(400).json({ 
+    error: `Você já possui um lançamento de horas registrado entre [${hI}:${mI}] e [${hF}:${mF}] nesta data.` 
+  });
+}
 
     let duracaoHoras = 0;
     if (inicioDate && fimDate) {

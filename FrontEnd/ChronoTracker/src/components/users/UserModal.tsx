@@ -94,14 +94,14 @@ export function UserModal({ open, onOpenChange, user, currentUser, onSave }: Use
                 throw new Error(errorData.error || 'Erro ao salvar usuário');
             }
 
-            console.log("Sucesso ao salvar!");
+            // console.log("Sucesso ao salvar!");
             toast.success(user ? "Usuário atualizado com sucesso!" : "Novo usuário cadastrado!");
 
             onSave();
             onOpenChange(false);
 
         } catch (error) {
-            console.error("Erro no fetch:", error);
+            // console.error("Erro no fetch:", error);
             // alert(error instanceof Error ? error.message : "Falha na conexão com o servidor");
             toast.error(error instanceof Error ? error.message : "Falha na conexão com o servidor");
         }

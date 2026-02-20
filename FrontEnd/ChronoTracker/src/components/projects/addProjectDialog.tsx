@@ -1,4 +1,3 @@
-// src/components/projects/addProjectDialog.tsx
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -181,7 +180,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
       if (!isEditMode) formProjects.reset();
       onSuccess();
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       alert("Erro ao conectar com o servidor.");
     } finally {
       setIsLoading(false);
@@ -334,7 +333,7 @@ export function AddProjectDialog({ clientes, onSuccess, projectToEdit, variant =
                   />
                 </div>
 
-                {/* Campo de Equipe fora do grid para ocupar largura total */}
+                {/* Campo de Equipe */}
                 <div className="space-y-3 border-t pt-4">
                   <Label className="text-sm font-semibold">Equipe do Projeto</Label>
                   <Popover>

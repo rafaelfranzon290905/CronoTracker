@@ -46,28 +46,6 @@ const formatarHorasDecimais = (totalDecimal: number | null | undefined): string 
   return `${horasPad}:${minutosPad}`;
 };
 
-// const deleteProject = async (id: number) => {
-//   if (confirm("Tem certeza que deseja excluir este projeto? Essa ação não pode ser desfeita.")) {
-//     try {
-//       const response = await fetch(`${API_BASE_URL}/projetos/${id}`, {
-//         method: 'DELETE',
-//       });
-
-//       if (response.ok) {
-//         toast.success("Projeto excluído com sucesso!");
-        
-//         window.location.reload();
-//       } else {
-//         const errorData = await response.json();
-//       // Apresenta a mensagem clara vinda do backend
-//         toast.error(errorData.error || "Erro ao excluir projeto.");
-//       }
-//     } catch (error) {
-//       // console.error("Erro de conexão:", error);
-//       toast.error("Erro ao conectar com o servidor.");
-//     }
-//   }
-// };
 
 const projectStatusConfig: any = {
     "Orçando": "bg-amber-500",      
@@ -142,7 +120,7 @@ export const getColumns = (
 
         const equipe = projeto.projeto_colaboradores || [];
 
-        console.log(`Projeto ${projeto.nome_projeto}`, equipe);
+        // console.log(`Projeto ${projeto.nome_projeto}`, equipe);
 
         if (equipe.length === 0) {
           return <span className="text-muted-foreground text-xs italic">Sem equipe</span>;
@@ -224,7 +202,6 @@ export const getColumns = (
         const projeto = row.original;
         const atividades = projeto.atividades || [];
 
-        // Função de exclusão interna para capturar o onSuccess corretamente
         const handleDelete = async () => {
           try {
             const response = await fetch(`${API_BASE_URL}/projetos/${projeto.projeto_id}`, {
@@ -233,10 +210,9 @@ export const getColumns = (
 
             if (response.ok) {
               toast.success("Projeto excluído com sucesso!");
-              onSuccess(); // Atualiza a tabela sem dar reload na página inteira
+              onSuccess(); 
             } else {
               const errorData = await response.json();
-              // Aqui ele vai exibir a mensagem clara: "Não é possível excluir: este projeto possui..."
               toast.error(errorData.error || "Erro ao excluir projeto.");
             }
           } catch (error) {
@@ -298,7 +274,6 @@ export const getColumns = (
                   projectToEdit={projeto}
                 />
 
-                {/* ALERT DIALOG PARA EXCLUSÃO */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem 

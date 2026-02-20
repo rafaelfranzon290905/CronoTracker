@@ -221,12 +221,10 @@ export const getColaboradorColumns = (
     // 1. Gera o array COMPLETO de colunas, passando os handlers
     const allColumns = columns(isGerente);
 
-    if (isGerente) {
-        // Se for gerente, retorna todas as colunas
-        return allColumns;
-    }
-    
-    // 2. Se não for gerente, filtra a coluna 'actions' (pelo id: "actions")
-    // ATENÇÃO: O ID da coluna Ações é 'actions', não 'acoes'.
-    return allColumns.filter(column => column.id !== 'actions');
+   if (isGerente) {
+
+       return allColumns;
+ }
+
+   return allColumns.filter(column => column.id !== 'actions');
 };

@@ -410,18 +410,7 @@ export function AddActivitiesDialog({ projetos, onSuccess }: { projetos: Projeto
                                     </FormItem>
                                 )}
                             />
-                            {/* Status */}
-                            {/* <FormField control={formActivities.control} name="status"
-                                render={({ field }) => (<FormItem><FormLabel>Status</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="a_fazer">A fazer</SelectItem>
-                                                    <SelectItem value="em_andamento">Em andamento</SelectItem>
-                                                    <SelectItem value="concluido">Concluído</SelectItem>
-                                                </SelectContent>
-                                            </Select><FormMessage /></FormItem>)}/> */}
-
+                
                             {apiError && (<p className="text-sm font-medium text-red-500 mt-2">{apiError}</p>)}
 
                         </form>

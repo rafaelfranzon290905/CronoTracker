@@ -23,7 +23,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-// --- Auto-growing textarea ---
 function AutoResizeTextarea({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -183,7 +182,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
             onOpenChange(false);
             onSuccess();
         } catch (error) {
-            console.error(error);
+            // console.error(error);
             setApiError("Não foi possível conectar ao servidor.");
         } finally {
             setIsSubmitting(false);
@@ -326,7 +325,7 @@ export function EditActivitiesDialog({ open, onOpenChange, initialData, projetos
                             />
 
 
-                            {/* Descrição (auto-growing textarea) */}
+                            {/* Descrição */}
                             <FormField control={formActivities.control} name="descr_atividade"
                                 render={({ field }) => (
                                     <FormItem>

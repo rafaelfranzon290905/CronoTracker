@@ -22,18 +22,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { type Collaborador } from "@/lib/types"
 import { API_BASE_URL } from  "@/apiConfig"
 
@@ -46,13 +37,7 @@ const formSchema = z.object({
   status: z.boolean(),
 });
 
-const cargos = [
-  "Desenvolvedor Frontend",
-  "Desenvolvedor Backend",
-  "Designer UX/UI",
-  "Gerente de Projetos",
-  "Analista de QA",
-] as const;
+
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -117,7 +102,7 @@ export function ModalColaboradores({
       aoSalvar();
       onOpenChange(false);
     } catch (error) {
-      console.error(error);
+      // console.error(error);
       alert(error instanceof Error ? error.message : "Erro desconhecido");
     } finally {
       setIsLoading(false);
@@ -152,31 +137,6 @@ export function ModalColaboradores({
                 )}
               />
 
-              {/* <FormField
-                control={form.control}
-                name="cargo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cargo</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o cargo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {cargos.map((cargo) => (
-                          <SelectItem key={cargo} value={cargo}>
-                            {cargo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
-
               <FormField
                 control={form.control}
                 name="email"
@@ -204,25 +164,6 @@ export function ModalColaboradores({
                   </FormItem>
                 )}
               />
-
-              {/* <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Colaborador Ativo</FormLabel>
-                      <FormDescription>Status atual no sistema.</FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              /> */}
             </form>
           </Form>
         </ScrollArea>

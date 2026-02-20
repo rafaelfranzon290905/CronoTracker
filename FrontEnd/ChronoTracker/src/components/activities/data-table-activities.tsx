@@ -21,7 +21,7 @@ import {
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Search } from "lucide-react";
-// Tipagem genérica da DataTable
+
 interface DataTableProps<TData, TValue> {
  columns: ColumnDef<TData, TValue>[];
  data: TData[];
@@ -61,7 +61,7 @@ const [sorting, setSorting] = React.useState<SortingState>([
 
  return (
   <div className="w-full">
-   {/* Filtro por nome da atividade (Chave corrigida de "name" para "nome_atividade") */}
+   {/* Filtro por nome da atividade*/}
    <div className="flex items-center py-4">
     <div className="relative w-full">
       <Input

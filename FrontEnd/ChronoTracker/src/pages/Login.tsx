@@ -8,7 +8,6 @@ import { API_BASE_URL } from  "@/apiConfig"
 import { Loader, Loader2 } from "lucide-react";
 
 
-// const API_BASE_URL = 'http://localhost:3001';
 const LOGIN_API_URL = `${API_BASE_URL}/login`;
 
 
@@ -44,10 +43,9 @@ export default function Login() {
             const result = await response.json();
 
             if (response.ok) {
-                // 🛑 SUCESSO: Armazenar o token e redirecionar
                 const { token, user } = result;
                 
-                // Armazena o token para uso futuro (Ex: LocalStorage)
+                // Armazena o token para uso futuro
                 localStorage.setItem('authToken', token); 
                 localStorage.setItem('currentUser', JSON.stringify({
                     id: user.usuario_id || user.usuario_id,
@@ -57,8 +55,6 @@ export default function Login() {
                     nomeCompleto: user.nome_completo
                 }));
 
-                // 🛑 NOVIDADE: Dispara o Log de Login para o Backend
-                // Não usamos 'await' aqui para não travar o redirecionamento do usuário
                 fetch(`${API_BASE_URL}/logs`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -73,7 +69,6 @@ export default function Login() {
                 navigate('/Dashboard');
 
             } else {
-                // FALHA: Exibir a mensagem de erro da API
                 setError(result.error || "Erro desconhecido ao fazer login.");
                 setIsLoading(false);
             }

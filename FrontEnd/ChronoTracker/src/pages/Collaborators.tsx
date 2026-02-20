@@ -4,9 +4,7 @@ import SideBar from "@/components/componentes/SideBar"
 import Header from "@/components/componentes/Header"
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import { type Collaborador } from "@/lib/types";
-import { columns } from "@/components/collaborators/columns";
 import { DataTable } from "@/components/collaborators/data-table";
-import { AddCollaboratorDialog } from "@/components/collaborators/AddCollaboratorDialog";
 import { ModalColaboradores } from "@/components/collaborators/modal-colaborador";
 import { usePermissions } from "@/hooks/usePermissions";
 import { getColaboradorColumns } from "@/components/collaborators/columns";
@@ -24,10 +22,7 @@ import {
 import { Loader2 } from "lucide-react";
 
 
-// const API_BASE_URL = 'http://localhost:3001';
-
 function Collaborators() {
-  {/* armazena os colaboradores vindo da api */ }
   const [data, setData] = useState<Collaborador[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +42,7 @@ function Collaborators() {
       if (!response.ok) throw new Error("Erro ao buscar dados");
       
       const result = await response.json();
-      console.log("DADOS DOS COLABORADORES: ", result);
+      // console.log("DADOS DOS COLABORADORES: ", result);
       setData(result); 
     } catch (error) {
       console.error("Erro no fetch:", error);
@@ -60,7 +55,6 @@ function Collaborators() {
     fetchData();
   }, []);
 
-{/* passa função via prop para o botao editar */ }
   const handleEdit = (colaborador: Collaborador) => {
     setEditingCollaborator(colaborador);
     setIsEditModalOpen(true);
@@ -132,7 +126,7 @@ const confirmInactivation = async () => {
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         colaboradorInicial={editingCollaborator}
-        aoSalvar={fetchData} // Quando salvar, recarrega a tabela
+        aoSalvar={fetchData} 
       />
       <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <AlertDialogContent>

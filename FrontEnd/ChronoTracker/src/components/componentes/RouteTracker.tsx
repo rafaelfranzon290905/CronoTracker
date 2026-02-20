@@ -12,7 +12,6 @@ useEffect(() => {
 
   try {
     const user = JSON.parse(storedUser);
-    // 🛑 BUSCA REFORÇADA: Tenta todas as chaves possíveis onde você pode ter guardado o ID
     const userId = user.usuario_id || user.id;
 
     if (userId && !isNaN(parseInt(userId))) {
@@ -20,7 +19,7 @@ useEffect(() => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          usuario_id: Number(userId), // Garante que vai como número
+          usuario_id: Number(userId), 
           evento: 'NAVEGACAO',
           tela_acessada: location.pathname
         }),

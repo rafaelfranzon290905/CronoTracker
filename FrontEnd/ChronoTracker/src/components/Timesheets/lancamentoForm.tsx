@@ -48,7 +48,6 @@ import {
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
 
-// const API = "http://localhost:3001"
 
 export default function LancamentoPage() {
   // const navigate = useNavigate()
@@ -96,7 +95,6 @@ export default function LancamentoPage() {
   const encerrarTimer = () => {
     if (intervalId) clearInterval(intervalId);
 
-    // Grava a hora de término real
     const agora = new Date();
     const h = agora.getHours().toString().padStart(2, '0');
     const m = agora.getMinutes().toString().padStart(2, '0');
@@ -136,7 +134,7 @@ export default function LancamentoPage() {
     if (!user || !user.colaborador_id) return;
 
     setIsLoading(true);
-    console.log("Buscando projetos para o colaborador ID:", user.colaborador_id);
+    // console.log("Buscando projetos para o colaborador ID:", user.colaborador_id);
 
     fetch(`${API_BASE_URL}/colaboradores`)
       .then(res => res.json())
@@ -235,7 +233,6 @@ export default function LancamentoPage() {
       return toast.error("A hora de término deve ser após a hora de início");
     }
 
-    // Nova validação de data futura
     const dataSelecionada = new Date(formData.data + "T00:00:00");
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);

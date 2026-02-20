@@ -18,7 +18,7 @@ interface ModalClienteProps {
   onOpenChange: (open: boolean) => void
   clienteInicial: Cliente | null
   aoSalvar: () => void
-  type?: "add" | "edit" | null // Deixei opcional
+  type?: "add" | "edit" | null 
 }
 
 interface Cliente {
@@ -51,9 +51,7 @@ const clienteVazio: Cliente = {
   status: true,
 }
 
-/* =======================
-   FORMATADORES
-======================= */
+/* FORMATADORES */
 const formatarCNPJ = (valor: string) => {
   const v = valor.replace(/\D/g, "")
   return v
@@ -75,7 +73,6 @@ export function ModalCliente({
   clienteInicial,
   aoSalvar,
 }: ModalClienteProps) {
-  // Se clienteInicial for null, usamos o clienteVazio (Modo Criação)
   const [formData, setFormData] = useState<Cliente>(clienteVazio)
   
   const [errors, setErrors] = useState<FormErrors>({
@@ -86,13 +83,12 @@ export function ModalCliente({
 
   useEffect(() => {
     if (open) {
-      // Se tiver clienteInicial, usa ele. Se não, reseta para vazio.
+      
       setFormData(clienteInicial || clienteVazio)
       setErrors({ cnpj: "", cep: "", estado: "" })
     }
   }, [open, clienteInicial])
 
-  // Removido o "if (!formData) return null" pois agora sempre temos dados
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
@@ -144,7 +140,6 @@ export function ModalCliente({
       estado: formData.estado.toUpperCase(),
     }
 
-    // Se ID for 0, é POST (criar). Se for > 0, é PUT (editar).
     const isEdit = formData.cliente_id !== 0
     const url = isEdit
       ? `${API_BASE_URL}/clientes/${formData.cliente_id}`
@@ -162,7 +157,6 @@ export function ModalCliente({
       const data = await response.json().catch(() => ({}))
 
       if (!response.ok) {
-        // AQUI ESTÁ A LÓGICA DO ERRO QUE VOCÊ QUERIA
         if (response.status === 409 || (data.message && data.message.toLowerCase().includes("cnpj"))) {
           const msg = data.message || "CNPJ já existente."
           setErrors(prev => ({ ...prev, cnpj: msg }))
@@ -232,7 +226,6 @@ export function ModalCliente({
           <div>
             <Label htmlFor="cnpj">CNPJ</Label>
             <Input id="cnpj" value={formData.cnpj} onChange={handleChange} maxLength={18} />
-            {/* MENSAGEM DE ERRO DO CNPJ APARECE AQUI */}
             {errors.cnpj && <span className="text-red-500 text-xs font-bold">{errors.cnpj}</span>}
           </div>
 

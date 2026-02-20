@@ -9,7 +9,7 @@ export type Collaborador = {
   total_despesas_valor?: number;
   valor_despesas_aprovadas?: number;
   valor_despesas_pendentes?: number;
-  atividades?: { atividade_id: number; nome_atividade: string; status: boolean; projetos?: { nome_projeto: string }; }[];
+  atividades?: { atividade_id: number; nome_atividade: string; status: "Pendente" | "Em Andamento" | "Concluída" | "Cancelado"; projetos?: { nome_projeto: string }; }[];
   projeto_colaboradores?: { 
     projetos: { 
       projeto_id: number; 
@@ -33,7 +33,6 @@ export type Collaborador = {
     data_lancamento: string;
   }[];
   status: boolean;            
-  // foto?: string | null;        //ainda nao vamos implementar
 };
 
 export interface Usuario {

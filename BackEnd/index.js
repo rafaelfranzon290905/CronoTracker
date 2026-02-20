@@ -22,9 +22,8 @@ app.get('/', (req, res) => {
   res.send('Servidor ChronoTracker Backend rodando com Prisma e Neon!');
 });
 
-// ==================================================================
+
 // ROTAS DE CLIENTES
-// ==================================================================
 
 // GET /clientes
 app.get('/clientes', async (req, res) => {
@@ -34,10 +33,47 @@ app.get('/clientes', async (req, res) => {
     });
     res.status(200).json(todosClientes);
   } catch (error) {
-    console.error('Erro ao buscar todos os clientes:', error);
+    // console.error('Erro ao buscar todos os clientes:', error);
     res.status(500).json({ error: 'Erro interno ao listar clientes.' });
   }
 });
+
+app.get('/clientes/:id', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    const cliente = await prisma.clientes.findUnique({
+      where: { cliente_id: clienteId },
+      include: {
+        projetos: {
+          include: {
+            despesas: true,
+            lancamentos_de_horas: true
+          },
+          orderBy: {
+            projeto_id: 'desc'
+          }
+        }
+      }
+    });
+
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    res.json(cliente);
+  } catch (err) {
+    // console.error(err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+
+
 
 // GET /clientes/cnpj/:cnpj
 app.get('/clientes/cnpj/:cnpj', async (req, res) => {
@@ -47,8 +83,15 @@ app.get('/clientes/cnpj/:cnpj', async (req, res) => {
   }
   try {
     const cliente = await prisma.clientes.findUnique({
-      where: { cnpj: cnpjLimpo },
-      select: { cliente_id: true, nome_empresa: true },
+      where: { cliente_id: cnpjLimpo },
+      include: {
+        projetos: {
+          include: {
+            despesas: true,
+            lancamentos_de_horas: true
+          }
+        }
+      }
     });
     if (cliente) {
       res.status(200).json({ existe: true, cliente: cliente });
@@ -56,7 +99,7 @@ app.get('/clientes/cnpj/:cnpj', async (req, res) => {
       res.status(200).json({ existe: false });
     }
   } catch (error) {
-    console.error('Erro ao verificar CNPJ:', error);
+    // console.error('Erro ao verificar CNPJ:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
@@ -89,7 +132,7 @@ app.post('/clientes', async (req, res) => {
         message: 'Este CNPJ já está cadastrado no sistema.' 
       });
     }
-    console.error('Erro ao cadastrar cliente:', error);
+    // console.error('Erro ao cadastrar cliente:', error);
     return res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
@@ -120,10 +163,42 @@ app.put('/clientes/:id', async (req, res) => {
     if (error.code === 'P2002') {
       return res.status(409).json({ code: 'CNPJ_DUPLICADO', message: 'CNPJ já existente' })
     }
-    console.error(error)
+    // console.error(error)
     return res.status(500).json({ message: 'Erro interno' })
   }
 })
+
+app.get('/clientes/:id', async (req, res) => {
+  const clienteId = parseInt(req.params.id);
+
+  if (isNaN(clienteId)) {
+    return res.status(400).json({ error: 'ID inválido' });
+  }
+
+  try {
+    const cliente = await prisma.clientes.findUnique({
+      where: { cliente_id: clienteId },
+      include: {
+        projetos: {
+          orderBy: {
+            projeto_id: 'desc'
+          }
+        }
+      }
+    });
+
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    res.status(200).json(cliente);
+
+  } catch (err) {
+    // console.error(err);
+    res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
 
 // DELETE /clientes/:id
 app.delete('/clientes/:id', async (req, res) => {
@@ -137,7 +212,7 @@ app.delete('/clientes/:id', async (req, res) => {
   } catch (error) {
     if (error.code == 'P2025') return res.status(404).json({ error: `Cliente com ID ${clienteId} não encontrado` });
     if (error.code === 'P2003') return res.status(400).json({ error: 'Este cliente não pode ser excluído porque possui projetos ou horas.' });
-    console.error('Erro ao deletar o cliente:', error);
+    // console.error('Erro ao deletar o cliente:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 })
@@ -153,14 +228,12 @@ app.get('/clientes/:id/projetos', async (req, res) => {
     });
     res.status(200).json(projetosDoCliente);
   } catch (error) {
-    console.error(`Erro ao buscar projetos do cliente ${clienteId}:`, error);
+    // console.error(`Erro ao buscar projetos do cliente ${clienteId}:`, error);
     res.status(500).json({ error: 'Erro interno ao buscar projetos.' });
   }
 });
 
-// ==================================================================
 // ROTAS DE COLABORADORES
-// ==================================================================
 
 // GET /colaboradores
 app.get('/colaboradores', async (req, res) => {
@@ -189,7 +262,7 @@ app.get('/colaboradores', async (req, res) => {
     });
     res.status(200).json(colaboradoresFormatados);
   } catch (error) {
-    console.error('Erro ao buscar colaboradores:', error);
+    // console.error('Erro ao buscar colaboradores:', error);
     res.status(500).json({ error: 'Erro ao buscar lista de colaboradores' });
   }
 });
@@ -208,7 +281,7 @@ app.get('/colaboradores/email/:email', async (req, res) => {
       res.status(200).json({ existe: false });
     }
   } catch (error) {
-    console.error('Erro ao verificar e-mail:', error);
+    // console.error('Erro ao verificar e-mail:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
@@ -231,7 +304,7 @@ app.post('/colaboradores', async (req, res) => {
     return res.status(201).json(novoColaborador);
   } catch (error) {
     if (error.code === 'P2002') return res.status(409).json({ error: 'Este e-mail já está cadastrado.' });
-    console.error('Erro ao cadastrar colaborador:', error);
+    // console.error('Erro ao cadastrar colaborador:', error);
     return res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
@@ -308,7 +381,7 @@ app.get('/colaboradores/:id', async (req, res) => {
 
     res.status(200).json(colaboradorFormatado);
   } catch (error) {
-    console.error(`Erro ao buscar detalhes do colaborador ${id}:`, error);
+    // console.error(`Erro ao buscar detalhes do colaborador ${id}:`, error);
     res.status(500).json({ error: 'Erro interno ao buscar colaborador.' });
   }
 });
@@ -330,7 +403,7 @@ app.put('/colaboradores/:id', async (req, res) => {
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ error: `Colaborador não encontrado.` });
     if (error.code === 'P2002') return res.status(400).json({ error: 'E-mail já está em uso.' });
-    console.error('[PUT] Erro:', error);
+    // console.error('[PUT] Erro:', error);
     res.status(500).json({ error: 'Erro interno ao atualizar.' });
   }
 });
@@ -352,14 +425,13 @@ app.delete('/colaboradores/:id', async (req, res) => {
     res.status(200).json({ message: 'Colaborador e Usuário inativados com sucesso.' });
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ error: 'Colaborador não encontrado.' });
-    console.error('[DELETE] Erro:', error);
+    // console.error('[DELETE] Erro:', error);
     res.status(500).json({ error: 'Erro interno ao excluir colaborador.' });
   }
 });
 
-// ==================================================================
+
 // ROTAS DE ATIVIDADES
-// ==================================================================
 
 // GET /atividades
 app.get('/atividades', async (req, res) => {
@@ -395,7 +467,7 @@ app.get('/atividades', async (req, res) => {
 
     res.status(200).json(atividadesComHorasReais);
   } catch (error) {
-    console.error('Erro ao buscar atividades:', error);
+    // console.error('Erro ao buscar atividades:', error);
     res.status(500).json({ error: 'Erro interno ao listar atividades.' });
   }
 });
@@ -429,7 +501,7 @@ app.get('/atividades/:atividade_id', async (req, res) => {
     if (!atividade) return res.status(404).json({ error: "Atividade não encontrada." });
     res.json(atividade);
   } catch (error) {
-    console.error("Erro ao buscar atividade:", error);
+    // console.error("Erro ao buscar atividade:", error);
     res.status(500).json({ error: "Erro ao buscar atividade." });
   }
 });
@@ -450,7 +522,7 @@ app.get('/debug/atividade-colaboradores', async (req, res) => {
 
 // POST /atividades
 app.post('/atividades', async (req, res) => {
-  const { nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
+  const { status, nome_atividade, prioridade, descr_atividade, data_prevista_inicio, data_prevista_fim, projeto_id, colaborador_ids, horas_previstas } = req.body;
 
   if (!projeto_id) {
     return res.status(400).json({ error: 'O ID do projeto é obrigatório para vincular a atividade.' });
@@ -481,7 +553,7 @@ app.post('/atividades', async (req, res) => {
                 error: `Limite de horas excedido. O projeto permite ${projeto.horas_previstas}h e o total ficaria em ${totalPrevistoJaAlocado + hPrevistasSolicitadas}h.` 
             });
         }
-    // Criação da Atividade no Prisma
+
  const novaAtividade = await prisma.atividades.create({
   data: {
     nome_atividade,
@@ -491,15 +563,10 @@ app.post('/atividades', async (req, res) => {
     data_prevista_fim: dataFim,
     horas_previstas: hPrevistasSolicitadas,
     horas_gastas: 0,
-    status: statusBoolean,
+    status: status || "Pendente",
     projetos: {
       connect: { projeto_id: projetoIdNumerico }
     },
-    // ...(colaborador_id && {
-    //   responsavel: {
-    //     connect: { colaborador_id: Number(colaborador_id) }
-    //   }
-    // })
     colaboradores_atividades: {
           create: (colaborador_ids || []).map(id => ({
             colaborador_id: Number(id)
@@ -525,7 +592,7 @@ await prisma.projetos.update({
     res.status(201).json(novaAtividade);
   } catch (error) {
     if (error.code === 'P2003') return res.status(404).json({ error: `O Projeto ID ${projeto_id} não existe.` });
-    console.error('Erro ao cadastrar atividade:', error);
+    // console.error('Erro ao cadastrar atividade:', error);
     res.status(500).json({ error: 'Erro interno.' });
   }
 });
@@ -572,11 +639,10 @@ app.put('/atividades/:atividade_id', async (req, res) => {
         data_prevista_inicio: dataInicio,
         data_prevista_fim: dataFim,
         horas_previstas: hPrevistasNovas,
-        status: Boolean(status),
+        status: status,
         projetos: { connect: { projeto_id: idProj } },
-        // responsavel: colaborador_id ? { connect: { colaborador_id: Number(colaborador_id) } } : { disconnect: true }
         colaboradores_atividades: {
-          deleteMany: {}, // Remove responsáveis antigos
+          deleteMany: {}, 
           create: (colaborador_ids || []).map(id => ({
             colaborador_id: Number(id)
           }))
@@ -605,7 +671,7 @@ await prisma.projetos.update({
     res.status(200).json(atividadeAtualizada);
   } catch (error) {
     if (error.code === 'P2025') return res.status(404).json({ error: "Atividade não encontrada." });
-    console.error("Erro ao atualizar:", error);
+    // console.error("Erro ao atualizar:", error);
     res.status(500).json({ error: "Erro interno." });
   }
 });
@@ -620,23 +686,20 @@ app.delete('/atividades/:atividade_id', async (req, res) => {
     await prisma.atividades.delete({ where: { atividade_id: atividadeId } });
     res.sendStatus(204);
   } catch (error) {
-    console.error("Erro ao deletar:", error);
+    // console.error("Erro ao deletar:", error);
     res.status(500).json({ error: "Não é possível excluir uma atividade que possui horas lançadas." });
   }
 });
 
-// ==================================================================
 // ROTAS DE PROJETOS
-// ==================================================================
 
 // GET /projetos
 app.get('/projetos', async (req, res) => {
   try {
     const totalLancamentos = await prisma.lancamentos_de_horas.count();
-    // console.log("DEBUG RENDER - Total de lançamentos no banco:", totalLancamentos);
     const projetos = await prisma.projetos.findMany({
       include: {
-        clientes: { select: { nome_cliente: true } },
+        clientes: { select: { cliente_id: true, nome_cliente: true } },
         atividades: { select: { atividade_id: true, nome_atividade: true, status: true } },
         projeto_colaboradores: { include: { colaboradores: true } }
       },
@@ -657,7 +720,7 @@ app.get('/projetos', async (req, res) => {
     });
     res.status(200).json(projetosComHoras);
   } catch (error) {
-    console.error('Erro ao buscar projetos:', error);
+    // console.error('Erro ao buscar projetos:', error);
     res.status(500).json({ error: 'Erro ao listar projetos.' });
   }
 });
@@ -694,7 +757,7 @@ app.get('/projetos/:id', async (req, res) => {
       total_despesas: Number(somaDespesas._sum.valor) || 0
     });
   } catch (error) {
-    console.error(`Erro ao buscar projeto ${id}:`, error);
+    // console.error(`Erro ao buscar projeto ${id}:`, error);
     res.status(500).json({ error: 'Erro interno ao buscar detalhes do projeto.' });
   }
 });
@@ -718,7 +781,7 @@ app.post('/projetos', async (req, res) => {
         data_inicio: inicio,
         data_fim: fim,
         horas_previstas: horas_previstas ? parseInt(horas_previstas) : 0,
-        status: status ?? true,
+        status: status || "Orçando",
         projeto_colaboradores: {
           create: (colaboradores_ids || []).map(id => ({ colaborador_id: id }))
         }
@@ -726,7 +789,7 @@ app.post('/projetos', async (req, res) => {
     });
     res.status(201).json(novoProjeto);
   } catch (error) {
-    console.error('Erro ao criar projeto:', error);
+    // console.error('Erro ao criar projeto:', error);
     res.status(500).json({ error: 'Erro interno ao criar projeto.' });
   }
 });
@@ -745,7 +808,7 @@ app.put('/projetos/:id', async (req, res) => {
         data_inicio: data_inicio ? new Date(data_inicio) : undefined,
         data_fim: data_fim ? new Date(data_fim) : undefined,
         horas_previstas: horas_previstas !== undefined ? parseInt(horas_previstas) : undefined,
-        status,
+        status: status,
         projeto_colaboradores: {
           deleteMany: {},
           create: (colaboradores_ids || []).map(idColab => ({ colaborador_id: parseInt(idColab) }))
@@ -755,7 +818,7 @@ app.put('/projetos/:id', async (req, res) => {
     });
     res.status(200).json(projetoAtualizado);
   } catch (error) {
-    console.error('Erro ao atualizar:', error);
+    // console.error('Erro ao atualizar:', error);
     res.status(500).json({ error: 'Erro ao atualizar projeto.' });
   }
 });
@@ -771,21 +834,18 @@ app.delete('/projetos/:id', async (req, res) => {
       return res.status(404).json({ error: 'Projeto não encontrado.' });
     }
     
-    // Erro de restrição (Foreign Key Constraint)
     if (error.code === 'P2003') {
       return res.status(400).json({ 
         error: 'Não é possível excluir: este projeto possui atividades, lançamentos de horas ou despesas vinculadas.' 
       });
     }
 
-    console.error('Erro ao excluir projeto:', error);
+    // console.error('Erro ao excluir projeto:', error);
     res.status(500).json({ error: 'Erro interno ao excluir projeto.' });
   }
 });
 
-// ==================================================================
 // ROTAS DE DESPESAS
-// ==================================================================
 
 // POST /despesas
 app.post('/despesas', async (req, res) => {
@@ -799,7 +859,9 @@ app.post('/despesas', async (req, res) => {
   try {
     const projeto = await prisma.projetos.findUnique({ where: { projeto_id: Number(projeto_id) } });
     if (!projeto) return res.status(404).json({ error: "Projeto não encontrado." });
-    if (projeto.status === false) return res.status(400).json({ error: "Projeto inativo." });
+    if (projeto.status === "Cancelado") {
+        return res.status(400).json({ error: "Não é permitido lançar despesas em projetos cancelados." });
+    }
 
     const novaDespesa = await prisma.despesas.create({
       data: {
@@ -815,7 +877,7 @@ app.post('/despesas', async (req, res) => {
     });
     res.status(201).json(novaDespesa);
   } catch (error) {
-    console.error("Erro ao cadastrar despesa:", error);
+    // console.error("Erro ao cadastrar despesa:", error);
     res.status(500).json({ error: "Erro interno." });
   }
 });
@@ -835,7 +897,7 @@ app.patch('/despesas/:id/status', async (req, res) => {
     });
     res.status(200).json(despesaAtualizada);
   } catch (error) {
-    console.error("Erro ao atualizar status da despesa:", error);
+    // console.error("Erro ao atualizar status da despesa:", error);
     res.status(500).json({ error: 'Erro interno.' });
   }
 });
@@ -854,14 +916,12 @@ app.get('/despesas', async (req, res) => {
     });
     res.status(200).json(despesas);
   } catch (error) {
-    console.error("Erro ao listar despesas:", error);
+    // console.error("Erro ao listar despesas:", error);
     res.status(500).json({ error: "Erro interno." });
   }
 });
 
-// ==================================================================
 // ROTAS DE LOGIN E USUÁRIOS
-// ==================================================================
 
 app.post('/login', async (req, res) => {
   const { nome_usuario, senha } = req.body;
@@ -889,7 +949,7 @@ app.post('/login', async (req, res) => {
         }
     });
   } catch (error) {
-    console.error("Erro no login:", error);
+    // console.error("Erro no login:", error);
     res.status(500).json({ error: "Erro interno." });
   }
 });
@@ -906,7 +966,6 @@ app.get('/usuarios', async (req, res) => {
         cargo: true,
         status: true,
         colaborador_id: true,
-        // hash_senha: false <-- Segurança: Nunca enviar o hash
       },
       orderBy: { nome_completo: 'asc' }
     });
@@ -985,9 +1044,7 @@ app.delete('/usuarios/:id', async (req, res) => {
   }
 });
 
-// ==================================================================
 // ROTAS DE TIMESHEETS (Lançamento de Horas)
-// ==================================================================
 
 // GET /lancamentos
 app.get('/lancamentos', async (req, res) => {
@@ -1018,7 +1075,7 @@ app.get('/lancamentos', async (req, res) => {
     }));
     res.status(200).json(formatados);
   } catch (error) {
-    console.error('Erro ao buscar lançamentos:', error);
+    // console.error('Erro ao buscar lançamentos:', error);
     res.status(500).json({ error: 'Erro ao listar horas.' });
   }
 });
@@ -1030,19 +1087,8 @@ app.post('/lancamentos', async (req, res) => {
     data, hora_inicio, hora_fim, descricao, tipo_lancamento 
   } = req.body;
 
-  console.log("Dados recebidos no backend:", req.body); // Log para debug
-
-  // // --- NOVA VALIDAÇÃO DE DATA FUTURA ---
-  // const dataLancamento = new Date(`${data}T00:00:00`); // Usar data local para comparar dia
-  // const hoje = new Date();
-  // hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
-
-  // if (dataLancamento > hoje) {
-  //   return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
-  // }
-
   try {
-    // 1. Validação de Data Futura
+    // Validação de Data Futura
     const dataLancamentoLocal = new Date(`${data}T00:00:00`); 
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0); 
@@ -1051,7 +1097,7 @@ app.post('/lancamentos', async (req, res) => {
       return res.status(400).json({ error: "Não é permitido lançar horas em datas futuras." });
     }
 
-    // 2. Buscar o usuário e colaborador (apenas uma vez)
+    // Buscar o usuário e colaborador
     if (!usuario_id) return res.status(400).json({ error: "ID do usuário não fornecido." });
 
     const usuarioExistente = await prisma.usuarios.findUnique({
@@ -1064,12 +1110,12 @@ app.post('/lancamentos', async (req, res) => {
 
     const colabId = usuarioExistente.colaborador_id;
 
-    // 3. Preparação dos horários para comparação (UTC para evitar erros de fuso)
+    // Preparação dos horários para comparação 
     const inicioDate = new Date(`${data}T${hora_inicio}:00Z`);
     const fimDate = new Date(`${data}T${hora_fim}:00Z`);
     const dataLancamentoBanco = new Date(`${data}T12:00:00Z`);
 
-    // 4. Verificação de Sobreposição
+    // Verificação de Sobreposição
     const sobreposicao = await prisma.lancamentos_de_horas.findFirst({
       where: {
         colaborador_id: colabId,
@@ -1092,7 +1138,7 @@ app.post('/lancamentos', async (req, res) => {
       });
     }
 
-    // 5. Cálculo de duração
+    // Cálculo de duração
     const diffMs = fimDate.getTime() - inicioDate.getTime();
     const duracaoHoras = diffMs / (1000 * 60 * 60);
 
@@ -1117,7 +1163,7 @@ app.post('/lancamentos', async (req, res) => {
     });
     res.status(201).json(novoLancamento);
   } catch (error) {
-    console.error("Erro ao lançar horas:", error);
+    // console.error("Erro ao lançar horas:", error);
     res.status(500).json({ error: 'Erro interno ao registrar horas.' });
   }
 });
@@ -1126,7 +1172,6 @@ app.post('/lancamentos', async (req, res) => {
 app.put('/lancamentos/:id', async (req, res) => {
   const { id } = req.params;
   
-  console.log("=== TENTATIVA DE EDIÇÃO ===");
   const { 
     projeto_id, atividade_id, cliente_id, 
     data_lancamento, hora_inicio, hora_fim, 
@@ -1134,7 +1179,7 @@ app.put('/lancamentos/:id', async (req, res) => {
   } = req.body;
 
   try {
-    // 1. Validações e Tratamento
+    // Validações e Tratamento
     if (!projeto_id || !atividade_id) {
        return res.status(400).json({ error: "Projeto e Atividade são obrigatórios." });
     }
@@ -1168,7 +1213,7 @@ app.put('/lancamentos/:id', async (req, res) => {
 
     const conflito = await prisma.lancamentos_de_horas.findFirst({
   where: {
-    lancamento_id: { not: idLancamento }, // Ignora o registro atual
+    lancamento_id: { not: idLancamento }, 
     colaborador_id: (await prisma.lancamentos_de_horas.findUnique({ 
         where: { lancamento_id: idLancamento }, 
         select: { colaborador_id: true } 
@@ -1198,21 +1243,16 @@ if (conflito) {
         duracaoHoras = diffMs / (1000 * 60 * 60);
     }
 
-    // --- CORREÇÃO DO MOTIVO ---
-    // Como a coluna 'motivo_edicao' não existe no banco, 
-    // vamos concatenar o motivo dentro da 'descricao' para não perder a informação.
     let descricaoFinal = descricao || "";
     if (motivo_edicao && motivo_edicao.trim() !== "") {
         descricaoFinal = `${descricaoFinal} | [Motivo Edição: ${motivo_edicao}]`;
     }
 
-    // 2. ATUALIZAÇÃO NO PRISMA
     const lancamentoAtualizado = await prisma.lancamentos_de_horas.update({
       where: { lancamento_id: idLancamento },
       data: {
         projetos: { connect: { projeto_id: idProjeto } },
         atividades: { connect: { atividade_id: idAtividade } },
-        // Lógica condicional para cliente (só conecta se tiver ID)
         ...(idCliente && { clientes: { connect: { cliente_id: idCliente } } }),
         
         data_lancamento: dataLancamentoDate,
@@ -1220,17 +1260,14 @@ if (conflito) {
         hora_fim: fimDate,
         duracao_total: duracaoHoras,
         
-        descricao: descricaoFinal, // Salvamos aqui!
-        
-        // motivo_edicao: motivo_edicao <-- REMOVIDO POIS NÃO EXISTE NO BANCO
+        descricao: descricaoFinal,      
       },
     });
 
-    console.log("=== SUCESSO ===");
     res.json(lancamentoAtualizado);
 
   } catch (error) {
-    console.error("ERRO NO UPDATE:", error);
+    // console.error("ERRO NO UPDATE:", error);
     
     if (error.code === 'P2025') return res.status(404).json({ error: "Lançamento não encontrado." });
     if (error.code === 'P2003') return res.status(400).json({ error: "Projeto ou Atividade informados não existem." });
@@ -1248,7 +1285,7 @@ app.delete('/lancamentos/:id', async (req, res) => {
     });
     res.status(204).send();
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ error: "Erro ao excluir." });
   }
 });
@@ -1276,7 +1313,7 @@ app.get('/dashboard/stats/:usuario_id', async (req, res) => {
     const usuario = await prisma.usuarios.findUnique({ where: { usuario_id: parseInt(usuario_id) } });
     if (!usuario?.colaborador_id) return res.status(404).json({ error: "Colaborador não encontrado" });
 
-    // Ajuste Datas (UTC-3 fixo simples ou UTC)
+    // Ajuste Datas 
     const agora = new Date();
     const hojeLocal = new Date(agora.getTime() - (3 * 60 * 60 * 1000)); 
     const inicioHoje = new Date(hojeLocal); inicioHoje.setUTCHours(0, 0, 0, 0);
@@ -1338,7 +1375,6 @@ app.get('/dashboard/stats/:usuario_id', async (req, res) => {
     });
 
     const totalDespesas = Number(despesasMes._sum.valor || 0);
-    console.log("Soma total de despesas (Global):", totalDespesas);
 
     res.json({
       totalHoje: Number(totalHoje.toFixed(1)),
@@ -1348,17 +1384,15 @@ app.get('/dashboard/stats/:usuario_id', async (req, res) => {
       totalDespesas: totalDespesas
     });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ error: "Erro ao calcular estatísticas" });
   }
 });
 
 // ROTA DO LOG DE SEGURANÇA
-// No seu arquivo do servidor (Backend)
 app.post('/logs', async (req, res) => {
   const { usuario_id, evento, tela_acessada } = req.body;
 
-  // 🛡️ PROTEÇÃO: Se o ID for inválido, nem tenta mandar pro Prisma
   const parsedId = parseInt(usuario_id);
   
   if (isNaN(parsedId)) {
@@ -1372,29 +1406,24 @@ app.post('/logs', async (req, res) => {
         usuario_id: parseInt(usuario_id),
         evento: evento,
         tela_acessada: tela_acessada || null,
-        // Removi o IP conforme combinamos
       }
     });
     res.status(201).json(novoLog);
   } catch (error) {
-    console.error("Erro ao salvar log:", error);
+    // console.error("Erro ao salvar log:", error);
     res.status(500).json({ error: "Erro ao salvar log" });
   }
 });
 
-// Inicialização
-// --- ROTAS DE RELATÓRIO
-// GET /relatorios - Gera dados para visualização ou download
 // --- ROTAS DE RELATÓRIO
 app.get('/relatorios', async (req, res) => {
   try {
-    console.log("Query Params recebidos no servidor:", req.query);
+    // console.log("Query Params recebidos no servidor:", req.query);
     const { data_inicio, data_fim, colaborador_id, projeto_id, atividade_id, exportar, formato } = req.query;
 
-    // 1. Montagem do Filtro (Where)
     let whereClause = {};
 
-    // Filtro de Datas (com ajuste de horas para cobrir o dia todo)
+    // Filtro de Datas
     if (data_inicio || data_fim) {
       whereClause.data_lancamento = {};
       if (data_inicio) whereClause.data_lancamento.gte = new Date(`${data_inicio}T00:00:00.000Z`);
@@ -1406,7 +1435,6 @@ app.get('/relatorios', async (req, res) => {
     if (!isNaN(idNum) && idNum > 0) {
         whereClause.colaborador_id = idNum;
     } else {
-        // Se cair aqui, o Front ainda está enviando texto em vez de número
         console.error("ERRO CRÍTICO: O servidor recebeu um nome em vez de ID:", colaborador_id);
     }
 }
@@ -1419,10 +1447,10 @@ app.get('/relatorios', async (req, res) => {
 
     if (atividade_id) whereClause.atividade_id = parseInt(atividade_id);
 
-    console.log("Where Clause final para o Prisma:", whereClause);
-    console.log("Filtros finais aplicados no Prisma:", JSON.stringify(whereClause, null, 2));
+    // console.log("Where Clause final para o Prisma:", whereClause);
+    // console.log("Filtros finais aplicados no Prisma:", JSON.stringify(whereClause, null, 2));
 
-    // 2. Execução da Busca Única
+    // Execução da Busca Única
     const dados = await prisma.lancamentos_de_horas.findMany({
       where: whereClause,
       include: {
@@ -1434,7 +1462,7 @@ app.get('/relatorios', async (req, res) => {
       orderBy: { data_lancamento: "asc" }
     });
 
-    // 3. Lógica de Resposta (Exportação vs JSON)
+    // Lógica de Resposta 
     if (exportar === 'true') {
       if (formato === 'xlsx') {
         const workbook = new ExcelJS.Workbook();
@@ -1474,7 +1502,7 @@ app.get('/relatorios', async (req, res) => {
         const dataFormatada = item.data_lancamento ? item.data_lancamento.toISOString().split('T')[0] : "";
         const horas = item.duracao_total ? item.duracao_total.toFixed(2).replace('.', ',') : "0,00";
 
-        // Escapa ponto e vírgula e aspas dentro dos textos
+        
         const limparTexto = (texto) => texto ? `"${texto.toString().replace(/"/g, '""').replace(/;/g, ',')}"` : '""';
 
         return `${dataFormatada};` +
@@ -1488,14 +1516,13 @@ app.get('/relatorios', async (req, res) => {
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', 'attachment; filename=relatorio_horas.csv');
-      return res.status(200).send("\ufeff" + instrucaoExcel + cabecalho + csv); // \ufeff ajuda o Excel a entender UTF-8
+      return res.status(200).send("\ufeff" + instrucaoExcel + cabecalho + csv); 
     }
 
-    // Retorno padrão para a tabela do Front
     return res.json(dados);
 
   } catch (error) {
-    console.error("Erro na rota /relatorios:", error);
+    // console.error("Erro na rota /relatorios:", error);
     return res.status(500).json({ error: "Erro ao gerar relatório" });
   }
 });
@@ -1518,7 +1545,7 @@ app.get('/relatorios/despesas', async (req, res) => {
             whereClause.projeto_id = parseInt(projeto_id);
         }
 
-        // Filtro de Projeto (Verifique se projeto_id é o nome correto na tabela)
+        // Filtro de Projeto 
         if (projeto_id && projeto_id !== "") {
             const id = parseInt(projeto_id);
             if (!isNaN(id)) whereClause.projeto_id = id;
@@ -1582,8 +1609,6 @@ app.get('/relatorios/despesas', async (req, res) => {
             return res.status(200).send("\ufeff" + cabecalho + csv);
         }
 
-        // Formatação para o front (ajuste os nomes das colunas conforme seu banco)
-        // Retorno para a tabela
         res.json(despesas.map(d => ({
             data: d.data_despesa,
             tipo_gasto: d.tipo_despesa || "Geral",
@@ -1592,7 +1617,7 @@ app.get('/relatorios/despesas', async (req, res) => {
             projeto: d.projeto?.nome_projeto || "Sem projeto"
         })));
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         res.status(500).json({ error: "Erro ao buscar despesas" });
     }
 });

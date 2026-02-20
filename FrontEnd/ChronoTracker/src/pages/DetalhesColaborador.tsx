@@ -100,6 +100,13 @@ export default function DetalhesColaborador() {
         </div>
     );
 
+    const statusConfig: any = {
+        "Pendente": "bg-slate-500",
+        "Em Andamento": "bg-blue-600",
+        "Concluída": "bg-green-600",
+        "Cancelado": "bg-red-600",
+    };
+
     return (
         <div className="flex h-screen w-full">
             <SideBar />
@@ -111,7 +118,7 @@ export default function DetalhesColaborador() {
                         subtitle={colaborador.cargo}
                     >
                         <div className="flex items-center gap-3">
-                            <Badge className={colaborador.status ? "bg-green-600" : "bg-red-600"}>
+                            <Badge className={colaborador.status ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}>
                                 {colaborador.status ? "Ativo" : "Inativo"}
                             </Badge>
                             {isGerente && (
@@ -209,8 +216,10 @@ export default function DetalhesColaborador() {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <Badge variant="outline" className="text-[10px] group-hover:border-blue-300">
-                                                        {atv.status ? "Ativa" : "Concluída"}
+                                                    <Badge 
+                                                        className={`${statusConfig[atv.status] || "bg-gray-400"} text-white border-none text-[10px] px-2 py-0`}
+                                                    >
+                                                        {atv.status || "Pendente"}
                                                     </Badge>
                                                 </Link>
                                             ))

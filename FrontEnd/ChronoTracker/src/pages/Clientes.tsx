@@ -4,14 +4,13 @@ import SideBar from "@/components/componentes/SideBar";
 import { PageHeader } from "@/components/componentes/TituloPagina";
 import { DataTable } from "@/components/clientes/data-table-clients";
 import { getColumns } from "@/components/clientes/collumnsClients";
-import { ModalCliente } from "@/components/clientes/ModalClientes"; // Usaremos apenas este modal
+import { ModalCliente } from "@/components/clientes/ModalClientes"; 
 import { ModalProjetos } from "@/components/clientes/ModalVerProjetos";
-// REMOVIDO: import DialogClientes from "@/components/componentes/DialogClientes"; <--- Não usamos mais esse
 import { usePermissions } from "@/hooks/usePermissions";
 import { type Cliente } from "@/lib/clients";
 import { API_BASE_URL } from "@/apiConfig";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button"; // Importar Button
+import { Button } from "@/components/ui/button"; 
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, PlusCircle } from "lucide-react"; // Importar PlusCircle para o botão
+import { Loader2, PlusCircle } from "lucide-react"; 
 
 function Clientes() {
   const [data, setData] = useState<Cliente[]>([]);
@@ -88,7 +87,6 @@ function Clientes() {
 
   const columns = useMemo(() => getColumns(
     isGerente,
-    // --- ALTERAÇÃO: Ao editar, passamos o cliente para o state unificado ---
     (cli) => { 
         setClienteSelecionado(cli); 
         setModalAberto(true); 
@@ -104,7 +102,6 @@ function Clientes() {
         <Header />
         <main className="mt-4">
           <PageHeader title="Clientes" subtitle="Gerencie sua base de clientes.">
-            {/* --- ALTERAÇÃO: Botão direto em vez do DialogClientes antigo --- */}
             {isGerente && (
                 <Button onClick={handleNovoCliente} className="gap-2">
                     <PlusCircle className="h-4 w-4" />
@@ -151,7 +148,7 @@ function Clientes() {
       <ModalCliente 
         open={modalAberto} 
         onOpenChange={setModalAberto} 
-        clienteInicial={clienteSelecionado} // Se for null, o modal sabe que é "Novo"
+        clienteInicial={clienteSelecionado} 
         aoSalvar={fetchClientes} 
       />
       

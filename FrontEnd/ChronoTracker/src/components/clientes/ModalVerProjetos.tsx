@@ -7,7 +7,7 @@ import { API_BASE_URL } from  "@/apiConfig"
 interface Projeto {
   projeto_id: number;
   nome_projeto: string;
-  status: boolean;
+  status: "Orçando" | "Em Andamento" | "Concluído" | "Cancelado";
 }
 
 interface ModalProjetosProps {
@@ -16,20 +16,23 @@ interface ModalProjetosProps {
   cliente: { id: number; nome: string } | null;
 }
 
+const projectStatusConfig: Record<string, string> = {
+  "Orçando": "bg-amber-500",
+  "Em Andamento": "bg-blue-600",
+  "Concluído": "bg-green-600",
+  "Cancelado": "bg-red-600",
+};
+
 export function ModalProjetos({ open, onOpenChange, cliente }: ModalProjetosProps) {
   const [projetos, setProjetos] = useState<Projeto[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const renderStatus = (status: boolean) => {
-    return status ? (
-      <Badge className="bg-green-500 hover:bg-green-600 text-white border-none">
-        Ativo
-      </Badge>
-    ) : (
-      <Badge variant="destructive" className="bg-red-500 hover:bg-red-600 text-white border-none">
-        Inativo
-      </Badge>
-    );
+  const renderStatus = (status: string) => {
+    return (
+    <Badge className={`${projectStatusConfig[status] || "bg-slate-400"} text-white shadow-sm`}>
+      {status || "Orçando"}
+    </Badge>
+  );
   };
 
   useEffect(() => {
@@ -37,12 +40,11 @@ export function ModalProjetos({ open, onOpenChange, cliente }: ModalProjetosProp
       const fetchProjetos = async () => {
         setLoading(true);
         try {
-          // Ajuste a URL conforme sua API (ex: /clientes/1/projetos ou /projetos?cliente_id=1)
           const response = await fetch(`${API_BASE_URL}/clientes/${cliente.id}/projetos`);
           const data = await response.json();
           setProjetos(data);
         } catch (error) {
-          console.error("Erro ao buscar projetos:", error);
+          // console.error("Erro ao buscar projetos:", error);
         } finally {
           setLoading(false);
         }

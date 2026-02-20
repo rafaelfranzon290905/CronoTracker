@@ -18,7 +18,6 @@ export function AddTimeEntryDialog({ onSuccess }: { onSuccess: () => void }) {
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center pr-8">
             Registro de Tempo
-            {/* O Switch Animado que você pediu entrará aqui */}
             <div className="flex bg-muted p-1 rounded-full scale-90">
                <Button 
                 size="sm" variant={modo === 'form' ? 'default' : 'ghost'} 
@@ -38,12 +37,6 @@ export function AddTimeEntryDialog({ onSuccess }: { onSuccess: () => void }) {
 
         {modo === 'form' ? (
           <div className="space-y-4 py-4">
-            {/* Aqui você constrói o formulário com:
-                1. Select Projeto (Filtrado)
-                2. Select Atividade (Dependente do projeto)
-                3. Input Data, Hora Início, Hora Fim
-                4. Textarea Descrição
-            */}
             <p className="text-center text-muted-foreground italic">Formulário de lançamento aqui...</p>
             <Button className="w-full" onClick={() => setIsOpen(false)}>Salvar Lançamento</Button>
           </div>

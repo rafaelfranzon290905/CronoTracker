@@ -22,7 +22,6 @@ interface Props {
 
 export function ListaDespesasProjeto({ despesas }: Props) {
   
-  // Função para definir a cor do Badge baseada no status
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Aprovada":

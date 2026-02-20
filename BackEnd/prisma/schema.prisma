@@ -9,22 +9,21 @@ datasource db {
 }
 
 model atividades {
-  atividade_id         Int                    @id @default(autoincrement())
-  projeto_id           Int
-  nome_atividade       String                 @db.VarChar(100)
-  descr_atividade      String?
-  prioridade           String?                @default("normal") @db.VarChar(20)
-  data_prevista_inicio DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
-  data_prevista_fim    DateTime?              @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
-  status               Boolean?               @default(true)
-  colaborador_id       Int?
-  horas_previstas      Float?                 @default(0)
-  horas_gastas         Float?                 @default(0)
-  responsavel          colaboradores?         @relation(fields: [colaborador_id], references: [colaborador_id], onUpdate: NoAction, map: "fk_atividade_colaborador")
-  projetos             projetos               @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_atividade_projeto")
-  lancamentos_de_horas lancamentos_de_horas[]
-
+  atividade_id             Int                       @id @default(autoincrement())
+  projeto_id               Int
+  nome_atividade           String                    @db.VarChar(100)
+  descr_atividade          String?
+  data_prevista_inicio     DateTime?                 @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
+  data_prevista_fim        DateTime?                 @default(dbgenerated("date_trunc('second'::text, CURRENT_TIMESTAMP)")) @db.Timestamp(6)
+  status                   String                    @default("Pendente") @db.VarChar(20)
+  colaborador_id           Int?
+  horas_gastas             Float?                    @default(0)
+  prioridade               String?                   @default("normal") @db.VarChar(20)
+  horas_previstas          Float?                    @default(0)
   colaboradores_atividades atividade_colaboradores[]
+  responsavel              colaboradores?            @relation(fields: [colaborador_id], references: [colaborador_id], onUpdate: NoAction, map: "fk_atividade_colaborador")
+  projetos                 projetos                  @relation(fields: [projeto_id], references: [projeto_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_atividade_projeto")
+  lancamentos_de_horas     lancamentos_de_horas[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -43,20 +42,19 @@ model clientes {
 }
 
 model colaboradores {
-  colaborador_id        Int                     @id @default(autoincrement())
-  nome_colaborador      String                  @db.VarChar(100)
-  cargo                 String                  @db.VarChar(50)
-  email                 String                  @unique @db.VarChar(100)
-  data_admissao         DateTime?               @default(now()) @db.Timestamp(6)
-  foto                  Bytes?
-  status                Boolean?                @default(true)
-  atividades            atividades[]
-  despesas              despesas[]
-  lancamentos_de_horas  lancamentos_de_horas[]
-  projeto_colaboradores projeto_colaboradores[]
-  usuario               usuarios?
-
+  colaborador_id           Int                       @id @default(autoincrement())
+  nome_colaborador         String                    @db.VarChar(100)
+  cargo                    String                    @db.VarChar(50)
+  email                    String                    @unique @db.VarChar(100)
+  data_admissao            DateTime?                 @default(now()) @db.Timestamp(6)
+  foto                     Bytes?
+  status                   Boolean?                  @default(true)
   colaboradores_atividades atividade_colaboradores[]
+  atividades               atividades[]
+  despesas                 despesas[]
+  lancamentos_de_horas     lancamentos_de_horas[]
+  projeto_colaboradores    projeto_colaboradores[]
+  usuario                  usuarios?
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -87,7 +85,7 @@ model projetos {
   descricao             String
   data_inicio           DateTime?               @default(now()) @db.Timestamp(6)
   data_fim              DateTime?               @default(now()) @db.Timestamp(6)
-  status                Boolean?                @default(true)
+  status                String                  @default("Orçando") @db.VarChar(20)
   horas_previstas       Int?                    @default(0)
   horas_gastas          Float?                  @default(0)
   atividades            atividades[]

@@ -299,25 +299,25 @@ export default function Relatorios() {
                     </div>
 
                     {/* Tabela de resultados e cabeçalhos dinamicos */}
-                    <div className="border rounded-lg overflow-hidden">
-                        <table className="w-full text-left border-collapse">
+                    <div className="border rounded-lg overflow-x-auto w-full">
+                        <table className="w-full border-collapse table-fixed">
                             <thead>
                                 <tr className="bg-botao-dark text-white border-b">
                                     {tipoRelatorio === 'despesas' ? (
                                         <>
-                                            <th className="p-3">Data</th>
-                                            <th className="p-3">Tipo de Gasto</th>
-                                            <th className="p-3">Descrição</th>
-                                            <th className="p-3 text-right">Valor</th>
+                                            <th className="p-3 w-[15%] text-left">Data</th>
+                                            <th className="p-3 w-[25%] text-left">Tipo de Gasto</th>
+                                            <th className="p-3 w-[45%] text-left">Descrição</th>
+                                            <th className="p-3 w-[15%] text-right">Valor</th>
                                         </>
                                     ) : (
                                         <>
-                                            <th className="p-3">Data</th>
-                                            <th className="p-3">Colaborador</th>
-                                            <th className="p-3">Projeto</th>
-                                            <th className="p-3">Atividade</th>
-                                            <th className="p-3">Horas</th>
-                                            <th className="p-3">Descrição</th>
+                                            <th className="p-3 w-[12%] text-left">Data</th>
+                                            <th className="p-3 w-[18%] text-left">Colaborador</th>
+                                            <th className="p-3 w-[18%] text-left">Projeto</th>
+                                            <th className="p-3 w-[15%] text-left">Atividade</th>
+                                            <th className="p-3 w-[10%] text-left">Horas</th>
+                                            <th className="p-3 w-[27%] text-left">Descrição</th>
                                         </>
                                     )}
                                     
@@ -328,20 +328,19 @@ export default function Relatorios() {
                                     <tr key={index} className="border-b hover:bg-gray-50">
                                         {tipoRelatorio === 'despesas' ? (
                                             <>
-                                                <td className="p-3">{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : "-"}</td>
-                                                <td className="p-3">{item.tipo_gasto}</td>
-                                                <td className="p-3">{item.descricao}</td>
-                                                <td className="p-3 text-right">{item.valor ? `R$ ${Number(item.valor).toFixed(2)}` : "R$ 0,00"}</td>
+                                                <td className="p-3 truncate">{item.data ? new Date(item.data).toLocaleDateString('pt-BR') : "-"}</td>
+                                                <td className="p-3 truncate">{item.tipo_gasto}</td>
+                                                <td className="p-3 truncate">{item.descricao}</td>
+                                                <td className="p-3 text-right font-mono">{item.valor ? `R$ ${Number(item.valor).toFixed(2)}` : "R$ 0,00"}</td>
                                             </>
                                         ) : (
                                             <>
-                                                {/* Ajuste os nomes das chaves (item.Data, item.Colaborador) conforme o seu Backend retornar */}
-                                                <td className="p-3">{item.data_lancamento ? new Date(item.data_lancamento).toLocaleDateString() : "-"}</td>
-                                                <td className="p-3">{item.colaboradores?.nome_colaborador || "N/A"}</td>
-                                                <td className="p-3">{item.projetos?.nome_projeto || "Sem preojeto"}</td>
-                                                <td className="p-3 text-sm font-semibold">{item.atividades?.nome_atividade || "Geral"}</td>
+                                                <td className="p-3 truncate">{item.data_lancamento ? new Date(item.data_lancamento).toLocaleDateString() : "-"}</td>
+                                                <td className="p-3 truncate">{item.colaboradores?.nome_colaborador || "N/A"}</td>
+                                                <td className="p-3 truncate">{item.projetos?.nome_projeto || "Sem projeto"}</td>
+                                                <td className="p-3 truncate text-sm font-semibold">{item.atividades?.nome_atividade || "Geral"}</td>
                                                 <td className="p-3">{item.duracao_total?.toFixed(2)}h</td>
-                                                <td className="p-3">{item.descricao}</td>
+                                                <td className="p-3 truncate">{item.descricao}</td>
                                             </>
                                         )}
                                         
@@ -357,14 +356,15 @@ export default function Relatorios() {
                             {dados.length > 0 && (
                                 <tfoot className="font-bold bg-gray-50 border-t-2">
                                     <tr>
-                                        <td colSpan={tipoRelatorio === 'despesas' ? 3 : 6} className="p-4 text-right uppercase text-xs tracking-wider text-gray-500">Total Acumulado:</td>
-                                        <td className="p-3 text-md text-botao-dark">
+                                        <td colSpan={tipoRelatorio === 'despesas' ? 2 : 4} className="p-auto"></td>
+                                        <td className="pr-0 text-right uppercase text-xs tracking-wider text-gray-500 whitespace-nowrap">Total Acumulado:</td>
+                                        <td className="p-3 pl-2 text-md text-botao-dark text-left whitespace-nowrap">
                                             {tipoRelatorio === 'despesas' 
                                                 ? `R$ ${dados.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                                                 : `${dados.reduce((acc, curr) => acc + (Number(curr.duracao_total) || 0), 0).toFixed(2)}h`
                                             }
                                         </td>
-                                        {tipoRelatorio !== 'despesas' && <td></td>}
+                                        {/* {tipoRelatorio !== 'despesas' && <td></td>} */}
                                     </tr>
                                 </tfoot>
                             )}
